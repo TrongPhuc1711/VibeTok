@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Lấy API URL từ env hoặc dùng relative path nếu không có
-const apiUrl = import.meta.env.API_URL || '';
+const apiUrl = import.meta.env.VITE_API_URL || '';
 const baseURL = apiUrl ? `${apiUrl}/api` : '/api';
 
 const api = axios.create({
