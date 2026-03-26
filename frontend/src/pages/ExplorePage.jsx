@@ -2,6 +2,7 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout';
 import CreatorCard from '../components/common/CreatorCard';
+import UserDropdown from '../components/layout/UserDropdown';
 import { useExplore } from '../hooks/useExplore';
 import { SpinnerCenter } from '../components/ui/Spinner';
 import { formatCount } from '../utils/formatters';
@@ -27,17 +28,22 @@ export default function ExplorePage() {
 
     return (
         <PageLayout>
-            {/* Category tabs */}
-            <div className="flex items-center border-b border-border overflow-x-auto [scrollbar-width:none] shrink-0">
-                {categories.map(cat => (
-                    <button key={cat.id} onClick={() => setActiveTab(cat.value)}
-                        className={`shrink-0 bg-transparent border-none px-4 py-[18px] text-sm font-body cursor-pointer transition-all whitespace-nowrap border-b-2
-              ${activeTab === cat.value ? 'text-primary font-semibold border-primary' : 'text-text-faint border-transparent hover:text-text-secondary'}`}>
-                        {cat.label}
-                    </button>
-                ))}
-                <div className="ml-auto pr-4 shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-[11px] font-bold text-white">MV</div>
+            {/* Category tabs va userdropdown */}
+            <div className="flex items-center border-b border-border shrink-0 pr-4">
+                {/*Category*/}
+                <div className="flex-1 flex items-center overflow-x-auto [scrollbar-width:none]">
+                    {categories.map(cat => (
+                        <button key={cat.id} onClick={() => setActiveTab(cat.value)}
+                            className={`shrink-0 bg-transparent border-none px-4 py-[18px] text-sm font-body cursor-pointer transition-all whitespace-nowrap border-b-2
+        ${activeTab === cat.value ? 'text-primary font-semibold border-primary' : 'text-text-faint border-transparent hover:text-text-secondary'}`}>
+                            {cat.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/*UserDropdown */}
+                <div className="ml-4 shrink-0 relative z-50">
+                    <UserDropdown />
                 </div>
             </div>
 

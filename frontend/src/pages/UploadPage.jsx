@@ -1,6 +1,3 @@
-// ============================================================
-// pages/UploadPage.jsx
-// ============================================================
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout';
@@ -10,6 +7,7 @@ import { useUpload } from '../hooks/useUpload';
 import { mockTracks } from '../services/mockData';
 import { VIDEO_PRIVACY_LABELS, DUET_LABELS, DUET_OPTIONS, ROUTES } from '../utils/constants';
 import { formatDuration } from '../utils/formatters';
+import UserDropdown from '../components/layout/UserDropdown';
 
 export default function UploadPage() {
     const navigate = useNavigate();
@@ -30,7 +28,8 @@ export default function UploadPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
                 <h1 className="font-display font-bold text-[22px] text-white m-0">Đăng video mới</h1>
-                <div className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-xs font-bold text-white">MV</div>
+                <UserDropdown/>
+                {/* <div className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-xs font-bold text-white">MV</div> */}
             </div>
 
             {/* Body */}

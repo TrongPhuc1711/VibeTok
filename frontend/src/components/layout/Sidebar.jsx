@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
+import UserDropdown from './UserDropdown';
 
 const NAV = [
     { path: ROUTES.HOME, label: 'Đề xuất', Icon: HomeIcon },
     { path: ROUTES.EXPLORE, label: 'Khám phá', Icon: CompassIcon },
     { path: ROUTES.FOLLOWING, label: 'Đã follow', Icon: UsersIcon },
-    { path: ROUTES.LIVE, label: 'LIVE', Icon: LiveIcon },
+    // { path: ROUTES.LIVE, label: 'LIVE', Icon: LiveIcon },
     { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
     { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
 ];
@@ -95,11 +96,11 @@ export default function Sidebar({ className = '' }) {
                         <span className="font-body text-[13px] text-text-secondary flex-1 text-left">
                             {username}
                         </span>
-                        {isLive && (
+                        {/* {isLive && (
                             <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded tracking-[0.3px]">
                                 LIVE
                             </span>
-                        )}
+                        )} */}
                     </button>
                 ))}
             </nav>
@@ -113,6 +114,10 @@ export default function Sidebar({ className = '' }) {
                     <PlusIcon />
                     Đăng video mới
                 </button>
+                {/* User Dropdown
+                <div className='flex items-center justify-between px-1 pt-1'>
+                    <UserDropdown placement='sidebar'/>
+                </div> */}
             </div>
         </aside>
     );
