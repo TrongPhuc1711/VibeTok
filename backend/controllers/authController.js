@@ -2,9 +2,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 
-// =======================
-// 1. API ĐĂNG KÝ (REGISTER)
-// =======================
+
+//ĐĂNG KÝ (REGISTER)
 export const register = async (req, res) => {
     // Lấy dữ liệu từ Frontend gửi lên
     const { ten_dang_nhap, email, mat_khau, ten_hien_thi } = req.body;
@@ -41,9 +40,8 @@ export const register = async (req, res) => {
     }
 };
 
-// =======================
-// 2. API ĐĂNG NHẬP (LOGIN)
-// =======================
+
+// ĐĂNG NHẬP (LOGIN)
 export const login = async (req, res) => {
     const { email, mat_khau } = req.body;
 

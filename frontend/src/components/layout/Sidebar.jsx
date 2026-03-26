@@ -114,10 +114,10 @@ export default function Sidebar({ className = '' }) {
                     <PlusIcon />
                     Đăng video mới
                 </button>
-                {/* User Dropdown
+                {/* User Dropdown */}
                 <div className='flex items-center justify-between px-1 pt-1'>
                     <UserDropdown placement='sidebar'/>
-                </div> */}
+                </div>
             </div>
         </aside>
     );
