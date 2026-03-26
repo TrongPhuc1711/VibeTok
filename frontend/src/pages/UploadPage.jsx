@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import PageLayout from '../components/layout/PageLayout';
 import FormInput from '../components/common/FormInput';
 import Button from '../components/ui/Button';
@@ -197,20 +198,69 @@ function VideoPreview({ file }) {
 }
 
 function SelectField({ label, value, options, onChange }) {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const containerRef = React.useRef(null);
+
+    // Đóng dropdown khi nhấn ra ngoài
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(o => o.value === value);
+
     return (
-        <div>
-            <label className="block text-text-secondary text-xs font-medium mb-1.5 font-body">{label}</label>
-            <div className="bg-elevated border border-border2 rounded-lg px-3.5 py-3 flex items-center justify-between relative cursor-pointer">
+        <div className="relative" ref={containerRef}>
+            <label className="block text-text-secondary text-xs font-medium mb-1.5 font-body">
+                {label}
+            </label>
+            
+            {/* Vùng hiển thị (Trigger) */}
+            <div 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`bg-elevated border ${isOpen ? 'border-primary' : 'border-border2'} 
+                rounded-lg px-3.5 py-2.5 flex items-center justify-between cursor-pointer 
+                transition-all hover:bg-[#2a2a2a]`}
+            >
                 <div>
-                    <p className="text-text-faint text-[11px] font-body m-0">{label}</p>
-                    <p className="text-[#ddd] text-[13px] font-body m-0 mt-0.5">{options.find(o => o.value === value)?.label}</p>
+                    <p className="text-text-faint text-[10px] font-body m-0 uppercase tracking-tighter">
+                        {label}
+                    </p>
+                    <p className="text-[#eee] text-[13px] font-body m-0 mt-0.5 font-medium">
+                        {selectedOption?.label || "Chọn..."}
+                    </p>
                 </div>
-                <select value={value} onChange={e => onChange(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full bg-transparent">
-                    {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-                <ChevIcon />
+                <div className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                    <ChevIcon />
+                </div>
             </div>
+
+            {/* Danh sách lựa chọn tùy chỉnh */}
+            {isOpen && (
+                <ul className="absolute z-[100] w-full mt-1.5 bg-[#2a2a2a] border border-border2 rounded-xl shadow-2xl overflow-hidden py-1 animate-in fade-in zoom-in duration-100">
+                    {options.map((option) => (
+                        <li
+                            key={option.value}
+                            onClick={() => {
+                                onChange(option.value);
+                                setIsOpen(false);
+                            }}
+                            className={`px-4 py-2.5 text-[13px] font-body cursor-pointer transition-colors
+                            ${option.value === value 
+                                ? 'bg-primary/10 text-primary font-semibold' 
+                                : 'text-[#ccc] hover:bg-[#383838] hover:text-white'
+                            }`}
+                        >
+                            {option.label}
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 }
