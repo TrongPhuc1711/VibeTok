@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 
 import PageLayout from '../components/layout/PageLayout';
 import FormInput from '../components/common/FormInput';
-import Button from '../components/ui/Button';
-import { useUpload } from '../hooks/useUpload';
-import { mockTracks } from '../services/mockData';
-import { VIDEO_PRIVACY_LABELS, DUET_LABELS, DUET_OPTIONS, ROUTES } from '../utils/constants';
-import { formatDuration } from '../utils/formatters';
-import UserDropdown from '../components/layout/UserDropdown';
+import Button from '../../components/ui/Button';
+import { useUpload } from '../../hooks/useUpload';
+import { mockTracks } from '../../services/mockData';
+import { VIDEO_PRIVACY_LABELS, DUET_LABELS, DUET_OPTIONS, ROUTES } from '../../utils/constants';
+import { formatDuration } from '../../utils/formatters';
+import UserDropdown from '../../components/layout/UserDropdown';
 
 export default function UploadPage() {
     const navigate = useNavigate();
