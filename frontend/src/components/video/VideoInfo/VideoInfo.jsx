@@ -1,6 +1,6 @@
 //thông tin bên dưới video
 import React from 'react';
-import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../utils/formatters';
+import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../../utils/formatters';
 
 export default function VideoInfo({ video }) {
     if (!video) return null;

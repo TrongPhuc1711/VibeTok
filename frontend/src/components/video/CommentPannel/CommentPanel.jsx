@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getComments, postComment } from '../../services/videoService';
-import { formatCount, formatTimeAgo } from '../../utils/formatters';
-import { isNotEmpty, hasMaxLength } from '../../utils/validators';
+import { getComments, postComment } from '../../../services/videoService';
+import { formatCount, formatTimeAgo } from '../../../utils/formatters';
+import { isNotEmpty, hasMaxLength } from '../../../utils/validators';
 
 export default function CommentPanel({ videoId, totalComments, onClose }) {
     const [comments, setComments] = useState([]);

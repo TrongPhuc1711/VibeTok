@@ -1,6 +1,6 @@
 //video player với controls
 import React, { useRef, useState, useEffect } from 'react';
-import { formatDuration } from '../../utils/formatters';
+import { formatDuration } from '../../../utils/formatters';
 
 export default function VideoPlayer({ src, poster, autoPlay = false, className = '' }) {
     const videoRef = useRef(null);

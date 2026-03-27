@@ -1,5 +1,5 @@
 import React from 'react';
-import Sidebar from './Sidebar';
+import Sidebar from '../Sidebar';
 /*
   PageLayout({ children, rightPanel?, noPadding? })
   rightPanel: nội dung hiển thị bên phải (optional)
