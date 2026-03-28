@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import PageLayout from '../components/layout/PageLayout';
+import PageLayout from '../components/layout/PageLayout/PageLayout';
 import CreatorCard from '../components/common/CreatorCard';
 import UserDropdown from '../components/layout/UserDropdown';
 import { useExplore } from '../hooks/useExplore';
