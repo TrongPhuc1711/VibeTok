@@ -1,5 +1,5 @@
-/**
- * ActionIcons — icons dùng trong VideoCard, CommentPanel
+/*
+ ActionIcons — icons dùng trong VideoCard, CommentPanel
  */
 
 export function HeartIcon({ filled = false }) {

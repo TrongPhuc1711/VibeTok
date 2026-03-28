@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import FormInput from '../../components/common/FormInput';
+import FormInput from '../../components/common/FormInput/FormInput';
 import Button from '../../components/ui/Button';
 import { login } from '../../services/authService';
 import { useValidation } from '../../hooks/useValidation';

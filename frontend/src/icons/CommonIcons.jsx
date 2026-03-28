@@ -1,5 +1,5 @@
-/**
- * CommonIcons — icons dùng rải rác trong app
+/*
+ CommonIcons — icons dùng rải rác trong app
  */
 
 export function EyeIcon() {

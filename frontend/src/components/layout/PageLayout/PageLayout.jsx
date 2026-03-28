@@ -1,8 +1,13 @@
 import React from 'react';
-import Sidebar from '../Sidebar';
+import Sidebar from '../Sidebar/Sidebar';
+
 /*
-  PageLayout({ children, rightPanel?, noPadding? })
-  rightPanel: nội dung hiển thị bên phải (optional)
+PageLayout — layout chung cho tất cả page có sidebar
+ 
+Props:
+children    – nội dung chính
+rightPanel  – ReactNode (optional panel bên phải)
+noPadding   – boolean
  */
 export default function PageLayout({ children, rightPanel, noPadding = false }) {
   return (
