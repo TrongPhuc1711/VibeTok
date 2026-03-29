@@ -1,4 +1,3 @@
-import { delay, ok, fail, mockUsers } from './mockData';
 import { setToken, setStoredUser, clearAuth } from '../utils/helpers';
 import api from '../api/api';
 const safe = ({ password: _, ...u }) => u;

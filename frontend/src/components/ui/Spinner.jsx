@@ -31,8 +31,8 @@ export function BounceDots() {
             {[0, 1, 2].map(i => (
                 <div
                     key={i}
-                    className="w-2 h-2 rounded-full bg-primary"
-                    style={{ animation: `bounceDot 0.8s ease-in-out ${i * 0.15}s infinite alternate` }}
+                    className="w-2 h-2 rounded-full bg-primary "
+                    style={{ animation: `bounceDot 1s ease-in-out ${i * 0.15}s infinite alternate` }}
                 />
             ))}
             <style>{`@keyframes bounceDot{from{transform:translateY(0)}to{transform:translateY(-10px)}}`}</style>
