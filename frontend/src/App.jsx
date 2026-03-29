@@ -4,7 +4,7 @@ import { isLoggedIn, getStoredUser } from './utils/helpers';
 import { ROUTES }     from './utils/constants';
 
 // Auth
-import LoginPage    from './pages/Auth/LoginPage';
+import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 
 // App pages
@@ -33,7 +33,6 @@ function AdminRoute({ children }) {
   if (!isLoggedIn()) return <Navigate to={ROUTES.LOGIN} replace />;
   
   // Tùy chỉnh điều kiện kiểm tra Admin dựa trên user hiện tại
-  // Ví dụ: mình đang check email admin theo file AdminSidebar của bạn
   const user = getStoredUser();
   const isAdmin = user && user.email === 'admin@vibetok.vn'; 
   

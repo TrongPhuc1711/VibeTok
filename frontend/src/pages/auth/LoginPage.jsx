@@ -23,9 +23,18 @@ export default function LoginPage() {
     const handleSubmit = async () => {
         if (!validate(form)) return;
         setLoading(true);
-        try { await login(form); navigate(ROUTES.HOME); }
-        catch (e) { setApiError(e.message || 'Đăng nhập thất bại'); }
-        finally { setLoading(false); }
+        try {
+            const { user } = await login(form);
+            if (user?.vai_tro === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate(ROUTES.HOME);
+            }
+        } catch (e) {
+            setApiError(e.message || 'Đăng nhập thất bại');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -69,7 +78,7 @@ export default function LoginPage() {
                     icon={<LockIcon />} required />
 
                 <div className="text-right -mt-1">
-                    <button onClick={() => { }} className="bg-transparent border-none text-primary text-sm cursor-pointer font-body hover:underline">
+                    <button className="bg-transparent border-none text-primary text-sm cursor-pointer font-body hover:underline">
                         Quên mật khẩu?
                     </button>
                 </div>
@@ -104,11 +113,6 @@ export default function LoginPage() {
                 <p className="text-center text-[#2a2a3a] text-[11px] leading-relaxed m-0">
                     Bằng cách đăng nhập, bạn đồng ý với Điều khoản &amp; Chính sách của VibeTok
                 </p>
-            </div>
-
-            {/* Demo hint */}
-            <div className="fixed bottom-5 left-5 bg-primary/10 border border-primary/20 rounded-lg px-3.5 py-2.5 text-xs text-text-faint font-body">
-                Demo: <span className="text-primary">nguyenvibe@email.com</span> / <span className="text-primary">Vibe1234</span>
             </div>
         </div>
     );
