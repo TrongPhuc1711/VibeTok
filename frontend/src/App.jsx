@@ -5,7 +5,7 @@ import { ROUTES }     from './utils/constants';
 
 // Auth
 import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/Auth/RegisterPage';
+import RegisterPage from './pages/auth/RegisterPage';
 
 // App pages
 import HomePage    from './pages/HomePage';
