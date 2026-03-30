@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 
-// ĐĂNG KÝ (REGISTER)
+// ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
         const { ten_dang_nhap, email, mat_khau, ten_hien_thi } = req.body;
@@ -41,7 +41,7 @@ export const register = async (req, res) => {
     }
 };
 
-// ĐĂNG NHẬP (LOGIN)
+// ĐĂNG NHẬP
 export const login = async (req, res) => {
     try {
         const { email, mat_khau } = req.body;
@@ -69,17 +69,28 @@ export const login = async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // Trả về đầy đủ thông tin user (không có mat_khau)
+        //Trả về đầy đủ thông tin, bao gồm cả initials để hiển thị đúng
+        const fullName = user.ten_hien_thi || '';
+        const initials = fullName
+            .trim()
+            .split(/\s+/)
+            .map(w => w[0]?.toUpperCase() ?? '')
+            .slice(0, 2)
+            .join('') || 'U';
+
         res.json({
             message: 'Đăng nhập thành công!',
             token,
             user: {
-                id:           user.id,
+                id:            String(user.id),
                 ten_dang_nhap: user.ten_dang_nhap,
+                username:      user.ten_dang_nhap,  
                 ten_hien_thi:  user.ten_hien_thi,
+                fullName:      user.ten_hien_thi,     
                 email:         user.email,
                 anh_dai_dien:  user.anh_dai_dien,
                 vai_tro:       user.vai_tro,
+                initials,                              
             }
         });
 
@@ -92,7 +103,6 @@ export const login = async (req, res) => {
 // LẤY THÔNG TIN BẢN THÂN (GET ME)
 export const getMe = async (req, res) => {
     try {
-        // req.user.id được gắn bởi verifyToken middleware
         const [users] = await pool.query(
             'SELECT id, ten_dang_nhap, ten_hien_thi, email, anh_dai_dien, vai_tro, created_at FROM users WHERE id = ?',
             [req.user.id]
@@ -102,9 +112,29 @@ export const getMe = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
         }
 
+        const u = users[0];
+        const fullName = u.ten_hien_thi || '';
+        const initials = fullName
+            .trim()
+            .split(/\s+/)
+            .map(w => w[0]?.toUpperCase() ?? '')
+            .slice(0, 2)
+            .join('') || 'U';
+
         res.json({
             message: 'Chào mừng bạn trở lại!',
-            user: users[0]
+            user: {
+                id:            String(u.id),
+                ten_dang_nhap: u.ten_dang_nhap,
+                username:      u.ten_dang_nhap,   
+                ten_hien_thi:  u.ten_hien_thi,
+                fullName:      u.ten_hien_thi,     
+                email:         u.email,
+                anh_dai_dien:  u.anh_dai_dien,
+                vai_tro:       u.vai_tro,
+                initials,
+                createdAt:     u.created_at,
+            }
         });
 
     } catch (error) {

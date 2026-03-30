@@ -7,7 +7,6 @@ export const getUserProfile = async (req, res) => {
         const user = await UserModel.findByUsername(req.params.username);
         if (!user) return res.status(404).json({ message: 'Người dùng không tồn tại' });
 
-        // Kiểm tra đang follow không (nếu đã đăng nhập)
         let isFollowing = false;
         if (req.user) {
             isFollowing = await FollowModel.isFollowing(req.user.id, user.id);
@@ -31,7 +30,7 @@ export const getSuggestions = async (req, res) => {
     }
 };
 
-// POST /api/users/:username/follow (cần verifyToken)
+// POST /api/users/:username/follow
 export const followUser = async (req, res) => {
     try {
         const target = await UserModel.findByUsername(req.params.username);
@@ -46,7 +45,7 @@ export const followUser = async (req, res) => {
     }
 };
 
-// DELETE /api/users/:username/follow (cần verifyToken)
+// DELETE /api/users/:username/follow
 export const unfollowUser = async (req, res) => {
     try {
         const target = await UserModel.findByUsername(req.params.username);
@@ -60,18 +59,34 @@ export const unfollowUser = async (req, res) => {
     }
 };
 
-// PATCH /api/users/me (cần verifyToken)
+// PATCH /api/users/me
 export const updateMyProfile = async (req, res) => {
     try {
         const { ten_hien_thi, tieu_su, vi_tri } = req.body;
-        const updated = await UserModel.updateProfile(req.user.id, { ten_hien_thi, tieu_su, vi_tri });
 
-        // Nếu có upload ảnh đại diện
+        //chỉ update khi có giá trị, không override bằng undefined
+        const updates = {};
+        if (ten_hien_thi !== undefined) updates.ten_hien_thi = ten_hien_thi;
+        if (tieu_su      !== undefined) updates.tieu_su      = tieu_su;
+        if (vi_tri       !== undefined) updates.vi_tri        = vi_tri;
+
+        const updated = await UserModel.updateProfile(req.user.id, updates);
+
         if (req.file) {
             await UserModel.updateAvatar(req.user.id, req.file.path);
         }
 
-        res.json({ message: 'Cập nhật thành công', user: normalizeUser(updated) });
+        const normalized = normalizeUser(updated);
+
+        //Trả về đủ field alias để frontend cập nhật localStorage
+        res.json({
+            message: 'Cập nhật thành công',
+            user: {
+                ...normalized,
+                username: normalized.username || normalized.ten_dang_nhap,
+                fullName: normalized.fullName || normalized.ten_hien_thi,
+            }
+        });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi cập nhật profile', error: e.message });
     }
