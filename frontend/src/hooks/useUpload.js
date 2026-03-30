@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { uploadVideo } from '../services/videoService';
+import api from '../api/api';
 import { mockTracks } from '../services/mockData';
 import { validateForm, uploadSchema } from '../utils/validators';
 import { MAX_VIDEO_SIZE_MB } from '../utils/constants';
@@ -47,17 +47,36 @@ export function useUpload({ onSuccess } = {}) {
         if (!valid) { setErrors(e); return false; }
 
         setUploading(true);
-        const interval = setInterval(() => setProgress(p => p >= 90 ? p : p + Math.random() * 12), 200);
+        setProgress(0);
+
         try {
-            await uploadVideo({ ...form, isDraft });
+            // Build FormData trực tiếp ở đây để chắc chắn file được đính kèm
+            const data = new FormData();
+            if (file) data.append('video', file);
+            data.append('caption',     form.caption || '');
+            data.append('privacy',     form.privacy || 'public');
+            data.append('allowDuet',   String(form.allowDuet  ?? true));
+            data.append('allowStitch', String(form.allowStitch ?? true));
+            data.append('location',    form.location || '');
+            data.append('isDraft',     String(isDraft));
+            if (form.music?.id) data.append('musicId', String(form.music.id));
+
+            await api.post('/videos/upload', data, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (e) => {
+                    const pct = Math.round((e.loaded * 100) / (e.total || 1));
+                    setProgress(pct);
+                },
+            });
+
             setProgress(100);
             onSuccess?.();
             return true;
         } catch (err) {
-            setErrors(p => ({ ...p, submit: err.message || 'Đăng video thất bại' }));
+            const msg = err.response?.data?.message || err.message || 'Đăng video thất bại';
+            setErrors(p => ({ ...p, submit: msg }));
             return false;
         } finally {
-            clearInterval(interval);
             setUploading(false);
         }
     }, [form, file, onSuccess]);

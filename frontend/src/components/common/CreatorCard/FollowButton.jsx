@@ -7,12 +7,14 @@ import React from 'react';
  *  following – boolean
  *  onClick   – handler
  *  size      – 'sm' | 'md'
+ *  disabled  – boolean
  *  className – override
  */
 export default function FollowButton({
   following = false,
   onClick,
   size = 'md',
+  disabled = false,
   className = '',
 }) {
   const sizeClass =
@@ -23,13 +25,14 @@ export default function FollowButton({
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={`
         rounded border font-semibold font-body transition-all cursor-pointer
+        disabled:opacity-50 disabled:cursor-not-allowed
         ${sizeClass}
-        ${
-          following
-            ? 'border-border2 text-text-faint bg-transparent'
-            : 'border-primary/50 text-primary bg-transparent hover:bg-primary/10'
+        ${following
+          ? 'border-border2 text-text-faint bg-transparent'
+          : 'border-primary/50 text-primary bg-transparent hover:bg-primary/10'
         }
         ${className}
       `}

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Avatar from '../Avatar/avatar';
 import FollowButton from './FollowButton';
 import { formatCount } from '../../../utils/formatters';
+import { followUser, unfollowUser } from '../../../services/userService';
+import { getStoredUser } from '../../../utils/helpers';
 
 /**
  * CreatorCard
@@ -12,31 +14,67 @@ import { formatCount } from '../../../utils/formatters';
  *  layout – 'card' | 'row'
  */
 export default function CreatorCard({ user, layout = 'card' }) {
-  const [following, setFollowing] = useState(false);
   const navigate = useNavigate();
+  const me = getStoredUser();
+
+  // Không cho phép follow chính mình
+  const isSelf =
+    me &&
+    (String(me.id) === String(user.id) ||
+      me.username === user.username ||
+      me.ten_dang_nhap === user.username);
+
+  const [following, setFollowing] = useState(user.isFollowing ?? false);
+  const [followerCount, setFollowerCount] = useState(user.followers ?? 0);
+  const [loading, setLoading] = useState(false);
 
   const goToProfile = () => navigate(`/profile/${user.username}`);
+
+  const handleFollow = async (e) => {
+    e.stopPropagation();
+    if (isSelf || loading) return;
+
+    const wasFollowing = following;
+    // Optimistic UI
+    setFollowing(!wasFollowing);
+    setFollowerCount(n => wasFollowing ? Math.max(0, n - 1) : n + 1);
+    setLoading(true);
+
+    try {
+      if (wasFollowing) {
+        await unfollowUser(user.username);
+      } else {
+        await followUser(user.username);
+      }
+    } catch {
+      // Rollback nếu API lỗi
+      setFollowing(wasFollowing);
+      setFollowerCount(n => wasFollowing ? n + 1 : Math.max(0, n - 1));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (layout === 'row') {
     return (
       <div className="flex items-center gap-3 py-2">
         <Avatar user={user} size="sm" onClick={goToProfile} />
-        <div
-          className="flex-1 min-w-0 cursor-pointer"
-          onClick={goToProfile}
-        >
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={goToProfile}>
           <p className="text-[#ddd] text-[13px] font-semibold font-body truncate m-0">
             {user.fullName}
           </p>
           <p className="text-text-faint text-xs font-body m-0">
-            {formatCount(user.followers)} followers
+            {formatCount(followerCount)} followers
           </p>
         </div>
-        <FollowButton
-          following={following}
-          onClick={() => setFollowing((f) => !f)}
-          size="sm"
-        />
+        {!isSelf && (
+          <FollowButton
+            following={following}
+            onClick={handleFollow}
+            size="sm"
+            disabled={loading}
+          />
+        )}
       </div>
     );
   }
@@ -52,14 +90,17 @@ export default function CreatorCard({ user, layout = 'card' }) {
       </p>
       <p className="text-text-faint text-xs font-body m-0">@{user.username}</p>
       <p className="text-text-faint text-xs font-body m-0">
-        {formatCount(user.followers)} followers
+        {formatCount(followerCount)} followers
       </p>
-      <div onClick={(e) => e.stopPropagation()}>
-        <FollowButton
-          following={following}
-          onClick={() => setFollowing((f) => !f)}
-        />
-      </div>
+      {!isSelf && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <FollowButton
+            following={following}
+            onClick={handleFollow}
+            disabled={loading}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -20,13 +20,18 @@ export const getTrendingHashtags = async ({ limit = 7 } = {}) => {
     }
 };
 
-// GET /api/users/suggestions (lọc chỉ creator)
+// GET /api/users/suggestions — hiển thị tất cả users gợi ý, ưu tiên creator
 export const getFeaturedCreators = async ({ limit = 5 } = {}) => {
     try {
-        const res = await api.get('/users/suggestions', { params: { limit: limit * 2 } });
+        const res = await api.get('/users/suggestions', { params: { limit: limit * 3 } });
         const all = res.data.users || [];
+
+        // Ưu tiên creator lên trước nhưng vẫn hiện user thường nếu chưa đủ
         const creators = all.filter(u => u.isCreator);
-        return { data: { creators: (creators.length ? creators : all).slice(0, limit) } };
+        const others = all.filter(u => !u.isCreator);
+        const merged = [...creators, ...others].slice(0, limit);
+
+        return { data: { creators: merged } };
     } catch {
         return { data: { creators: [] } };
     }
@@ -37,7 +42,7 @@ export const globalSearch = async ({ q = '', limit = 20 } = {}) => {
     try {
         const [videosRes, usersRes, hashtagsRes] = await Promise.allSettled([
             api.get('/videos/search', { params: { q, limit } }),
-            api.get('/users/suggestions', { params: { limit: 5 } }),
+            api.get('/users/suggestions', { params: { limit: 20 } }),
             api.get('/hashtags/search', { params: { q, limit: 5 } }),
         ]);
 
@@ -45,12 +50,14 @@ export const globalSearch = async ({ q = '', limit = 20 } = {}) => {
         const allUsers = usersRes.status === 'fulfilled' ? (usersRes.value.data.users || []) : [];
         const hashtags = hashtagsRes.status === 'fulfilled' ? (hashtagsRes.value.data.hashtags || []) : [];
 
-        // Lọc users theo query
+        // Lọc users theo query (bao gồm cả user thường)
         const lq = q.toLowerCase();
-        const users = allUsers.filter(u =>
-            u.username?.toLowerCase().includes(lq) ||
-            u.fullName?.toLowerCase().includes(lq)
-        );
+        const users = q.trim()
+            ? allUsers.filter(u =>
+                u.username?.toLowerCase().includes(lq) ||
+                u.fullName?.toLowerCase().includes(lq)
+            )
+            : allUsers;
 
         return { data: { videos, users, hashtags, query: q } };
     } catch {
