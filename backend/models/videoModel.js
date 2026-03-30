@@ -1,0 +1,154 @@
+import pool from '../config/db.js';
+import { normalizeUser } from './userModel.js';
+
+export const normalizeVideo = (v) => {
+    if (!v) return null;
+    return {
+        id:        String(v.id),
+        userId:    String(v.ma_nguoi_dung),
+        caption:   v.mo_ta || v.tieu_de || '',
+        videoUrl:  v.duong_dan_video,
+        thumbnail: v.anh_thu_nho || null,
+        duration:  Number(v.thoi_luong_giay) || 0,
+        views:     Number(v.luot_xem)        || 0,
+        likes:     Number(v.luot_thich)      || 0,
+        comments:  Number(v.luot_binh_luan)  || 0,
+        shares:    Number(v.luot_chia_se)    || 0,
+        bookmarks: 0,
+        privacy:   v.quyen_rieng_tu,
+        allowDuet:   Boolean(v.cho_phep_duet),
+        allowStitch: Boolean(v.cho_phep_stitch),
+        location:  v.vi_tri || '',
+        isDraft:   Boolean(v.la_ban_nhap),
+        createdAt: v.ngay_tao,
+        // user được join
+        user: v.user_id ? {
+            id:        String(v.user_id),
+            username:  v.ten_dang_nhap,
+            fullName:  v.ten_hien_thi,
+            anh_dai_dien: v.anh_dai_dien,
+            isCreator: v.vai_tro === 'creator' || v.vai_tro === 'admin',
+            initials:  (v.ten_hien_thi || '').trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U',
+        } : null,
+        // music được join
+        music: v.music_id ? {
+            id:     String(v.music_id),
+            title:  v.tieu_de_nhac,
+            artist: v.nghe_si,
+        } : null,
+    };
+};
+
+// Query join chung
+const VIDEO_JOIN_QUERY = `
+    SELECT v.*,
+        u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
+        m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si
+    FROM videos v
+    LEFT JOIN users u ON v.ma_nguoi_dung = u.id
+    LEFT JOIN music m ON v.ma_am_nhac = m.id
+`;
+
+export const VideoModel = {
+    // Feed công khai
+    async getFeed({ page = 1, limit = 5 } = {}) {
+        const offset = (page - 1) * limit;
+        const [rows] = await pool.query(
+            `${VIDEO_JOIN_QUERY}
+             WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
+             ORDER BY v.ngay_tao DESC
+             LIMIT ? OFFSET ?`,
+            [limit, offset]
+        );
+        const [countRows] = await pool.query(
+            "SELECT COUNT(*) AS total FROM videos WHERE quyen_rieng_tu='public' AND hoat_dong=1 AND la_ban_nhap=0"
+        );
+        const total = countRows[0].total;
+        return {
+            videos:  rows.map(normalizeVideo),
+            hasMore: offset + rows.length < total,
+            total,
+        };
+    },
+
+    // Video theo userId
+    async getByUserId(userId, { page = 1, limit = 12 } = {}) {
+        const offset = (page - 1) * limit;
+        const [rows] = await pool.query(
+            `${VIDEO_JOIN_QUERY}
+             WHERE v.ma_nguoi_dung = ? AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
+             ORDER BY v.ngay_tao DESC
+             LIMIT ? OFFSET ?`,
+            [userId, limit, offset]
+        );
+        return rows.map(normalizeVideo);
+    },
+
+    // Tìm video theo id
+    async findById(id) {
+        const [rows] = await pool.query(
+            `${VIDEO_JOIN_QUERY} WHERE v.id = ? AND v.hoat_dong = 1`,
+            [id]
+        );
+        return normalizeVideo(rows[0]) || null;
+    },
+
+    // Tìm kiếm
+    async search({ q = '', page = 1, limit = 10 } = {}) {
+        const offset = (page - 1) * limit;
+        const like   = `%${q}%`;
+        const [rows] = await pool.query(
+            `${VIDEO_JOIN_QUERY}
+             WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
+               AND (v.mo_ta LIKE ? OR v.tieu_de LIKE ?)
+             ORDER BY v.luot_xem DESC
+             LIMIT ? OFFSET ?`,
+            [like, like, limit, offset]
+        );
+        return rows.map(normalizeVideo);
+    },
+
+    // Tạo video mới
+    async create({ userId, musicId, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt }) {
+        const [result] = await pool.query(
+            `INSERT INTO videos (ma_nguoi_dung, ma_am_nhac, mo_ta, duong_dan_video, anh_thu_nho,
+                thoi_luong_giay, quyen_rieng_tu, cho_phep_duet, cho_phep_stitch, vi_tri,
+                ngay_len_lich, la_ban_nhap)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, musicId || null, caption, videoUrl, thumbnail || null,
+             duration || 0, privacy || 'public', allowDuet ? 1 : 0, allowStitch ? 1 : 0,
+             location || null, scheduleAt || null, isDraft ? 1 : 0]
+        );
+        return result.insertId;
+    },
+
+    // Xóa video
+    async softDelete(videoId, userId) {
+        const [result] = await pool.query(
+            'UPDATE videos SET hoat_dong = 0 WHERE id = ? AND ma_nguoi_dung = ?',
+            [videoId, userId]
+        );
+        return result.affectedRows > 0;
+    },
+
+    // Tăng lượt xem
+    async incrementViews(videoId) {
+        await pool.query('UPDATE videos SET luot_xem = luot_xem + 1 WHERE id = ?', [videoId]);
+    },
+
+    // Cập nhật số like
+    async updateLikeCount(videoId, delta = 1) {
+        await pool.query(
+            'UPDATE videos SET luot_thich = GREATEST(0, luot_thich + ?) WHERE id = ?',
+            [delta, videoId]
+        );
+    },
+
+    // Cập nhật số comment
+    async updateCommentCount(videoId, delta = 1) {
+        await pool.query(
+            'UPDATE videos SET luot_binh_luan = GREATEST(0, luot_binh_luan + ?) WHERE id = ?',
+            [delta, videoId]
+        );
+    },
+};
