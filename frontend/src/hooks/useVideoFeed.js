@@ -2,35 +2,37 @@ import { useState, useEffect, useCallback } from 'react';
 import { getFeed } from '../services/videoService';
 
 export function useVideoFeed(type = 'forYou') {
-    const [videos, setVideos] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [videos,      setVideos]      = useState([]);
+    const [loading,     setLoading]     = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [error, setError] = useState(null);
+    const [page,        setPage]        = useState(1);
+    const [hasMore,     setHasMore]     = useState(true);
+    const [error,       setError]       = useState(null);
 
-    const fetch = useCallback(async (p = 1, reset = false) => {
+    const fetchVideos = useCallback(async (p = 1, reset = false) => {
         try {
             if (p === 1) setLoading(true); else setLoadingMore(true);
             const res = await getFeed({ type, page: p });
-            setVideos(prev => reset ? res.data.videos : [...prev, ...res.data.videos]);
-            setHasMore(res.data.hasMore);
+            const incoming = res.data.videos || [];
+            setVideos(prev => reset ? incoming : [...prev, ...incoming]);
+            setHasMore(res.data.hasMore ?? false);
             setPage(p);
+            setError(null);
         } catch (e) {
-            setError(e.message);
+            setError(e.message || 'Lỗi khi tải video');
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
     }, [type]);
 
-    useEffect(() => { fetch(1, true); }, [fetch]);
+    useEffect(() => { fetchVideos(1, true); }, [fetchVideos]);
 
     const loadMore = useCallback(() => {
-        if (!loadingMore && hasMore) fetch(page + 1);
-    }, [loadingMore, hasMore, page, fetch]);
+        if (!loadingMore && hasMore) fetchVideos(page + 1);
+    }, [loadingMore, hasMore, page, fetchVideos]);
 
-    const refresh = useCallback(() => fetch(1, true), [fetch]);
+    const refresh = useCallback(() => fetchVideos(1, true), [fetchVideos]);
 
     return { videos, loading, loadingMore, hasMore, error, loadMore, refresh };
 }

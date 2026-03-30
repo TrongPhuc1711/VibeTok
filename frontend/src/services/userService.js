@@ -1,64 +1,42 @@
-import { delay, ok, fail, mockUsers, mockVideos } from './mockData';
-import { getStoredUser, setStoredUser } from '../utils/helpers';
+import api from '../api/api';
+import { getStoredUser } from '../utils/helpers';
 
-const safe = ({ password: _, ...u }) => u;
-
-/* GET /api/users/:username */
+//  GET /api/users/:username 
 export const getUserProfile = async (username) => {
-    await delay(500);
-    const user = mockUsers.find(u => u.username === username.replace('@', ''));
-    if (!user) fail(404, 'Người dùng không tồn tại');
-    return ok({ user: safe(user) });
+    const res = await api.get(`/users/${username.replace('@', '')}`);
+    return { data: res.data };
 };
 
-/* GET /api/users/:username/videos */
-export const getUserVideos = async (username, { page = 1, limit = 10 } = {}) => {
-    await delay(400);
-    const user = mockUsers.find(u => u.username === username.replace('@', ''));
-    if (!user) fail(404, 'Người dùng không tồn tại');
-    const all = mockVideos.filter(v => v.userId === user.id);
-    const start = (page - 1) * limit;
-    return ok({ videos: all.slice(start, start + limit), total: all.length, hasMore: start + limit < all.length });
+//  GET /api/videos/user/:userId (videos của user theo id) 
+// Dùng userService vì frontend gọi theo username → cần lookup id trước
+export const getUserVideos = async (username, opts = {}) => {
+    // Lấy profile để có userId, rồi lấy videos
+    const profileRes = await getUserProfile(username);
+    const userId = profileRes.data.user.id;
+    const res = await api.get(`/videos/user/${userId}`, { params: opts });
+    return { data: res.data };
 };
 
-/* POST /api/users/:username/follow */
-export const followUser = async (username) => {
-    await delay(300);
-    const user = mockUsers.find(u => u.username === username.replace('@', ''));
-    if (!user) fail(404, 'Người dùng không tồn tại');
-    user.followers += 1;
-    return ok({ followers: user.followers, following: true });
-};
-
-/* DELETE /api/users/:username/follow */
-export const unfollowUser = async (username) => {
-    await delay(300);
-    const user = mockUsers.find(u => u.username === username.replace('@', ''));
-    if (!user) fail(404, 'Người dùng không tồn tại');
-    user.followers = Math.max(0, user.followers - 1);
-    return ok({ followers: user.followers, following: false });
-};
-
-/* PATCH /api/users/me */
-export const updateProfile = async (updates) => {
-    await delay(700);
-    const current = getStoredUser();
-    if (!current) fail(401, 'Chưa đăng nhập');
-    const idx = mockUsers.findIndex(u => u.id === current.id);
-    if (idx === -1) fail(404, 'Người dùng không tồn tại');
-    mockUsers[idx] = { ...mockUsers[idx], ...updates };
-    const updated = safe(mockUsers[idx]);
-    setStoredUser(updated);
-    return ok({ user: updated });
-};
-
-/* GET /api/users/suggestions */
+//  GET /api/users/suggestions 
 export const getSuggestedUsers = async ({ limit = 5 } = {}) => {
-    await delay(400);
-    const me = getStoredUser();
-    const suggestions = mockUsers
-        .filter(u => u.id !== me?.id)
-        .slice(0, limit)
-        .map(safe);
-    return ok({ users: suggestions });
+    const res = await api.get('/users/suggestions', { params: { limit } });
+    return { data: res.data };
+};
+
+//  POST /api/users/:username/follow 
+export const followUser = async (username) => {
+    const res = await api.post(`/users/${username.replace('@', '')}/follow`);
+    return { data: res.data };
+};
+
+//  DELETE /api/users/:username/follow 
+export const unfollowUser = async (username) => {
+    const res = await api.delete(`/users/${username.replace('@', '')}/follow`);
+    return { data: res.data };
+};
+
+//  PATCH /api/users/me 
+export const updateProfile = async (updates) => {
+    const res = await api.patch('/users/me', updates);
+    return { data: res.data };
 };
