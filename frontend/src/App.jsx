@@ -21,7 +21,19 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 
 /*  Route guards  */
 function PrivateRoute({ children }) {
-  return isLoggedIn() ? children : <Navigate to={ROUTES.LOGIN} replace />;
+  const [isReady, setIsReady] = useState(false);
+  const [auth, setAuth] = useState(false);
+
+  useEffect(() => {
+    // Kiểm tra trạng thái đăng nhập từ helpers khi component mount
+    setAuth(isLoggedIn());
+    setIsReady(true);
+  }, []);
+
+  // Nếu chưa kiểm tra xong, hiển thị màn hình chờ (tránh bị redirect nhầm)
+  if (!isReady) return null; 
+
+  return auth ? children : <Navigate to={ROUTES.LOGIN} replace />;
 }
 
 function PublicRoute({ children }) {
@@ -30,14 +42,22 @@ function PublicRoute({ children }) {
 
 // BỘ BẢO VỆ CHO ADMIN
 function AdminRoute({ children }) {
-  if (!isLoggedIn()) return <Navigate to={ROUTES.LOGIN} replace />;
-  
-  // Tùy chỉnh điều kiện kiểm tra Admin dựa trên user hiện tại
-  const user = getStoredUser();
-  const isAdmin = user && user.email === 'admin@vibetok.vn'; 
-  
-  if (!isAdmin) return <Navigate to={ROUTES.HOME} replace />;
-  return children;
+  const [isReady, setIsReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const user = getStoredUser();
+    const loggedIn = isLoggedIn();
+    // Logic kiểm tra admin của bạn
+    const checkAdmin = loggedIn && user && user.email === 'admin@vibetok.vn';
+    
+    setIsAdmin(checkAdmin);
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) return null;
+
+  return isAdmin ? children : <Navigate to={ROUTES.HOME} replace />;
 }
 
 export default function App() {
