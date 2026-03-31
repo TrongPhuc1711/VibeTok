@@ -9,19 +9,24 @@ import api from '../../../api/api';
  * FollowListModal — modal kiểu TikTok hiển thị followers / following
  *
  * Props:
- *  username   – string (username của profile đang xem)
- *  type       – 'followers' | 'following'
- *  onClose    – () => void
+ *  username    – string (username của profile đang xem)
+ *  type        – 'followers' | 'following'
+ *  onClose     – () => void
  *  onTabChange – (type) => void
  */
 export default function FollowListModal({ username, type, onClose, onTabChange }) {
     const navigate = useNavigate();
     const me = getStoredUser();
 
+    // Có phải đang xem profile của chính mình không?
+    const isMyProfile =
+        me && (me.username === username || me.ten_dang_nhap === username);
+
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [followStates, setFollowStates] = useState({}); // { userId: boolean }
+    const [followStates, setFollowStates] = useState({});
+    const [loadingStates, setLoadingStates] = useState({});
 
     const fetchList = useCallback(async (t) => {
         setLoading(true);
@@ -30,16 +35,26 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
             const res = await api.get(`/users/${username}/${t}`, { params: { limit: 50 } });
             const list = res.data.users || [];
             setUsers(list);
-            // Khởi tạo trạng thái follow
+
+            // ⭐ KEY FIX:
+            // Tab "following" của chính mình → tất cả users đều đang được follow (= true)
+            // Vì backend không có verifyToken nên isFollowing luôn false từ API
+            // Tab "followers" hoặc xem profile người khác → dùng isFollowing từ API
             const states = {};
-            list.forEach(u => { states[u.id] = u.isFollowing; });
+            list.forEach(u => {
+                if (t === 'following' && isMyProfile) {
+                    states[u.id] = true;
+                } else {
+                    states[u.id] = u.isFollowing ?? false;
+                }
+            });
             setFollowStates(states);
         } catch {
             setUsers([]);
         } finally {
             setLoading(false);
         }
-    }, [username]);
+    }, [username, isMyProfile]);
 
     useEffect(() => {
         fetchList(type);
@@ -54,9 +69,13 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
 
     const handleFollowToggle = async (user) => {
         if (!me) return;
+        if (loadingStates[user.id]) return;
+
         const wasFollowing = followStates[user.id];
         // Optimistic update
         setFollowStates(s => ({ ...s, [user.id]: !wasFollowing }));
+        setLoadingStates(s => ({ ...s, [user.id]: true }));
+
         try {
             if (wasFollowing) {
                 await unfollowUser(user.username);
@@ -66,6 +85,8 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
         } catch {
             // Rollback
             setFollowStates(s => ({ ...s, [user.id]: wasFollowing }));
+        } finally {
+            setLoadingStates(s => ({ ...s, [user.id]: false }));
         }
     };
 
@@ -164,6 +185,7 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
                             {filtered.map(user => {
                                 const isSelf = me && (String(me.id) === String(user.id) || me.username === user.username);
                                 const isFollowing = followStates[user.id] ?? user.isFollowing;
+                                const isLoadingThis = loadingStates[user.id] ?? false;
 
                                 return (
                                     <div
@@ -200,11 +222,13 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
                                             </p>
                                         </div>
 
-                                        {/* Follow button */}
+                                        {/* Follow / Đang follow button */}
                                         {!isSelf && me && (
                                             <button
                                                 onClick={() => handleFollowToggle(user)}
+                                                disabled={isLoadingThis}
                                                 className={`shrink-0 text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer
+                                                    disabled:opacity-50 disabled:cursor-not-allowed
                                                     ${isFollowing
                                                         ? 'bg-transparent border-[#2a2a3e] text-[#888] hover:border-red-500/40 hover:text-red-400'
                                                         : 'bg-[#ff2d78] border-[#ff2d78] text-white hover:bg-[#e0266b]'

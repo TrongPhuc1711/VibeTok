@@ -8,12 +8,11 @@ export const FollowModel = {
                 'INSERT INTO follows (ma_nguoi_theo_doi, ma_nguoi_duoc_theo_doi) VALUES (?, ?)',
                 [followerId, followingId]
             );
-            // Cập nhật số liệu
             await pool.query('UPDATE users SET so_nguoi_theo_doi = so_nguoi_theo_doi + 1 WHERE id = ?', [followingId]);
             await pool.query('UPDATE users SET so_nguoi_dang_theo_doi = so_nguoi_dang_theo_doi + 1 WHERE id = ?', [followerId]);
             return true;
         } catch (e) {
-            if (e.code === 'ER_DUP_ENTRY') return false; // Đã follow rồi
+            if (e.code === 'ER_DUP_ENTRY') return false;
             throw e;
         }
     },
@@ -37,6 +36,16 @@ export const FollowModel = {
         );
         return rows.length > 0;
     },
+
+    // Lấy mảng id mà followerId đang follow (dùng để batch-check isFollowing)
+    async getFollowingIds(followerId) {
+        if (!followerId) return [];
+        const [rows] = await pool.query(
+            'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+            [followerId]
+        );
+        return rows.map(r => r.ma_nguoi_duoc_theo_doi);
+    },
 };
 
 // Like 
@@ -48,7 +57,6 @@ export const LikeModel = {
                 [userId, videoId]
             );
             await pool.query('UPDATE videos SET luot_thich = luot_thich + 1 WHERE id = ?', [videoId]);
-            // Cập nhật tổng lượt thích của tác giả
             await pool.query(
                 `UPDATE users u 
                  JOIN videos v ON v.ma_nguoi_dung = u.id 

@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../middlewares/authMiddleware.js';
+import { verifyToken, optionalAuth } from '../middlewares/authMiddleware.js';
 import { uploadAvatar } from '../middlewares/uploadMiddleware.js';
 import {
     getUserProfile, getSuggestions,
@@ -10,11 +10,11 @@ import { getFollowers, getFollowing } from '../controllers/followListController.
 
 const router = express.Router();
 
-// Public
-router.get('/suggestions', getSuggestions);
-router.get('/:username/followers', getFollowers);   // ai follow user này
-router.get('/:username/following', getFollowing);   // user này follow ai
-router.get('/:username', getUserProfile);
+// Public (nhưng dùng optionalAuth để biết user hiện tại → check isFollowing đúng)
+router.get('/suggestions', optionalAuth, getSuggestions);
+router.get('/:username/followers', optionalAuth, getFollowers);
+router.get('/:username/following', optionalAuth, getFollowing);
+router.get('/:username', optionalAuth, getUserProfile);
 
 // Protected 
 router.patch('/me', verifyToken, uploadAvatar, updateMyProfile);

@@ -24,7 +24,20 @@ export const getSuggestions = async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const currentId = req.user?.id || 0;
         const users = await UserModel.getSuggestions(currentId, limit);
-        res.json({ users: users.map(normalizeUser) });
+
+        // Lấy danh sách id mà currentUser đang follow (nếu đã đăng nhập)
+        let followingSet = new Set();
+        if (currentId) {
+            const rows = await FollowModel.getFollowingIds(currentId);
+            followingSet = new Set(rows);
+        }
+
+        const result = users.map(u => ({
+            ...normalizeUser(u),
+            isFollowing: followingSet.has(u.id),
+        }));
+
+        res.json({ users: result });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi gợi ý người dùng', error: e.message });
     }
@@ -64,7 +77,6 @@ export const updateMyProfile = async (req, res) => {
     try {
         const { ten_hien_thi, tieu_su, vi_tri } = req.body;
 
-        //chỉ update khi có giá trị, không override bằng undefined
         const updates = {};
         if (ten_hien_thi !== undefined) updates.ten_hien_thi = ten_hien_thi;
         if (tieu_su      !== undefined) updates.tieu_su      = tieu_su;
@@ -78,7 +90,6 @@ export const updateMyProfile = async (req, res) => {
 
         const normalized = normalizeUser(updated);
 
-        //Trả về đủ field alias để frontend cập nhật localStorage
         res.json({
             message: 'Cập nhật thành công',
             user: {
