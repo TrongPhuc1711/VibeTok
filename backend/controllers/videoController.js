@@ -1,15 +1,15 @@
-import { VideoModel }              from '../models/videoModel.js';
-import { CommentModel }            from '../models/commentModel.js';
-import { LikeModel }               from '../models/follow/followLikeModel.js';
-import { HashtagModel }            from '../models/contentModel.js';
-import { UserModel }               from '../models/userModel.js';
+import { VideoModel } from '../models/videoModel.js';
+import { CommentModel } from '../models/commentModel.js';
+import { LikeModel } from '../models/follow/followLikeModel.js';
+import { HashtagModel } from '../models/contentModel.js';
+import { UserModel } from '../models/userModel.js';
 
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
     try {
-        const page  = parseInt(req.query.page)  || 1;
+        const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 5;
-        const data  = await VideoModel.getFeed({ page, limit });
+        const data = await VideoModel.getFeed({ page, limit });
         res.json(data);
     } catch (e) {
         res.status(500).json({ message: 'Lỗi tải feed', error: e.message });
@@ -33,7 +33,7 @@ export const getVideoById = async (req, res) => {
         const video = await VideoModel.findById(req.params.id);
         if (!video) return res.status(404).json({ message: 'Video không tồn tại' });
         // Tăng lượt xem (async, không chặn response)
-        VideoModel.incrementViews(req.params.id).catch(() => {});
+        VideoModel.incrementViews(req.params.id).catch(() => { });
         res.json({ video });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi lấy video', error: e.message });
@@ -43,7 +43,7 @@ export const getVideoById = async (req, res) => {
 // GET /api/videos/user/:userId
 export const getVideosByUser = async (req, res) => {
     try {
-        const page  = parseInt(req.query.page)  || 1;
+        const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 12;
         const videos = await VideoModel.getByUserId(req.params.userId, { page, limit });
         res.json({ videos });
@@ -60,17 +60,19 @@ export const uploadVideo = async (req, res) => {
         const { caption = '', privacy = 'public', allowDuet, allowStitch, location = '', musicId, isDraft } = req.body;
 
         const videoId = await VideoModel.create({
-            userId:      req.user.id,
-            musicId:     musicId || null,
+            userId: req.user.id,
+            musicId: musicId || null,
             caption,
-            videoUrl:    req.file.path,     // Cloudinary URL
-            thumbnail:   req.file.path.replace('/upload/', '/upload/so_2,w_300/').replace(/\.[^.]+$/, '.jpg'),
-            duration:    req.file.duration  || 0,
+            videoUrl: req.file.path,     // Cloudinary URL
+            thumbnail: req.file.path
+                .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
+                .replace(/\.[^.]+$/, '.jpg'),
+            duration: req.file.duration || 0,
             privacy,
-            allowDuet:   allowDuet  !== 'false',
+            allowDuet: allowDuet !== 'false',
             allowStitch: allowStitch !== 'false',
             location,
-            isDraft:     isDraft === 'true',
+            isDraft: isDraft === 'true',
         });
 
         // Xử lý hashtags từ caption
@@ -91,7 +93,7 @@ export const uploadVideo = async (req, res) => {
 // GET /api/videos/:id/comments
 export const getComments = async (req, res) => {
     try {
-        const page  = parseInt(req.query.page)  || 1;
+        const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const comments = await CommentModel.getByVideoId(req.params.id, { page, limit });
         res.json({ comments });
@@ -107,9 +109,9 @@ export const postComment = async (req, res) => {
         if (!content?.trim()) return res.status(400).json({ message: 'Nội dung không được trống' });
 
         const comment = await CommentModel.create({
-            videoId:  req.params.id,
-            userId:   req.user.id,
-            content:  content.trim(),
+            videoId: req.params.id,
+            userId: req.user.id,
+            content: content.trim(),
             parentId: parentId || null,
         });
         await VideoModel.updateCommentCount(req.params.id, 1);
