@@ -7,6 +7,7 @@ import { SpinnerCenter } from '../components/ui/Spinner';
 import FollowListModal from '../components/common/FollowListModal/FollowListModal';
 import { useProfile } from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
+import { deleteVideo } from '../services/videoService';
 import { formatCount } from '../utils/formatters';
 import { getStoredUser } from '../utils/helpers';
 import { BackIcon, ShareSmIcon } from '../icons/CommonIcons';
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('Videos');
   const [suggests, setSuggests] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [localVideos, setLocalVideos] = useState([]);
 
   // Modal followers/following
   const [followModal, setFollowModal] = useState(null); // null | 'followers' | 'following'
@@ -33,11 +35,34 @@ export default function ProfilePage() {
     username === me?.username ||
     username === me?.ten_dang_nhap;
 
+  // Đồng bộ localVideos khi videos từ hook thay đổi
+  useEffect(() => {
+    setLocalVideos(videos);
+  }, [videos]);
+
   useEffect(() => {
     getSuggestedUsers({ limit: 5 })
       .then((r) => setSuggests(r.data.users.filter((u) => u.username !== target)))
       .catch(() => { });
   }, [target]);
+
+  // Xóa video và cập nhật state ngay lập tức
+  const handleDeleteVideo = async (videoId) => {
+    try {
+      await deleteVideo(videoId);
+      // Cập nhật danh sách video
+      setLocalVideos(prev => prev.filter(v => v.id !== videoId));
+      // Cập nhật số đếm trên profile
+      setProfile(p => ({
+        ...p,
+        videos: Math.max(0, (p.videos || 0) - 1),
+      }));
+      // Đóng modal nếu đang xem video bị xóa
+      if (selectedVideo?.id === videoId) setSelectedVideo(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể xóa video này');
+    }
+  };
 
   // Khi follow/unfollow từ modal → cập nhật số liệu profile
   const handleFollowToggleInModal = (delta) => {
@@ -77,9 +102,11 @@ export default function ProfilePage() {
     );
   }
 
-  // Stats với click để mở modal
+  // Dùng localVideos.length thay vì profile.videos để luôn đồng bộ
+  const displayVideoCount = localVideos.length;
+
   const stats = [
-    { label: 'Videos', value: formatCount(profile.videos), clickable: false },
+    { label: 'Videos', value: formatCount(displayVideoCount), clickable: false },
     { label: 'Follower', value: formatCount(profile.followers), clickable: true, modalType: 'followers' },
     { label: 'Đã follow', value: formatCount(profile.following), clickable: true, modalType: 'following' },
     { label: 'Thích', value: formatCount(profile.likes), clickable: false },
@@ -171,7 +198,7 @@ export default function ProfilePage() {
             </p>
           )}
 
-          {/* ── Stats ── clickable Follower & Đã follow */}
+          {/* Stats */}
           <div className="flex items-center gap-0">
             {stats.map((s, i) => (
               <React.Fragment key={s.label}>
@@ -189,7 +216,6 @@ export default function ProfilePage() {
                     {s.label}
                   </p>
                 </div>
-                {/* Divider */}
                 {i < stats.length - 1 && (
                   <div className="w-px h-8 bg-border2 mx-1" />
                 )}
@@ -215,9 +241,15 @@ export default function ProfilePage() {
         {/* Videos grid */}
         <div className="p-3 grid grid-cols-5 gap-1">
           {activeTab === 'Videos' && (
-            videos.length > 0 ? (
-              videos.map((v) => (
-                <VideoThumb key={v.id} video={v} onClick={() => setSelectedVideo(v)} />
+            localVideos.length > 0 ? (
+              localVideos.map((v) => (
+                <VideoThumb
+                  key={v.id}
+                  video={v}
+                  isOwner={isMyProfile}
+                  onClick={() => setSelectedVideo(v)}
+                  onDelete={handleDeleteVideo}
+                />
               ))
             ) : (
               <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
@@ -241,7 +273,12 @@ export default function ProfilePage() {
 
       {/* Modal xem video */}
       {selectedVideo && (
-        <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
+        <VideoModal
+          video={selectedVideo}
+          isOwner={isMyProfile}
+          onClose={() => setSelectedVideo(null)}
+          onDelete={handleDeleteVideo}
+        />
       )}
 
       {/* Modal follower/following */}
@@ -258,9 +295,24 @@ export default function ProfilePage() {
 }
 
 /* ── VideoThumb ── */
-function VideoThumb({ video, onClick }) {
+function VideoThumb({ video, isOwner, onClick, onDelete }) {
   const [hovered, setHovered] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const hue = (parseInt(video.id?.slice(-2) ?? '0', 16) || 0) % 360;
+
+  const handleDeleteClick = async (e) => {
+    e.stopPropagation();
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      // Tự reset sau 3s nếu không xác nhận
+      setTimeout(() => setConfirmDelete(false), 3000);
+      return;
+    }
+    setDeleting(true);
+    await onDelete(video.id);
+    setDeleting(false);
+  };
 
   return (
     <div
@@ -271,7 +323,7 @@ function VideoThumb({ video, onClick }) {
         transform: hovered ? 'scale(1.03)' : 'scale(1)',
       }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setConfirmDelete(false); }}
       onClick={onClick}
     >
       {video.thumbnail && (
@@ -282,11 +334,33 @@ function VideoThumb({ video, onClick }) {
           onError={(e) => { e.target.style.display = 'none'; }}
         />
       )}
+
+      {/* Hover overlay */}
       {hovered && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
           <span className="text-white text-2xl">▶</span>
         </div>
       )}
+
+      {/* Nút xóa — chỉ hiện khi là chủ và hover */}
+      {isOwner && hovered && (
+        <button
+          onClick={handleDeleteClick}
+          disabled={deleting}
+          className={`
+            absolute top-1.5 right-1.5 z-10 text-[10px] font-bold font-body
+            px-2 py-1 rounded border-none cursor-pointer transition-all
+            disabled:opacity-50
+            ${confirmDelete
+              ? 'bg-red-500 text-white animate-pulse'
+              : 'bg-black/60 text-white/80 hover:bg-red-500 hover:text-white'
+            }
+          `}
+        >
+          {deleting ? '...' : confirmDelete ? 'Xác nhận?' : '🗑'}
+        </button>
+      )}
+
       <p className="absolute bottom-1.5 left-1.5 text-white text-[11px] font-semibold font-body m-0 drop-shadow">
         ▶ {formatCount(video.views || video.likes || 0)}
       </p>
@@ -295,12 +369,21 @@ function VideoThumb({ video, onClick }) {
 }
 
 /* ── VideoModal ── */
-function VideoModal({ video, onClose }) {
+function VideoModal({ video, isOwner, onClose, onDelete }) {
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  const handleDelete = async () => {
+    if (!window.confirm('Bạn có chắc muốn xóa video này không?')) return;
+    setDeleting(true);
+    await onDelete(video.id);
+    setDeleting(false);
+  };
 
   return (
     <div
@@ -332,7 +415,7 @@ function VideoModal({ video, onClose }) {
             </div>
           </div>
           <p className="text-white/90 text-sm font-body leading-relaxed mb-4 flex-1">{video.caption}</p>
-          <div className="grid grid-cols-3 gap-2 border-t border-border pt-4">
+          <div className="grid grid-cols-3 gap-2 border-t border-border pt-4 mb-4">
             {[
               { icon: '❤️', value: formatCount(video.likes), label: 'Thích' },
               { icon: '💬', value: formatCount(video.comments), label: 'Bình luận' },
@@ -345,6 +428,17 @@ function VideoModal({ video, onClose }) {
               </div>
             ))}
           </div>
+
+          {/* Nút xóa trong modal — chỉ hiện với chủ video */}
+          {isOwner && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full py-2 rounded-lg border border-red-500/40 text-red-400 bg-transparent text-[13px] font-semibold font-body cursor-pointer hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            >
+              {deleting ? 'Đang xóa...' : '🗑 Xóa video'}
+            </button>
+          )}
         </div>
 
         <button

@@ -49,6 +49,12 @@ export const getUserVideosByUserId = async (userId, { page = 1, limit = 12 } = {
     return { data: res.data };
 };
 
+// DELETE /api/videos/:id
+export const deleteVideo = async (videoId) => {
+    const res = await api.delete(`/videos/${videoId}`);
+    return { data: res.data };
+};
+
 // POST /api/videos/upload — multipart/form-data
 export const uploadVideo = async (formData) => {
     const { caption, privacy, allowDuet, allowStitch, location, music, isDraft, file } = formData;
@@ -56,13 +62,13 @@ export const uploadVideo = async (formData) => {
     if (!file) throw new Error('Vui lòng chọn file video');
 
     const data = new FormData();
-    data.append('video',        file);
-    data.append('caption',      caption || '');
-    data.append('privacy',      privacy || 'public');
-    data.append('allowDuet',    String(allowDuet  ?? true));
-    data.append('allowStitch',  String(allowStitch ?? true));
-    data.append('location',     location || '');
-    data.append('isDraft',      String(isDraft ?? false));
+    data.append('video', file);
+    data.append('caption', caption || '');
+    data.append('privacy', privacy || 'public');
+    data.append('allowDuet', String(allowDuet ?? true));
+    data.append('allowStitch', String(allowStitch ?? true));
+    data.append('location', location || '');
+    data.append('isDraft', String(isDraft ?? false));
     if (music?.id) data.append('musicId', String(music.id));
 
     const res = await api.post('/videos/upload', data, {
