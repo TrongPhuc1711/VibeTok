@@ -9,7 +9,7 @@ const INITIAL_FORM = {
     allowDuet: true,
     allowStitch: true,
     location: '',
-    music: mockTracks[0],
+    music: null,          
     scheduleType: 'now',
     thumbnail: 'auto',
 };
@@ -49,7 +49,6 @@ export function useUpload({ onSuccess } = {}) {
         setProgress(0);
 
         try {
-            // Build FormData trực tiếp ở đây để chắc chắn file được đính kèm
             const data = new FormData();
             if (file) data.append('video', file);
             data.append('caption',     form.caption || '');

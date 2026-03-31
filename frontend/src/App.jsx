@@ -31,11 +31,10 @@ function PublicRoute({ children }) {
 // BỘ BẢO VỆ CHO ADMIN
 function AdminRoute({ children }) {
   if (!isLoggedIn()) return <Navigate to={ROUTES.LOGIN} replace />;
-  
-  // Tùy chỉnh điều kiện kiểm tra Admin dựa trên user hiện tại
+ 
   const user = getStoredUser();
-  const isAdmin = user && user.email === 'admin@vibetok.vn'; 
-  
+  const isAdmin = user?.vai_tro === 'admin';
+ 
   if (!isAdmin) return <Navigate to={ROUTES.HOME} replace />;
   return children;
 }

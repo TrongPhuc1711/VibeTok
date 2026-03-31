@@ -11,10 +11,14 @@ export function useProfile(username) {
     useEffect(() => {
         if (!username) return;
         setLoading(true);
+        setError(null);
         Promise.all([getUserProfile(username), getUserVideos(username)])
             .then(([pRes, vRes]) => {
-                setProfile(pRes.data.user);
-                setVideos(vRes.data.videos);
+                const user = pRes.data.user;
+                setProfile(user);
+                setVideos(vRes.data.videos ?? []);
+                // ✅ FIX: sync following state from API instead of always false
+                setFollowing(user.isFollowing ?? false);
             })
             .catch(e => setError(e.message))
             .finally(() => setLoading(false));
@@ -22,12 +26,27 @@ export function useProfile(username) {
 
     const toggleFollow = useCallback(async () => {
         if (!profile) return;
+        // Optimistic update
+        const wasFollowing = following;
+        setFollowing(!wasFollowing);
+        setProfile(p => ({
+            ...p,
+            followers: Math.max(0, (p.followers || 0) + (wasFollowing ? -1 : 1)),
+        }));
         try {
-            const fn = following ? unfollowUser : followUser;
+            const fn = wasFollowing ? unfollowUser : followUser;
             const res = await fn(profile.username);
-            setFollowing(f => !f);
-            setProfile(p => ({ ...p, followers: res.data.followers }));
+            // Sync real count from server if available
+            if (res.data?.followers != null) {
+                setProfile(p => ({ ...p, followers: res.data.followers }));
+            }
         } catch (e) {
+            // Rollback on error
+            setFollowing(wasFollowing);
+            setProfile(p => ({
+                ...p,
+                followers: Math.max(0, (p.followers || 0) + (wasFollowing ? 1 : -1)),
+            }));
             setError(e.message);
         }
     }, [following, profile]);
