@@ -5,9 +5,7 @@ import CommentPanel from '../components/video/CommentPannel/CommentPanel';
 import { BounceDots } from '../components/ui/Spinner';
 import { useVideoFeed } from '../hooks/useVideoFeed';
 
-// 1. Nhận feedType từ App.jsx truyền vào
 export default function HomePage({ feedType = 'forYou' }) {
-  // 2. Truyền feedType vào hook
   const { videos, loading } = useVideoFeed(feedType);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showComments, setShowComments] = useState(false);
@@ -29,11 +27,10 @@ export default function HomePage({ feedType = 'forYou' }) {
     ) : null;
 
   return (
-    // 3. Đã xóa thẻ <div className="flex h-screen..."> bọc ngoài cùng gây lỗi layout
     <PageLayout rightPanel={rightPanel} noPadding>
       <div
-        // 4. Đảm bảo thẻ div này chiếm toàn bộ không gian của PageLayout
-        className="w-full h-full relative outline-none bg-base"
+        // Đặt bg-black giống TikTok và relative để làm mốc cho nút bấm absolute
+        className="w-full h-full relative flex items-center justify-center bg-black outline-none"
         tabIndex={0}
         onWheel={(e) => go(e.deltaY > 0 ? 1 : -1)}
         onKeyDown={(e) => {
@@ -42,36 +39,49 @@ export default function HomePage({ feedType = 'forYou' }) {
         }}
       >
         {loading ? (
-          <div className="flex h-full items-center justify-center">
-            <BounceDots />
-          </div>
+          <BounceDots />
         ) : current ? (
           <>
-            <VideoCard
-              video={current}
-              isActive
-              onComment={() => setShowComments(true)}
-            />
+            {/* 1. Khu vực Video - Đặt chính giữa */}
+            <div
+              className="relative rounded-xl overflow-hidden shadow-2xl flex-shrink-0"
+              // Kích thước linh hoạt, tối đa 700px để không bị lố màn hình
+              style={{ width: '400px', height: 'calc(100vh - 120px)', maxHeight: '700px' }}
+            >
+              <VideoCard
+                video={current}
+                isActive
+                onComment={() => setShowComments(true)}
+              />
+            </div>
 
-            {/* Dot navigator */}
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-20">
-              {videos.map((v, i) => (
-                <div
-                  key={v.id}
-                  onClick={() => setCurrentIdx(i)}
-                  className={`
-                    rounded-full cursor-pointer transition-all self-center
-                    ${i === currentIdx
-                      ? 'w-2 h-2 bg-primary'
-                      : 'w-1 h-1 bg-white/20 hover:bg-white/40'
-                    }
-                  `}
-                />
-              ))}
+            {/* 2. Nút điều hướng - Cố định ở giữa, mép ngoài cùng bên phải */}
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
+              {/* Nút Lên */}
+              <button
+                onClick={() => go(-1)}
+                disabled={currentIdx === 0}
+                className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+              </button>
+              
+              {/* Nút Xuống */}
+              <button
+                onClick={() => go(1)}
+                disabled={currentIdx === videos.length - 1}
+                className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-text-subtle font-body">
+          <div className="flex flex-col items-center gap-3 text-white/60 font-body">
             <span className="text-[32px]">🎬</span>
             <p>Không có video nào. Hãy theo dõi thêm creator!</p>
           </div>
