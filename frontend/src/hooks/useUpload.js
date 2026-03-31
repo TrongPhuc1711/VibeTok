@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import api from '../api/api';
-import { mockTracks } from '../services/mockData';
 import { validateForm, uploadSchema } from '../utils/validators';
 import { MAX_VIDEO_SIZE_MB } from '../utils/constants';
 
