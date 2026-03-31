@@ -1,5 +1,5 @@
 import { UserModel, normalizeUser } from '../models/userModel.js';
-import { FollowModel }              from '../models/followLikeModel.js';
+import { FollowModel }              from '../models/follow/followLikeModel.js';
 
 // GET /api/users/:username
 export const getUserProfile = async (req, res) => {

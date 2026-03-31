@@ -1,6 +1,6 @@
 import { VideoModel }              from '../models/videoModel.js';
 import { CommentModel }            from '../models/commentModel.js';
-import { LikeModel }               from '../models/followLikeModel.js';
+import { LikeModel }               from '../models/follow/followLikeModel.js';
 import { HashtagModel }            from '../models/contentModel.js';
 import { UserModel }               from '../models/userModel.js';
 
