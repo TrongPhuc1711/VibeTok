@@ -21,8 +21,9 @@ import { PlusIcon } from '../../../icons/NavIcons';
     onComment  – () => void
     onShare    – (id) => void
     onBookmark – (id, bookmarked) => void
+    inline     – boolean: khi true thì render dạng flex column bình thường (không absolute)
 */
-export default function VideoCardActions({ video, onComment, onShare, onBookmark }) {
+export default function VideoCardActions({ video, onComment, onShare, onBookmark, inline = false }) {
   const navigate = useNavigate();
 
   const [liked, setLiked] = useState(video?.isLiked ?? false);
@@ -77,13 +78,17 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
 
   const user = video?.user ?? {};
 
+  const wrapperClass = inline
+    ? 'flex flex-col gap-5 items-center pb-4'
+    : 'absolute right-3 bottom-20 flex flex-col gap-4 items-center z-10';
+
   return (
-    <div className="absolute right-3 bottom-20 flex flex-col gap-4 items-center z-10">
+    <div className={wrapperClass}>
 
       {/* ── Avatar + Follow ── */}
       <div className="relative mb-2">
         <div
-          className="w-[46px] h-[46px] rounded-full border-2 border-white/60 bg-brand-gradient
+          className="w-[50px] h-[50px] rounded-full border-2 border-white/60 bg-brand-gradient
                      flex items-center justify-center text-[14px] font-bold text-white
                      cursor-pointer overflow-hidden"
           onClick={() => user.username && navigate(`/profile/${user.username}`)}
@@ -94,7 +99,6 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
           }
         </div>
 
-        {/* Nút + follow — ẩn khi đã follow */}
         {!following && (
           <button
             onClick={handleFollow}
@@ -117,28 +121,32 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
         active={liked}
         onClick={handleLike}
         loading={likeLoading}
+        inline={inline}
       />
 
-      {/* ── Comment ── */}
+      {/* Comment */}
       <ActionBtn
         icon={<CommentIcon />}
         count={formatCount(video?.comments)}
         onClick={() => onComment?.(video?.id)}
+        inline={inline}
       />
 
-      {/* ── Share ── */}
+      {/*  Share  */}
       <ActionBtn
         icon={<ShareIcon />}
         count={formatCount(video?.shares)}
         onClick={() => onShare?.(video?.id)}
+        inline={inline}
       />
 
-      {/* ── Bookmark ── */}
+      {/*  Bookmark  */}
       <ActionBtn
         icon={<BookmarkIcon filled={bookmarked} />}
         count={formatCount(video?.bookmarks)}
         active={bookmarked}
         onClick={handleBookmark}
+        inline={inline}
       />
 
       {/* ── Đĩa nhạc quay ── */}
@@ -148,7 +156,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
 }
 
 /* ─── ActionBtn ──────────────────────────────────────── */
-function ActionBtn({ icon, count, active, onClick, loading }) {
+function ActionBtn({ icon, count, active, onClick, loading, inline }) {
   return (
     <button
       onClick={onClick}
@@ -156,20 +164,24 @@ function ActionBtn({ icon, count, active, onClick, loading }) {
       className="flex flex-col items-center gap-[3px] bg-transparent border-none cursor-pointer
                  disabled:opacity-50 group transition-transform active:scale-90"
     >
-      <div className="w-[48px] h-[48px] rounded-full flex items-center justify-center
-                      bg-black/30 backdrop-blur-[2px]
-                      group-hover:bg-white/15 transition-colors">
+      <div className={`
+        rounded-full flex items-center justify-center transition-colors
+        ${inline
+          ? 'w-[52px] h-[52px] bg-white/10 hover:bg-white/20'
+          : 'w-[48px] h-[48px] bg-black/30 backdrop-blur-[2px] group-hover:bg-white/15'
+        }
+      `}>
         {icon}
       </div>
       <span className={`text-[12px] font-semibold font-body leading-none drop-shadow
-        ${active ? 'text-primary' : 'text-white'}`}>
+        ${active ? 'text-primary' : inline ? 'text-white' : 'text-white'}`}>
         {count ?? '0'}
       </span>
     </button>
   );
 }
 
-/* ─── MusicDisc ─────────────────────────────────────── */
+/*  MusicDisc  */
 function MusicDisc({ track }) {
   return (
     <div
@@ -177,7 +189,7 @@ function MusicDisc({ track }) {
       title={track ? `${track.title} – ${track.artist}` : 'Nhạc nền'}
     >
       <div
-        className="w-[40px] h-[40px] rounded-full border-4 border-white/20
+        className="w-[44px] h-[44px] rounded-full border-4 border-white/20
                    bg-gradient-to-br from-[#2a1a3e] to-[#0d0d1a]
                    flex items-center justify-center relative overflow-hidden"
         style={{ animation: 'spin 4s linear infinite' }}

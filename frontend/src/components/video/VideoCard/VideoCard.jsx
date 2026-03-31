@@ -4,14 +4,13 @@ import VideoCardInfo from './VideoCardInfo';
 import VideoCardActions from './VideoCardActions';
 import { VideoPlaySmIcon } from '../../../icons/CommonIcons';
 
-export default function VideoCard({ video, isActive, onComment, onLike, onShare, onBookmark }) {
+export default function VideoCard({ video, isActive, onComment, onLike, onShare, onBookmark, hideActions = false }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
 
   const hue = (parseInt(video?.id?.slice(-3) ?? '0', 16) || 0) % 360;
 
-  // Tự động play/pause khi card active
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -28,7 +27,7 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().then(() => setPlaying(true)).catch(() => {});
+      v.play().then(() => setPlaying(true)).catch(() => { });
     } else {
       v.pause();
       setPlaying(false);
@@ -62,7 +61,6 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
           style={{ zIndex: 1 }}
         />
       ) : (
-        /* Fallback gradient khi chưa có video URL */
         <>
           <div
             className="absolute inset-0 pointer-events-none"
@@ -96,7 +94,7 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
         {muted ? '🔇' : '🔊'}
       </button>
 
-      {/* Sub-components — z-index cao hơn video */}
+      {/* Sub-components */}
       <div style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%', pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto' }}>
           <VideoCardTopBar activeTab="For You" />
@@ -104,15 +102,19 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
         <div style={{ pointerEvents: 'auto' }}>
           <VideoCardInfo video={video} />
         </div>
-        <div style={{ pointerEvents: 'auto' }}>
-          <VideoCardActions
-            video={video}
-            onComment={onComment}
-            onLike={onLike}
-            onShare={onShare}
-            onBookmark={onBookmark}
-          />
-        </div>
+
+        {/* Actions chỉ render bên trong khi hideActions = false */}
+        {!hideActions && (
+          <div style={{ pointerEvents: 'auto' }}>
+            <VideoCardActions
+              video={video}
+              onComment={onComment}
+              onLike={onLike}
+              onShare={onShare}
+              onBookmark={onBookmark}
+            />
+          </div>
+        )}
       </div>
 
       {/* Progress bar */}
