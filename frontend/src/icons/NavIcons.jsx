@@ -100,3 +100,26 @@ export function ChevronIcon({ open = false, size = 12 }) {
     </svg>
   );
 }
+export function ArrowUpIcon({ color = 'currentColor', size = 18 }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke={color} strokeWidth="2.5"
+      strokeLinecap="round" strokeLinejoin="round"
+    >
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  );
+}
+ 
+export function ArrowDownIcon({ color = 'currentColor', size = 18 }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke={color} strokeWidth="2.5"
+      strokeLinecap="round" strokeLinejoin="round"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}

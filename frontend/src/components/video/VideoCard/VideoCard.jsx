@@ -4,7 +4,16 @@ import VideoCardInfo from './VideoCardInfo';
 import VideoCardActions from './VideoCardActions';
 import { VideoPlaySmIcon } from '../../../icons/CommonIcons';
 
-export default function VideoCard({ video, isActive, onComment, onLike, onShare, onBookmark, hideActions = false }) {
+export default function VideoCard({
+  video,
+  isActive,
+  onComment,
+  onLike,
+  onShare,
+  onBookmark,
+  hideActions = false,
+  hideTopBar = false,   // ← prop mới
+}) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -27,7 +36,7 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().then(() => setPlaying(true)).catch(() => { });
+      v.play().then(() => setPlaying(true)).catch(() => {});
     } else {
       v.pause();
       setPlaying(false);
@@ -48,7 +57,7 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
         background: `linear-gradient(135deg,hsl(${hue},30%,8%),hsl(${(hue + 60) % 360},20%,5%))`,
       }}
     >
-      {/* Video thật */}
+      {/* Video */}
       {video?.videoUrl ? (
         <video
           ref={videoRef}
@@ -84,10 +93,10 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
         </div>
       )}
 
-      {/* Nút mute/unmute */}
+      {/* Mute button */}
       <button
         onClick={toggleMute}
-        className="absolute top-16 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border-none cursor-pointer text-white text-sm"
+        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border-none cursor-pointer text-white text-sm"
         style={{ zIndex: 20 }}
         title={muted ? 'Bật âm thanh' : 'Tắt âm thanh'}
       >
@@ -96,14 +105,17 @@ export default function VideoCard({ video, isActive, onComment, onLike, onShare,
 
       {/* Sub-components */}
       <div style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%', pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto' }}>
-          <VideoCardTopBar activeTab="For You" />
-        </div>
+        {/* TopBar — ẩn khi hideTopBar = true */}
+        {!hideTopBar && (
+          <div style={{ pointerEvents: 'auto' }}>
+            <VideoCardTopBar activeTab="For You" />
+          </div>
+        )}
+
         <div style={{ pointerEvents: 'auto' }}>
           <VideoCardInfo video={video} />
         </div>
 
-        {/* Actions chỉ render bên trong khi hideActions = false */}
         {!hideActions && (
           <div style={{ pointerEvents: 'auto' }}>
             <VideoCardActions
