@@ -17,17 +17,23 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const me = getStoredUser();
 
-  const target = username || me?.username || 'nguyenvibe';
+  const target = username || me?.username || me?.ten_dang_nhap || 'me';
   const { profile, videos, loading, following, toggleFollow } = useProfile(target);
 
   const [activeTab, setActiveTab] = useState('Videos');
   const [suggests, setSuggests] = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null); // Video đang xem trong modal
 
   useEffect(() => {
     getSuggestedUsers({ limit: 5 })
       .then((r) => setSuggests(r.data.users.filter((u) => u.username !== target)))
       .catch(() => {});
   }, [target]);
+
+  const isMyProfile =
+    !username ||
+    username === me?.username ||
+    username === me?.ten_dang_nhap;
 
   const rightPanel = (
     <div className="p-[18px]">
@@ -86,9 +92,7 @@ export default function ProfilePage() {
           >
             <div
               className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full"
-              style={{
-                background: 'radial-gradient(circle,rgba(255,45,120,.15),transparent 70%)',
-              }}
+              style={{ background: 'radial-gradient(circle,rgba(255,45,120,.15),transparent 70%)' }}
             />
           </div>
 
@@ -99,14 +103,22 @@ export default function ProfilePage() {
 
           {/* Actions */}
           <div className="absolute bottom-[-42px] right-8 flex gap-2 items-center">
-            <Button variant="ghost" size="sm">Nhắn tin</Button>
-            <Button
-              variant={following ? 'ghost' : 'primary'}
-              size="sm"
-              onClick={toggleFollow}
-            >
-              {following ? 'Following' : 'Follow'}
-            </Button>
+            {!isMyProfile && (
+              <Button variant="ghost" size="sm">Nhắn tin</Button>
+            )}
+            {isMyProfile ? (
+              <Button variant="ghost" size="sm" onClick={() => navigate('/settings')}>
+                Chỉnh sửa hồ sơ
+              </Button>
+            ) : (
+              <Button
+                variant={following ? 'ghost' : 'primary'}
+                size="sm"
+                onClick={toggleFollow}
+              >
+                {following ? 'Following' : 'Follow'}
+              </Button>
+            )}
             <button className="w-[34px] h-[34px] flex items-center justify-center bg-transparent border border-border2 rounded-md cursor-pointer text-text-secondary hover:border-primary/40 transition-colors">
               <ShareSmIcon />
             </button>
@@ -146,9 +158,7 @@ export default function ProfilePage() {
               { label: 'Likes',     value: formatCount(profile.likes) },
             ].map((s) => (
               <div key={s.label}>
-                <p className="font-display font-bold text-[18px] text-white m-0 mb-0.5">
-                  {s.value}
-                </p>
+                <p className="font-display font-bold text-[18px] text-white m-0 mb-0.5">{s.value}</p>
                 <p className="text-text-faint text-xs font-body m-0">{s.label}</p>
               </div>
             ))}
@@ -161,37 +171,55 @@ export default function ProfilePage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`
-                bg-transparent border-none px-5 py-3 text-sm font-body cursor-pointer transition-all border-b-2
-                ${activeTab === tab
-                  ? 'text-white font-semibold border-primary'
-                  : 'text-text-faint border-transparent'
-                }
-              `}
+              className={`bg-transparent border-none px-5 py-3 text-sm font-body cursor-pointer transition-all border-b-2
+                ${activeTab === tab ? 'text-white font-semibold border-primary' : 'text-text-faint border-transparent'}`}
             >
               {tab}
             </button>
           ))}
         </div>
 
-        {/* Videos grid */}
+        {/* Videos grid — chỉ hiện video của user này */}
         <div className="p-3 grid grid-cols-5 gap-1">
-          {videos.length > 0 ? (
-            videos.map((v) => <VideoThumb key={v.id} video={v} />)
-          ) : (
+          {activeTab === 'Videos' && (
+            videos.length > 0 ? (
+              videos.map((v) => (
+                <VideoThumb
+                  key={v.id}
+                  video={v}
+                  onClick={() => setSelectedVideo(v)}
+                />
+              ))
+            ) : (
+              <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+                <span className="text-[32px]">🎬</span>
+                <p>{isMyProfile ? 'Bạn chưa đăng video nào' : 'Người dùng chưa đăng video nào'}</p>
+                {isMyProfile && (
+                  <Button onClick={() => navigate('/upload')}>Đăng video đầu tiên</Button>
+                )}
+              </div>
+            )
+          )}
+
+          {activeTab !== 'Videos' && (
             <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-              <span className="text-[32px]">🎬</span>
-              <p>Chưa có video nào</p>
+              <span className="text-[32px]">🔒</span>
+              <p>Tính năng đang phát triển</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal xem video */}
+      {selectedVideo && (
+        <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
+      )}
     </PageLayout>
   );
 }
 
-/* VideoThumb */
-function VideoThumb({ video }) {
+/* ── VideoThumb ── */
+function VideoThumb({ video, onClick }) {
   const [hovered, setHovered] = useState(false);
   const hue = (parseInt(video.id?.slice(-2) ?? '0', 16) || 0) % 360;
 
@@ -205,15 +233,109 @@ function VideoThumb({ video }) {
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
     >
+      {/* Thumbnail nếu có */}
+      {video.thumbnail && (
+        <img
+          src={video.thumbnail}
+          alt={video.caption}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+      )}
+
+      {/* Hover overlay */}
       {hovered && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-          <span className="text-white text-lg">▶</span>
+          <span className="text-white text-2xl">▶</span>
         </div>
       )}
-      <p className="absolute bottom-1.5 left-1.5 text-white text-[11px] font-semibold font-body m-0">
-        ▶ {formatCount(video.views || video.likes)}
+
+      {/* View count */}
+      <p className="absolute bottom-1.5 left-1.5 text-white text-[11px] font-semibold font-body m-0 drop-shadow">
+        ▶ {formatCount(video.views || video.likes || 0)}
       </p>
+    </div>
+  );
+}
+
+/* ── VideoModal ── */
+function VideoModal({ video, onClose }) {
+  // Đóng khi nhấn Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative flex gap-4 bg-surface border border-border rounded-2xl overflow-hidden max-h-[90vh] shadow-2xl">
+        {/* Video player */}
+        <div className="relative bg-black" style={{ width: 360, height: 640 }}>
+          {video.videoUrl ? (
+            <video
+              src={video.videoUrl}
+              autoPlay
+              loop
+              controls
+              playsInline
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-text-faint flex-col gap-2">
+              <span className="text-4xl">🎬</span>
+              <p className="text-sm font-body">Không có video</p>
+            </div>
+          )}
+        </div>
+
+        {/* Info panel */}
+        <div className="w-[280px] flex flex-col p-5 overflow-auto">
+          {/* User */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-sm font-bold text-white shrink-0">
+              {video.user?.initials || 'U'}
+            </div>
+            <div>
+              <p className="text-white text-sm font-semibold font-body m-0">@{video.user?.username}</p>
+              <p className="text-text-faint text-xs font-body m-0">{video.user?.fullName}</p>
+            </div>
+          </div>
+
+          {/* Caption */}
+          <p className="text-white/90 text-sm font-body leading-relaxed mb-4 flex-1">
+            {video.caption}
+          </p>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-2 border-t border-border pt-4">
+            {[
+              { icon: '❤️', value: formatCount(video.likes), label: 'Thích' },
+              { icon: '💬', value: formatCount(video.comments), label: 'Bình luận' },
+              { icon: '👁️', value: formatCount(video.views), label: 'Xem' },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center gap-1">
+                <span className="text-xl">{s.icon}</span>
+                <span className="text-white text-sm font-bold font-body">{s.value}</span>
+                <span className="text-text-faint text-[10px] font-body">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Nút đóng */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 border-none text-white text-lg cursor-pointer flex items-center justify-center hover:bg-black/70 transition-colors z-10"
+        >
+          ×
+        </button>
+      </div>
     </div>
   );
 }
