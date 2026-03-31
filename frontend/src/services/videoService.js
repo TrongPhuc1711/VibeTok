@@ -3,7 +3,7 @@ import { FEED_PAGE_SIZE } from '../utils/constants';
 
 // GET /api/videos/feed
 export const getFeed = async ({ type = 'forYou', page = 1, limit = FEED_PAGE_SIZE } = {}) => {
-    const res = await api.get('/videos/feed', { params: { page, limit } });
+    const res = await api.get('/videos/feed', { params: { type, page, limit } });
     return { data: res.data };
 };
 
