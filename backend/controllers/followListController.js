@@ -1,4 +1,4 @@
-import { FollowListService } from "../services/followListService";
+import { FollowListService } from "../services/followListService.js";
 
 // GET /api/users/:username/followers
 export const getFollowers = async (req, res) => {

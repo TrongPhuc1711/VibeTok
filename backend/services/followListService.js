@@ -1,4 +1,4 @@
-import { FollowListModel } from "../models/follow/followListModel";
+import { FollowListModel } from "../models/follow/followListModel.js";
 
 // Chuẩn hoá một user row thành object trả về frontend
 const normalizeUser = (u, followingSet) => ({
