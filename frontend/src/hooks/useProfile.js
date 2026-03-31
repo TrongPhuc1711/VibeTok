@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getUserProfile, getUserVideos, followUser, unfollowUser } from '../services/userService';
+import { getUserProfile, followUser, unfollowUser } from '../services/userService';
+import { getUserVideosByUserId } from '../services/videoService';
 
 export function useProfile(username) {
     const [profile, setProfile] = useState(null);
@@ -12,21 +13,28 @@ export function useProfile(username) {
         if (!username) return;
         setLoading(true);
         setError(null);
-        Promise.all([getUserProfile(username), getUserVideos(username)])
-            .then(([pRes, vRes]) => {
+        setProfile(null);
+        setVideos([]);
+
+        getUserProfile(username)
+            .then(async (pRes) => {
                 const user = pRes.data.user;
                 setProfile(user);
-                setVideos(vRes.data.videos ?? []);
-                // ✅ FIX: sync following state from API instead of always false
                 setFollowing(user.isFollowing ?? false);
+
+                try {
+                    const vRes = await getUserVideosByUserId(user.id);
+                    setVideos(vRes.data.videos ?? []);
+                } catch {
+                    setVideos([]);
+                }
             })
-            .catch(e => setError(e.message))
+            .catch(e => setError(e.message ?? 'Không tìm thấy người dùng'))
             .finally(() => setLoading(false));
     }, [username]);
 
     const toggleFollow = useCallback(async () => {
         if (!profile) return;
-        // Optimistic update
         const wasFollowing = following;
         setFollowing(!wasFollowing);
         setProfile(p => ({
@@ -36,12 +44,11 @@ export function useProfile(username) {
         try {
             const fn = wasFollowing ? unfollowUser : followUser;
             const res = await fn(profile.username);
-            // Sync real count from server if available
             if (res.data?.followers != null) {
                 setProfile(p => ({ ...p, followers: res.data.followers }));
             }
         } catch (e) {
-            // Rollback on error
+            // Rollback
             setFollowing(wasFollowing);
             setProfile(p => ({
                 ...p,
