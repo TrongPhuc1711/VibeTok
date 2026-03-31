@@ -1,104 +1,64 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseHashtags, stripHashtags } from '../../../utils/formatters';
-import { followUser, unfollowUser } from '../../../services/userService';
-import { isLoggedIn } from '../../../utils/helpers';
 
 /*
-  VideoCardInfo — vùng thông tin phía dưới trái video
-  user, caption, music
+  VideoCardInfo — vùng thông tin góc dưới bên trái video (Chuẩn giao diện TikTok Web)
+  Chỉ hiển thị Username, Caption và Hashtags. Lớp gradient mỏng, chữ có drop-shadow.
  */
 export default function VideoCardInfo({ video }) {
   const navigate = useNavigate();
-  const [following, setFollowing] = useState(video?.user?.isFollowing ?? false);
-  const [loading, setLoading] = useState(false);
 
   const user = video?.user ?? {};
   const hashtags = parseHashtags(video?.caption ?? '');
   const captionText = stripHashtags(video?.caption ?? '');
 
-  const handleFollow = async (e) => {
-    e.stopPropagation();
-    if (!isLoggedIn()) { navigate('/login'); return; }
-    if (loading) return;
-
-    const wasFollowing = following;
-    setFollowing(!wasFollowing);
-    setLoading(true);
-    try {
-      if (wasFollowing) {
-        await unfollowUser(user.username);
-      } else {
-        await followUser(user.username);
-      }
-    } catch {
-      // rollback nếu lỗi
-      setFollowing(wasFollowing);
-    } finally {
-      setLoading(false);
+  const handleNavigateToProfile = (e) => {
+    e.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài làm dừng video
+    if (user.username) {
+      navigate(`/profile/${user.username}`);
     }
   };
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-[60px] px-5 pt-20 pb-5 z-10"
-      style={{ background: 'linear-gradient(to top,rgba(0,0,0,.8),transparent)' }}
+      // w-full, p-4 (padding đều các cạnh), pt-24 (kéo dài gradient lên trên một chút để chữ không bị chìm)
+      // pointer-events-none để vùng gradient đen không vô tình chặn thao tác click/pause video của người dùng
+      className="absolute bottom-0 left-0 w-full p-4 pt-24 z-10 flex flex-col gap-1.5 pointer-events-none"
+      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)' }}
     >
-      {/* User row */}
-      <div className="flex items-center gap-2.5 mb-2.5">
-        <div
-          className="w-11 h-11 rounded-full bg-brand-gradient flex items-center justify-center text-sm font-bold text-white border-2 border-white/30 cursor-pointer"
-          onClick={() => user.username && navigate(`/profile/${user.username}`)}
-        >
-          {user.initials ?? 'U'}
-        </div>
+      {/* Tên người dùng */}
+      {/* Phục hồi pointer-events-auto để user có thể click vào tên */}
+      <h3 
+        onClick={handleNavigateToProfile}
+        className="text-white font-bold text-[17px] tracking-wide pointer-events-auto cursor-pointer drop-shadow-md hover:underline w-fit m-0"
+      >
+        {/* Ưu tiên hiển thị fullname hoặc displayName nếu có, không thì dùng username */}
+        {user.fullName || user.username || "nguoi_dung_an_danh"}
+      </h3>
 
-        <span
-          className="text-white text-sm font-semibold font-body cursor-pointer hover:underline"
-          onClick={() => user.username && navigate(`/profile/${user.username}`)}
-        >
-          @{user.username ?? 'user'}
-        </span>
-
-        {user.isCreator && (
-          <span className="bg-brand-gradient text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-            Creator
+      {/* Caption & Hashtags */}
+      <div className="text-[#f1f1f2] text-[15px] font-normal leading-snug pointer-events-auto drop-shadow-md w-[90%]">
+        {captionText}
+        
+        {/* Render hashtags sau caption */}
+        {hashtags.length > 0 && (
+          <span className="font-bold hover:underline cursor-pointer ml-1">
+            {hashtags.map((h) => (
+               <span key={h} className="text-white font-bold hover:underline cursor-pointer mr-1">
+                 {h}
+               </span>
+            ))}
           </span>
         )}
-
-        {/* Follow / Đang follow button */}
-        <button
-          onClick={handleFollow}
-          disabled={loading}
-          className={`
-            ml-1 border text-white text-xs px-3 py-0.5 rounded-sm cursor-pointer bg-transparent transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${following
-              ? 'border-border2 text-text-faint hover:border-red-500/40 hover:text-red-400'
-              : 'border-white/50 hover:border-primary hover:text-primary'
-            }
-          `}
-        >
-          {following ? 'Đang follow' : '+ Follow'}
-        </button>
       </div>
 
-      {/* Caption + hashtags */}
-      <p className="text-white/90 text-sm font-body leading-relaxed m-0 mb-2">
-        {captionText}{' '}
-        {hashtags.map((h) => (
-          <span key={h} className="text-primary font-medium">
-            {h}{' '}
-          </span>
-        ))}
-      </p>
-
-      {/* Music */}
+      {/*Music - Nếu bạn vẫn muốn giữ lại dòng nhạc đang phát */}
       {video?.music && (
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-white/60 shrink-0" />
-          <span className="text-white/70 text-xs font-body">
-            {video.music.title} – {video.music.artist} · Trending
+        <div className="flex items-center gap-1.5 mt-1 pointer-events-auto cursor-pointer w-fit hover:underline">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white drop-shadow-md"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+          <span className="text-white text-[14px] font-medium drop-shadow-md">
+            {video.music.title} – {video.music.artist}
           </span>
         </div>
       )}
