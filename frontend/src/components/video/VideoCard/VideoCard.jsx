@@ -12,11 +12,12 @@ export default function VideoCard({
   onShare,
   onBookmark,
   hideActions = false,
-  hideTopBar = false,   // ← prop mới
+  hideTopBar = false,
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   const hue = (parseInt(video?.id?.slice(-3) ?? '0', 16) || 0) % 360;
 
@@ -43,7 +44,8 @@ export default function VideoCard({
     }
   };
 
-  const toggleMute = () => {
+  const toggleMute = (e) => {
+    e.stopPropagation();
     if (videoRef.current) {
       videoRef.current.muted = !muted;
       setMuted(m => !m);
@@ -52,12 +54,12 @@ export default function VideoCard({
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-base"
+      className="relative w-full h-full overflow-hidden"
       style={{
         background: `linear-gradient(135deg,hsl(${hue},30%,8%),hsl(${(hue + 60) % 360},20%,5%))`,
       }}
     >
-      {/* Video */}
+      {/* ── Video element ── */}
       {video?.videoUrl ? (
         <video
           ref={videoRef}
@@ -66,46 +68,60 @@ export default function VideoCard({
           muted={muted}
           playsInline
           onClick={togglePlay}
-          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
-          style={{ zIndex: 1 }}
+          onLoadedData={() => setVideoLoaded(true)}
+          className="absolute inset-0 w-full h-full cursor-pointer"
+          /* object-contain: hiển thị đúng tỉ lệ, có letterbox nếu cần */
+          style={{
+            objectFit: 'contain',
+            objectPosition: 'center',
+            zIndex: 1,
+          }}
         />
       ) : (
+        /* Placeholder gradient nếu không có video */
         <>
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse at 20% -10%,rgba(255,107,53,.15),transparent 50%)' }}
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(ellipse at 20% -10%,rgba(255,107,53,.18),transparent 55%)' }}
           />
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse at 80% 90%,rgba(255,45,120,.12),transparent 50%)' }}
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(ellipse at 80% 90%,rgba(255,45,120,.14),transparent 55%)' }}
           />
         </>
       )}
 
-      {/* Pause overlay */}
-      {!playing && (
+      {/* ── Pause overlay ── */}
+      {video?.videoUrl && !playing && (
         <div
           onClick={togglePlay}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60px] h-[60px] rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center cursor-pointer"
-          style={{ zIndex: 15 }}
+          className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
+          style={{ background: 'rgba(0,0,0,0.15)' }}
         >
-          <VideoPlaySmIcon />
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+          >
+            <VideoPlaySmIcon />
+          </div>
         </div>
       )}
 
-      {/* Mute button */}
+      {/* ── Mute button ── */}
       <button
         onClick={toggleMute}
-        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border-none cursor-pointer text-white text-sm"
-        style={{ zIndex: 20 }}
+        className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer text-white text-sm z-20 transition-all hover:scale-105"
+        style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         title={muted ? 'Bật âm thanh' : 'Tắt âm thanh'}
       >
         {muted ? '🔇' : '🔊'}
       </button>
 
-      {/* Sub-components */}
-      <div style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%', pointerEvents: 'none' }}>
-        {/* TopBar — ẩn khi hideTopBar = true */}
+      {/* ── Overlay components ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 10 }}
+      >
         {!hideTopBar && (
           <div style={{ pointerEvents: 'auto' }}>
             <VideoCardTopBar activeTab="For You" />
@@ -129,9 +145,19 @@ export default function VideoCard({
         )}
       </div>
 
-      {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-white/15" style={{ zIndex: 20 }}>
-        <div className="h-full w-[42%] bg-white/70" />
+      {/* ── Progress bar ── */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-[2px] z-20"
+        style={{ background: 'rgba(255,255,255,0.12)' }}
+      >
+        <div
+          className="h-full"
+          style={{
+            width: '42%',
+            background: 'rgba(255,255,255,0.7)',
+            transition: 'width 0.3s linear',
+          }}
+        />
       </div>
     </div>
   );
