@@ -28,10 +28,6 @@ export const toggleVideoLike = (videoId) => {
   return set.has(id);
 };
 
-/* ─────────────────────────────────────────────
-   VideoCard component
-   Props mới: onRatio(ratio: number) — gọi khi biết tỉ lệ video
-───────────────────────────────────────────── */
 export default function VideoCard({
   video,
   isActive,

@@ -118,7 +118,6 @@ export default function HomePage({ feedType = 'forYou' }) {
                 style={{
                   width:  containerSize.width,
                   height: containerSize.height,
-                  transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1), height 0.3s cubic-bezier(0.4,0,0.2,1)',
                   background: '#000',
                 }}
               >
