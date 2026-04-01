@@ -64,7 +64,7 @@ function useVideoContainerSize(aspectRatio, showComments) {
 
 /* ── Main component ── */
 export default function HomePage({ feedType = 'forYou' }) {
-  const { videos, loading } = useVideoFeed(feedType);
+  const { videos, loading, loadMore, hasMore } = useVideoFeed(feedType);
   const [currentIdx,     setCurrentIdx]     = useState(0);
   const [commentVideoId, setCommentVideoId] = useState(null);
   // Tỉ lệ w/h thực của video hiện tại
@@ -77,13 +77,18 @@ export default function HomePage({ feedType = 'forYou' }) {
   /* Chuyển video */
   const go = useCallback((dir) => {
     const next = currentIdx + dir;
+
+    if (dir > 0 && next >= videos.length - 3 && hasMore) {
+        loadMore();
+    }
+
     if (next >= 0 && next < videos.length) {
       setCurrentIdx(next);
       setCommentVideoId(null);
       // Reset về 9:16 mặc định → VideoCard sẽ update khi metadata load
       setAspectRatio(9 / 16);
     }
-  }, [currentIdx, videos.length]);
+  }, [currentIdx, videos.length, hasMore, loadMore]);
 
   /* Wheel scroll */
   const handleWheel = useCallback((e) => {

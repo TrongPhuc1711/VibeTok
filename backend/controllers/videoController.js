@@ -8,7 +8,7 @@ import { triggerNotification } from './notificationController.js';
 export const getFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 5;
+        const limit = parseInt(req.query.limit) || 100;
         const data = await VideoModel.getFeed({ page, limit });
         res.json(data);
     } catch (e) {
