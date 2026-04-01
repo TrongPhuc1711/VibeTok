@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
+import { NotificationBadge } from '../../notification';
 import {
-  HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon,
+  HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon, BellIcon,
 } from '../../../icons/NavIcons';
 
 const NAV = [
@@ -46,6 +46,7 @@ export default function SidebarNav() {
           </button>
         );
       })}
+      <NotificationBadge />
     </nav>
   );
 }

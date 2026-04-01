@@ -123,3 +123,11 @@ export function ArrowDownIcon({ color = 'currentColor', size = 18 }) {
     </svg>
   );
 }
+export function BellIcon({ active }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={c(active)} strokeWidth="1.2">
+      <path d="M7 1C5 1 3 2.5 3 5V8L1.5 10.5H12.5L11 8V5C11 2.5 9 1 7 1Z" />
+      <path d="M5 11.5C5 12.6 5.9 13.5 7 13.5C8.1 13.5 9 12.6 9 11.5" />
+    </svg>
+  );
+}

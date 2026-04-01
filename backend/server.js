@@ -1,19 +1,23 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import pool from './config/db.js';
 
 import authRoutes    from './routes/authRoutes.js';
 import videoRoutes   from './routes/videoRoutes.js';
 import userRoutes    from './routes/userRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
-
+import notificationRoutes from './routes/notificationRoutes.js';
+import { initSocket } from './utils/socket.js';
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 
 app.use(cors());
 app.use(express.json());
+initSocket(server);
 
 app.get('/', (req, res) => res.send('🚀 VibeTok Backend đang hoạt động!'));
 
@@ -30,6 +34,7 @@ app.use('/api/auth',    authRoutes);
 app.use('/api/videos',  videoRoutes);
 app.use('/api/users',   userRoutes);
 app.use('/api', contentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server: http://localhost:${PORT}`));

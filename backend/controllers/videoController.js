@@ -3,7 +3,7 @@ import { CommentModel } from '../models/commentModel.js';
 import { LikeModel } from '../models/follow/followLikeModel.js';
 import { HashtagModel } from '../models/contentModel.js';
 import { UserModel } from '../models/userModel.js';
-
+import { triggerNotification } from './notificationController.js';
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
     try {
@@ -115,6 +115,13 @@ export const postComment = async (req, res) => {
             parentId: parentId || null,
         });
         await VideoModel.updateCommentCount(req.params.id, 1);
+
+        // Bắn thông báo
+        const video = await VideoModel.findById(req.params.id);
+        if (video && video.userId !== String(req.user.id)) {
+            await triggerNotification(video.userId, req.user, 'comment', video.id, comment.id);
+        }
+
         res.status(201).json({ message: 'Bình luận thành công!', comment });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi đăng bình luận', error: e.message });
@@ -125,6 +132,13 @@ export const postComment = async (req, res) => {
 export const likeVideo = async (req, res) => {
     try {
         const liked = await LikeModel.like(req.user.id, req.params.id);
+        
+        if (liked) {
+            const video = await VideoModel.findById(req.params.id);
+            if (video && video.userId !== String(req.user.id)) {
+                await triggerNotification(video.userId, req.user, 'like', video.id);
+            }
+        }
         res.json({ message: liked ? 'Đã thích' : 'Đã thích rồi', liked: true });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi like video', error: e.message });
