@@ -41,9 +41,24 @@ export default function VideoCard({
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [muted,   setMuted]   = useState(true);
+  
+  // 1. Quản lý trạng thái Volume
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem('vibetok_volume');
+    return saved !== null ? parseFloat(saved) : 0.5;
+  });
+  const [muted, setMuted] = useState(false);
 
+  // Giữ nguyên logic hue của bạn
   const hue = (parseInt(video?.id?.slice(-3) ?? '0', 16) || 0) % 360;
+
+  // 2. Đồng bộ âm lượng với thẻ video thực tế
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+      videoRef.current.muted = muted;
+    }
+  }, [volume, muted]);
 
   /* Auto play / pause */
   useEffect(() => {
@@ -56,7 +71,6 @@ export default function VideoCard({
     }
   }, [isActive]);
 
-  /* Khi metadata load xong → báo tỉ lệ thực cho parent */
   const handleLoadedMetadata = () => {
     const v = videoRef.current;
     if (v?.videoWidth && v?.videoHeight && onRatio) {
@@ -71,14 +85,29 @@ export default function VideoCard({
     else          { v.pause(); setPlaying(false); }
   };
 
+  // 3. Hàm xử lý khi kéo thanh volume
+  const handleVolumeChange = (e) => {
+    const newVol = parseFloat(e.target.value);
+    setVolume(newVol);
+    setMuted(newVol === 0);
+    localStorage.setItem('vibetok_volume', newVol);
+  };
+
+  // 4. Hàm xử lý khi bấm nút Loa
   const toggleMute = (e) => {
     e.stopPropagation();
-    if (videoRef.current) { videoRef.current.muted = !muted; setMuted(m => !m); }
+    const newMuted = !muted;
+    setMuted(newMuted);
+    // Nếu đang tắt tiếng mà bật lại, nếu volume đang là 0 thì cho lên 0.5
+    if (!newMuted && volume === 0) {
+        setVolume(0.5);
+        localStorage.setItem('vibetok_volume', 0.5);
+    }
   };
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden"
+      className="relative w-full h-full overflow-hidden group" // Thêm class 'group' để hiện volume khi hover
       style={{ background: `linear-gradient(135deg,hsl(${hue},25%,7%),hsl(${(hue+60)%360},18%,4%))` }}
     >
       {/* ── Video element ── */}
@@ -86,7 +115,7 @@ export default function VideoCard({
         <video
           ref={videoRef}
           src={video.videoUrl}
-          loop muted={muted} playsInline
+          loop playsInline
           onClick={togglePlay}
           onLoadedMetadata={handleLoadedMetadata}
           className="absolute inset-0 w-full h-full cursor-pointer"
@@ -115,14 +144,22 @@ export default function VideoCard({
         </div>
       )}
 
-      {/* ── Mute button ── */}
-      <button
-        onClick={toggleMute}
-        className="absolute top-3.5 right-3.5 w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer z-20 transition-all hover:scale-110"
-        style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', color: 'white', fontSize: 14 }}
-      >
-        {muted ? '🔇' : '🔊'}
-      </button>
+      {/* ── Cụm điều khiển âm lượng mới (Slider + Button) ── */}
+      <div className="absolute top-3.5 right-3.5 flex items-center gap-2 z-20 bg-black/40 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <input
+          type="range"
+          min="0" max="1" step="0.05"
+          value={muted ? 0 : volume}
+          onChange={handleVolumeChange}
+          className="w-16 h-1 accent-white cursor-pointer"
+        />
+        <button 
+          onClick={toggleMute} 
+          className="text-white border-none bg-transparent cursor-pointer text-lg p-0 flex items-center justify-center"
+        >
+          {muted || volume === 0 ? '🔇' : '🔊'}
+        </button>
+      </div>
 
       {/* ── Overlays ── */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
