@@ -1,16 +1,5 @@
 import React from 'react';
 
-/**
- * Avatar — hiển thị ảnh đại diện hoặc initials
- *
- * Props:
- *  user      – object có trường initials / fullName
- *  size      – 'xs' | 'sm' | 'md' | 'lg' | 'xl'
- *  live      – boolean, hiển thị badge LIVE
- *  border    – boolean, thêm viền primary khi active
- *  onClick   – handler khi click
- *  className – override thêm class
- */
 const SIZE_MAP = {
   xs: 'w-6 h-6 text-[8px]',
   sm: 'w-9 h-9 text-xs',
@@ -37,6 +26,8 @@ export default function Avatar({
       .slice(0, 2) ||
     'U';
 
+  const imgSrc = user.anh_dai_dien || user.avatar || null;
+
   return (
     <div className="relative shrink-0 inline-block">
       <div
@@ -44,13 +35,26 @@ export default function Avatar({
         className={`
           ${SIZE_MAP[size] ?? SIZE_MAP.md}
           rounded-full bg-brand-gradient flex items-center justify-center
-          font-bold text-white select-none
+          font-bold text-white select-none overflow-hidden
           ${border ? 'border-2 border-primary' : ''}
           ${onClick ? 'cursor-pointer' : ''}
           ${className}
         `}
       >
-        {initials}
+        {imgSrc ? (
+          <img
+            src={imgSrc}
+            alt={user.fullName || user.username || 'avatar'}
+            className="w-full h-full object-cover"
+            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+          />
+        ) : null}
+        <span
+          className="w-full h-full flex items-center justify-center"
+          style={{ display: imgSrc ? 'none' : 'flex' }}
+        >
+          {initials}
+        </span>
       </div>
 
       {live && (

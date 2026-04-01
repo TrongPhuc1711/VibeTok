@@ -11,19 +11,12 @@ import {
 } from '../../../icons/CommonIcons';
 import { ChevronIcon } from '../../../icons/NavIcons';
 
-/**
- * UserDropdown
- *
- * placement = "topbar"  → avatar nhỏ, dropdown xuống dưới bên phải
- * placement = "sidebar" → row user info, dropdown bật lên trên
- */
 export default function UserDropdown({ placement = 'topbar' }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const user = getStoredUser();
 
-  /* Đóng khi click ra ngoài */
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -32,7 +25,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  /* Đóng khi nhấn Escape */
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', handler);
@@ -60,7 +52,31 @@ export default function UserDropdown({ placement = 'topbar' }) {
       .slice(0, 2) ||
     'U';
 
-  /* ── Dropdown panel ─────────────────────────────────────── */
+  const imgSrc = user?.anh_dai_dien || user?.avatar || null;
+
+  /* Avatar circle — dùng chung cho cả 2 placement */
+  const AvatarCircle = ({ size = 'md', showBorder = false }) => {
+    const sizeClass = size === 'sm'
+      ? 'w-8 h-8 text-[10px]'
+      : 'w-9 h-9 text-[11px]';
+
+    return (
+      <div
+        className={`
+          ${sizeClass} rounded-full bg-brand-gradient flex items-center justify-center
+          font-bold text-white overflow-hidden shrink-0 transition-all
+          ${showBorder ? (open ? 'border-2 border-primary shadow-[0_0_0_3px_rgba(255,45,120,0.2)]' : 'border-2 border-transparent hover:border-primary/50') : ''}
+        `}
+      >
+        {imgSrc ? (
+          <img src={imgSrc} alt={user?.fullName || 'avatar'} className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
+      </div>
+    );
+  };
+
   const dropdownPanel = open && (
     <div
       className={`
@@ -72,12 +88,9 @@ export default function UserDropdown({ placement = 'topbar' }) {
         }
       `}
     >
-      {/* User info header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-            {initials}
-          </div>
+          <AvatarCircle size="sm" />
           <div className="min-w-0">
             <p className="text-white text-[13px] font-semibold font-body truncate m-0 leading-tight">
               {user?.fullName || 'Người dùng'}
@@ -89,34 +102,19 @@ export default function UserDropdown({ placement = 'topbar' }) {
         </div>
       </div>
 
-      {/* Menu */}
       <div className="py-1">
-        <MenuItem
-          icon={<ProfileMenuIcon />}
-          label="Trang cá nhân"
-          onClick={() => handleNavigate(ROUTES.PROFILE)}
-        />
-        <MenuItem
-          icon={<LockMenuIcon />}
-          label="Đổi mật khẩu"
-          onClick={() => handleNavigate('/change-password')}
-        />
+        <MenuItem icon={<ProfileMenuIcon />} label="Trang cá nhân" onClick={() => handleNavigate(ROUTES.PROFILE)} />
+        <MenuItem icon={<LockMenuIcon />} label="Đổi mật khẩu" onClick={() => handleNavigate('/change-password')} />
       </div>
 
       <div className="h-px bg-border" />
 
       <div className="py-1">
-        <MenuItem
-          icon={<LogoutMenuIcon />}
-          label="Đăng xuất"
-          onClick={handleLogout}
-          danger
-        />
+        <MenuItem icon={<LogoutMenuIcon />} label="Đăng xuất" onClick={handleLogout} danger />
       </div>
     </div>
   );
 
-  /* ── Sidebar placement ──────────────────────────────────── */
   if (placement === 'sidebar') {
     return (
       <div ref={ref} className="relative w-full">
@@ -128,14 +126,11 @@ export default function UserDropdown({ placement = 'topbar' }) {
             ${open ? 'bg-white/5' : 'hover:bg-white/5'}
           `}
         >
-          <div
-            className={`
-              w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center
-              text-[10px] font-bold text-white shrink-0 border-2 transition-all
-              ${open ? 'border-primary' : 'border-transparent'}
-            `}
-          >
-            {initials}
+          <div className={`w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-[10px] font-bold text-white shrink-0 border-2 transition-all overflow-hidden ${open ? 'border-primary' : 'border-transparent'}`}>
+            {imgSrc
+              ? <img src={imgSrc} alt={user?.fullName || 'avatar'} className="w-full h-full object-cover" />
+              : initials
+            }
           </div>
           <div className="flex-1 min-w-0 text-left">
             <p className="text-white text-[12px] font-semibold font-body truncate m-0 leading-tight">
@@ -152,22 +147,14 @@ export default function UserDropdown({ placement = 'topbar' }) {
     );
   }
 
-  /* ── Topbar placement: chỉ hiện avatar tròn ────────────── */
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`
-          w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center
-          text-[11px] font-bold text-white border-2 transition-all cursor-pointer
-          ${open
-            ? 'border-primary shadow-[0_0_0_3px_rgba(255,45,120,0.2)]'
-            : 'border-transparent hover:border-primary/50'
-          }
-        `}
+        className="cursor-pointer border-none p-0 bg-transparent"
         title={user?.fullName || 'Tài khoản'}
       >
-        {initials}
+        <AvatarCircle size="lg" showBorder />
       </button>
       {dropdownPanel}
     </div>
