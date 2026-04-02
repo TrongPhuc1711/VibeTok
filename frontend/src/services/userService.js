@@ -1,4 +1,5 @@
 import api from '../api/api';
+import { addFollowing, removeFollowing, seedFollowingCache } from '../utils/following';
 
 // GET /api/users/:username
 export const getUserProfile = async (username) => {
@@ -14,19 +15,30 @@ export const getUserVideos = async (username, opts = {}) => {
     return { data: res.data };
 };
 
-// GET /api/users/suggestions
+// GET /api/users/suggestions — seed cache từ kết quả trả về
 export const getSuggestedUsers = async ({ limit = 5 } = {}) => {
     const res = await api.get('/users/suggestions', { params: { limit } });
+    const users = res.data.users || [];
+
+    // Seed followingCache từ danh sách gợi ý
+    const followingIds = users
+        .filter(u => u.isFollowing)
+        .map(u => u.id);
+    if (followingIds.length > 0) {
+        seedFollowingCache(followingIds);
+    }
+
     return { data: res.data };
 };
 
-// POST /api/users/:username/follow
+// POST /api/users/:username/follow 
 export const followUser = async (username) => {
     const res = await api.post(`/users/${username.replace('@', '')}/follow`);
+    // Lấy userId từ response nếu có, không thì bỏ qua 
     return { data: res.data };
 };
 
-// DELETE /api/users/:username/follow
+// DELETE /api/users/:username/follow — cập nhật cache ngay
 export const unfollowUser = async (username) => {
     const res = await api.delete(`/users/${username.replace('@', '')}/follow`);
     return { data: res.data };

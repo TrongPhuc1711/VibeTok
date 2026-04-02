@@ -47,7 +47,6 @@ function useVideoContainerSize(aspectRatio, showComments) {
         h = w / aspectRatio;
       }
 
-      // Giới hạn tối thiểu
       w = Math.max(220, Math.round(w));
       h = Math.max(280, Math.round(h));
 
@@ -67,34 +66,45 @@ export default function HomePage({ feedType = 'forYou' }) {
   const { videos, loading, loadMore, hasMore } = useVideoFeed(feedType);
   const [currentIdx,     setCurrentIdx]     = useState(0);
   const [commentVideoId, setCommentVideoId] = useState(null);
-  // Tỉ lệ w/h thực của video hiện tại
   const [aspectRatio,    setAspectRatio]    = useState(9 / 16);
 
   const current      = videos[currentIdx];
   const showComments = commentVideoId !== null;
   const containerSize = useVideoContainerSize(aspectRatio, showComments);
 
-  /* Chuyển video */
+  /* ── Chuyển video ── */
   const go = useCallback((dir) => {
     const next = currentIdx + dir;
 
     if (dir > 0 && next >= videos.length - 3 && hasMore) {
-        loadMore();
+      loadMore();
     }
 
     if (next >= 0 && next < videos.length) {
       setCurrentIdx(next);
       setCommentVideoId(null);
-      // Reset về 9:16 mặc định → VideoCard sẽ update khi metadata load
       setAspectRatio(9 / 16);
     }
   }, [currentIdx, videos.length, hasMore, loadMore]);
 
-  /* Wheel scroll */
+  /* ── Wheel scroll — chỉ chuyển video khi KHÔNG mở bình luận ── */
   const handleWheel = useCallback((e) => {
+    // Nếu panel bình luận đang mở → không làm gì, để panel tự scroll
+    if (showComments) return;
     e.preventDefault();
     go(e.deltaY > 0 ? 1 : -1);
-  }, [go]);
+  }, [go, showComments]);
+
+  /* ── Keyboard ── */
+  const handleKeyDown = useCallback((e) => {
+    // Nếu đang focus vào input (ô bình luận) → không chuyển video
+    const tag = e.target?.tagName?.toLowerCase();
+    if (tag === 'input' || tag === 'textarea') return;
+    if (showComments) return;
+
+    if (e.key === 'ArrowDown' || e.key === 'j') go(1);
+    if (e.key === 'ArrowUp'   || e.key === 'k') go(-1);
+  }, [go, showComments]);
 
   return (
     <PageLayout noPadding>
@@ -103,21 +113,16 @@ export default function HomePage({ feedType = 'forYou' }) {
         style={{ background: '#08080f' }}
         tabIndex={0}
         onWheel={handleWheel}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowDown' || e.key === 'j') go(1);
-          if (e.key === 'ArrowUp'   || e.key === 'k') go(-1);
-        }}
+        onKeyDown={handleKeyDown}
       >
         {loading ? (
           <BounceDots />
         ) : current ? (
           <>
             {/* ── Layout chính: Video + Actions ── */}
-            <div
-              className="flex items-end"
-              style={{ gap: 16 }}
-            >
-              {/* ── Video container — co dãn theo tỉ lệ thực ── */}
+            <div className="flex items-end" style={{ gap: 16 }}>
+
+              {/* ── Video container ── */}
               <div
                 className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-2xl"
                 style={{
@@ -138,10 +143,7 @@ export default function HomePage({ feedType = 'forYou' }) {
               </div>
 
               {/* ── Action buttons ── */}
-              <div
-                className="flex-shrink-0 flex flex-col items-center"
-                style={{ paddingBottom: 12 }}
-              >
+              <div className="flex-shrink-0 flex flex-col items-center" style={{ paddingBottom: 12 }}>
                 <VideoCardActions
                   key={current.id + '-actions'}
                   video={current}
@@ -151,14 +153,16 @@ export default function HomePage({ feedType = 'forYou' }) {
               </div>
             </div>
 
-            {/* ── Mũi tên điều hướng ── */}
-            <div
-              className="absolute flex flex-col gap-2 z-50"
-              style={{ right: 12, top: '50%', transform: 'translateY(-50%)' }}
-            >
-              <NavArrow direction="up"   onClick={() => go(-1)} disabled={currentIdx === 0} />
-              <NavArrow direction="down" onClick={() => go(1)}  disabled={currentIdx === videos.length - 1} />
-            </div>
+            {/* ── Mũi tên điều hướng — ẩn khi mở bình luận ── */}
+            {!showComments && (
+              <div
+                className="absolute flex flex-col gap-2 z-50"
+                style={{ right: 12, top: '50%', transform: 'translateY(-50%)' }}
+              >
+                <NavArrow direction="up"   onClick={() => go(-1)} disabled={currentIdx === 0} />
+                <NavArrow direction="down" onClick={() => go(1)}  disabled={currentIdx === videos.length - 1} />
+              </div>
+            )}
 
             {/* ── Comment Panel ── */}
             {showComments && (
@@ -171,7 +175,6 @@ export default function HomePage({ feedType = 'forYou' }) {
           </>
         ) : (
           <div className="flex flex-col items-center gap-3 font-body" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            <span style={{ fontSize: 44 }}>🎬</span>
             <p style={{ fontSize: 14 }}>Không có video nào. Hãy theo dõi thêm creator!</p>
           </div>
         )}

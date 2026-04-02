@@ -4,12 +4,15 @@ import { LikeModel } from '../models/follow/followLikeModel.js';
 import { HashtagModel } from '../models/contentModel.js';
 import { UserModel } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
+
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 100;
-        const data = await VideoModel.getFeed({ page, limit });
+        // Truyền currentUserId để backend tính isFollowing ngay trong query
+        const currentUserId = req.user?.id ?? null;
+        const data = await VideoModel.getFeed({ page, limit, currentUserId });
         res.json(data);
     } catch (e) {
         res.status(500).json({ message: 'Lỗi tải feed', error: e.message });
@@ -63,7 +66,7 @@ export const uploadVideo = async (req, res) => {
             userId: req.user.id,
             musicId: musicId || null,
             caption,
-            videoUrl: req.file.path,     // Cloudinary URL
+            videoUrl: req.file.path,
             thumbnail: req.file.path
                 .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
                 .replace(/\.[^.]+$/, '.jpg'),
@@ -75,11 +78,9 @@ export const uploadVideo = async (req, res) => {
             isDraft: isDraft === 'true',
         });
 
-        // Xử lý hashtags từ caption
         const tags = (caption.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) || []);
         if (tags.length) await HashtagModel.attachToVideo(videoId, tags);
 
-        // Tăng tổng video của user
         await UserModel.incrementVideoCount(req.user.id);
 
         const video = await VideoModel.findById(videoId);
@@ -116,7 +117,6 @@ export const postComment = async (req, res) => {
         });
         await VideoModel.updateCommentCount(req.params.id, 1);
 
-        // Bắn thông báo
         const video = await VideoModel.findById(req.params.id);
         if (video && video.userId !== String(req.user.id)) {
             await triggerNotification(video.userId, req.user, 'comment', video.id, comment.id);
@@ -132,7 +132,6 @@ export const postComment = async (req, res) => {
 export const likeVideo = async (req, res) => {
     try {
         const liked = await LikeModel.like(req.user.id, req.params.id);
-        
         if (liked) {
             const video = await VideoModel.findById(req.params.id);
             if (video && video.userId !== String(req.user.id)) {

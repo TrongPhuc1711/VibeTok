@@ -5,10 +5,10 @@ import FollowButton from './FollowButton';
 import { formatCount } from '../../../utils/formatters';
 import { followUser, unfollowUser } from '../../../services/userService';
 import { getStoredUser } from '../../../utils/helpers';
+import { addFollowing, removeFollowing } from '../../../utils/following';
 
 /**
  * CreatorCard
- *
  * Props:
  *  user   – user object
  *  layout – 'card' | 'row'
@@ -17,7 +17,6 @@ export default function CreatorCard({ user, layout = 'card' }) {
   const navigate = useNavigate();
   const me = getStoredUser();
 
-  // Không cho phép follow chính mình
   const isSelf =
     me &&
     (String(me.id) === String(user.id) ||
@@ -35,9 +34,14 @@ export default function CreatorCard({ user, layout = 'card' }) {
     if (isSelf || loading) return;
 
     const wasFollowing = following;
-    // Optimistic UI
+    // Optimistic UI + cache
     setFollowing(!wasFollowing);
     setFollowerCount(n => wasFollowing ? Math.max(0, n - 1) : n + 1);
+    if (wasFollowing) {
+      removeFollowing(user.id);
+    } else {
+      addFollowing(user.id);
+    }
     setLoading(true);
 
     try {
@@ -47,9 +51,14 @@ export default function CreatorCard({ user, layout = 'card' }) {
         await followUser(user.username);
       }
     } catch {
-      // Rollback nếu API lỗi
+      // Rollback UI + cache
       setFollowing(wasFollowing);
       setFollowerCount(n => wasFollowing ? n + 1 : Math.max(0, n - 1));
+      if (wasFollowing) {
+        addFollowing(user.id);
+      } else {
+        removeFollowing(user.id);
+      }
     } finally {
       setLoading(false);
     }

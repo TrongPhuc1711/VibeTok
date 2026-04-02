@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../middlewares/authMiddleware.js';
+import { verifyToken, optionalAuth } from '../middlewares/authMiddleware.js';
 import { uploadVideo as uploadVideoMiddleware } from '../middlewares/uploadMiddleware.js';
 import {
     getFeed, searchVideos, getVideoById, getVideosByUser,
@@ -9,8 +9,8 @@ import {
 
 const router = express.Router();
 
-// Public
-router.get('/feed',          getFeed);
+// Public — dùng optionalAuth để lấy currentUserId khi đã login
+router.get('/feed',          optionalAuth, getFeed);
 router.get('/search',        searchVideos);
 router.get('/user/:userId',  getVideosByUser);
 router.get('/:id/comments',  getComments);

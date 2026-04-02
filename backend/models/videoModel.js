@@ -29,6 +29,8 @@ export const normalizeVideo = (v) => {
             anh_dai_dien: v.anh_dai_dien,
             isCreator: v.vai_tro === 'creator' || v.vai_tro === 'admin',
             initials:  (v.ten_hien_thi || '').trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U',
+            // isFollowing được inject từ bên ngoài sau khi query
+            isFollowing: Boolean(v.is_following),
         } : null,
         // music được join
         music: v.music_id ? {
@@ -39,22 +41,44 @@ export const normalizeVideo = (v) => {
     };
 };
 
-// Query join chung
+// Query join chung — thêm subquery isFollowing nếu có currentUserId
+const buildVideoQuery = (currentUserId = null) => {
+    const followingSubquery = currentUserId
+        ? `(SELECT COUNT(*) FROM follows 
+           WHERE ma_nguoi_theo_doi = ${pool.escape(currentUserId)} 
+           AND ma_nguoi_duoc_theo_doi = v.ma_nguoi_dung) > 0`
+        : `0`;
+
+    return `
+        SELECT v.*,
+            u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
+            m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si,
+            (${followingSubquery}) AS is_following
+        FROM videos v
+        LEFT JOIN users u ON v.ma_nguoi_dung = u.id
+        LEFT JOIN music m ON v.ma_am_nhac = m.id
+    `;
+};
+
+// Query join chung KHÔNG có isFollowing (dùng cho các route không cần)
 const VIDEO_JOIN_QUERY = `
     SELECT v.*,
         u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
-        m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si
+        m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si,
+        0 AS is_following
     FROM videos v
     LEFT JOIN users u ON v.ma_nguoi_dung = u.id
     LEFT JOIN music m ON v.ma_am_nhac = m.id
 `;
 
 export const VideoModel = {
-    // Feed công khai
-    async getFeed({ page = 1, limit = 5 } = {}) {
+    // Feed công khai — có isFollowing theo currentUserId
+    async getFeed({ page = 1, limit = 5, currentUserId = null } = {}) {
         const offset = (page - 1) * limit;
+        const query = buildVideoQuery(currentUserId);
+
         const [rows] = await pool.query(
-            `${VIDEO_JOIN_QUERY}
+            `${query}
              WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
              ORDER BY v.ngay_tao DESC
              LIMIT ? OFFSET ?`,

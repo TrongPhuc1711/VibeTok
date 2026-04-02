@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { formatCount } from '../../../utils/formatters';
 import { followUser, unfollowUser } from '../../../services/userService';
 import { likeVideo, unlikeVideo } from '../../../services/videoService';
-import { isLoggedIn } from '../../../utils/helpers';
+import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
+import {
+  isFollowingUser,
+  addFollowing,
+  removeFollowing,
+} from '../../../utils/following';
 import {
   HeartIcon, CommentIcon, ShareIcon, BookmarkIcon, MusicIcon,
 } from '../../../icons/ActionIcons';
@@ -35,7 +40,15 @@ export default function VideoCardActions({
   inline = false,
 }) {
   const navigate = useNavigate();
+  const me = getStoredUser();
   const videoId = video?.id;
+
+  // Kiểm tra có phải video của chính mình không
+  const isOwnVideo =
+    me &&
+    (String(me.id) === String(video?.user?.id) ||
+      me.username === video?.user?.username ||
+      me.ten_dang_nhap === video?.user?.username);
 
   /* Khởi tạo state từ localStorage */
   const [liked,         setLiked]         = useState(() => isInStorage(LIKES_KEY, videoId));
@@ -45,7 +58,7 @@ export default function VideoCardActions({
   const [likeLoading,   setLikeLoading]    = useState(false);
   const [followLoading, setFollowLoading]  = useState(false);
 
-  /* Khi đổi video → đọc lại localStorage */
+  /* Khi đổi video → đọc lại */
   useEffect(() => {
     setLiked(isInStorage(LIKES_KEY, videoId));
     setBookmarked(isInStorage(BOOKMARKS_KEY, videoId));
@@ -59,7 +72,6 @@ export default function VideoCardActions({
 
     const was = liked;
     const nowLiked = toggleStorageItem(LIKES_KEY, videoId);
-
     setLiked(nowLiked);
     setLocalLikes(n => was ? Math.max(0, n - 1) : n + 1);
     setLikeLoading(true);
@@ -67,7 +79,6 @@ export default function VideoCardActions({
       if (was) await unlikeVideo(videoId);
       else     await likeVideo(videoId);
     } catch {
-      /* rollback localStorage nếu API lỗi */
       toggleStorageItem(LIKES_KEY, videoId);
       setLiked(was);
       setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
@@ -108,8 +119,9 @@ export default function VideoCardActions({
   return (
     <div className={wrapperCls}>
 
-      {/* Avatar + Follow */}
+      {/* Avatar + Follow button */}
       <div className="relative mb-1">
+        {/* Avatar */}
         <div
           onClick={() => user.username && navigate(`/profile/${user.username}`)}
           className="w-[50px] h-[50px] rounded-full border-2 border-white/60 bg-brand-gradient flex items-center justify-center text-[14px] font-bold text-white cursor-pointer overflow-hidden"
@@ -119,7 +131,14 @@ export default function VideoCardActions({
             : (user.initials ?? 'U')
           }
         </div>
-        {!following && (
+
+        {/*
+          Hiện nút "+" chỉ khi:
+          1. Không phải video của chính mình
+          2. Chưa follow người đăng
+          3. Đã đăng nhập (hoặc cho phép click để redirect login)
+        */}
+        {!isOwnVideo && !following && (
           <button
             onClick={handleFollow}
             disabled={followLoading}
@@ -130,7 +149,7 @@ export default function VideoCardActions({
         )}
       </div>
 
-      {/* Like — hiệu ứng bounce khi click */}
+      {/* Like */}
       <ActionBtn
         icon={<HeartIcon filled={liked} />}
         count={formatCount(localLikes)}
