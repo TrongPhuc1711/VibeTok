@@ -34,7 +34,7 @@ export default function ProfilePage() {
   const [localVideos,  setLocalVideos]  = useState([]);
 
   // Modals
-  const [followModal, setFollowModal]   = useState(null);  // 'followers' | 'following' | null
+  const [followModal, setFollowModal]   = useState(null);
   const [editOpen,    setEditOpen]      = useState(false);
 
   const isMyProfile =
@@ -157,7 +157,13 @@ export default function ProfilePage() {
           {/* Action buttons */}
           <div className="absolute bottom-[-42px] right-8 flex gap-2 items-center">
             {!isMyProfile && (
-              <Button variant="ghost" size="sm">Nhắn tin</Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/messages?u=${profile.username}`)}
+              >
+                💬 Nhắn tin
+              </Button>
             )}
             {isMyProfile ? (
               <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>

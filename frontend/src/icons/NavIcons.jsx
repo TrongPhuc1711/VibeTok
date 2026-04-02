@@ -131,3 +131,12 @@ export function BellIcon({ active }) {
     </svg>
   );
 }
+
+export function MessageIcon({ active }) {
+    const color = active ? '#ff2d78' : '#666';
+    return (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={color} strokeWidth="1.2">
+            <path d="M12.5 9a1 1 0 01-1 1H4L1.5 12.5V2.5a1 1 0 011-1h9a1 1 0 011 1V9z" />
+        </svg>
+    );
+}

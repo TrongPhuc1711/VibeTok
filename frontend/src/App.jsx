@@ -12,6 +12,7 @@ import HomePage    from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
 import ProfilePage from './pages/ProfilePage';
 import UploadPage  from './pages/UploadPage/UploadPage';
+import MessagesPage from './pages/MessagesPage';
 
 // Admin
 import AdminRoutes from './pages/Admin/AdminRoutes';
@@ -48,7 +49,7 @@ export default function App() {
           <Route path={ROUTES.LOGIN}    element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-          {/* Admin — đã được bảo vệ bởi AdminRoute */}
+          {/* Admin */}
           <Route path="/admin/*" element={
             <AdminRoute>
               <AdminRoutes />
@@ -64,7 +65,11 @@ export default function App() {
           <Route path={ROUTES.FOLLOWING}   element={<PrivateRoute><HomePage /></PrivateRoute>} />
           <Route path={ROUTES.LIVE}        element={<PrivateRoute><HomePage /></PrivateRoute>} />
 
-          {/* Fallback (Khi người dùng gõ link bậy bạ) */}
+          {/* Messages */}
+          <Route path="/messages"          element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+          <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+
+          {/* Fallback */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
         </Routes>
       </ErrorBoundary>
