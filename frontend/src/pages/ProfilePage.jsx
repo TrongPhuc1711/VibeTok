@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import PageLayout              from '../components/layout/PageLayout/PageLayout';
-import CreatorCard             from '../components/common/CreatorCard';
-import Button                  from '../components/ui/Button';
-import { SpinnerCenter }       from '../components/ui/Spinner';
-import FollowListModal         from '../components/common/FollowListModal/FollowListModal';
-import EditProfileModal        from '../components/profile/EditProfileModal/EditProfileModal';
-import ProfileVideoFeedModal   from '../components/profile/ProfileVideoFeedModal';
+import PageLayout         from '../components/layout/PageLayout/PageLayout';
+import CreatorCard        from '../components/common/CreatorCard';
+import Button             from '../components/ui/Button';
+import { SpinnerCenter }  from '../components/ui/Spinner';
+import FollowListModal    from '../components/common/FollowListModal/FollowListModal';
+import EditProfileModal   from '../components/profile/EditProfileModal/EditProfileModal';
 
 import { useProfile }        from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
@@ -18,6 +17,7 @@ import { BackIcon }          from '../icons/CommonIcons';
 import { useToast }          from '../components/ui/Toast';
 
 import VideoThumb from '../components/profile/VideoThumb';
+import VideoModal from '../components/profile/VideoModal';
 
 const TABS = ['Videos', 'Liked', 'Reposts'];
 
@@ -32,19 +32,11 @@ export default function ProfilePage() {
 
   const [activeTab,    setActiveTab]    = useState('Videos');
   const [suggests,     setSuggests]     = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const [localVideos,  setLocalVideos]  = useState([]);
 
-<<<<<<< Updated upstream
-  // Feed modal state
-  const [feedModalIndex, setFeedModalIndex] = useState(null); // null = đóng, number = mở
-
-  // Modals
-  const [followModal, setFollowModal] = useState(null);
-  const [editOpen,    setEditOpen]    = useState(false);
-=======
   const [followModal, setFollowModal]   = useState(null);
   const [editOpen,    setEditOpen]      = useState(false);
->>>>>>> Stashed changes
 
   const isMyProfile =
     !username ||
@@ -65,15 +57,8 @@ export default function ProfilePage() {
       await deleteVideo(videoId);
       setLocalVideos(prev => prev.filter(v => v.id !== videoId));
       setProfile(p => ({ ...p, videos: Math.max(0, (p.videos || 0) - 1) }));
-<<<<<<< Updated upstream
-      // Nếu đang xem video bị xóa trong modal → đóng modal
-      if (feedModalIndex !== null && localVideos[feedModalIndex]?.id === videoId) {
-        setFeedModalIndex(null);
-      }
-=======
       if (selectedVideo?.id === videoId) setSelectedVideo(null);
       showSuccess('Đã xóa video', 'Video đã được xóa khỏi trang cá nhân của bạn');
->>>>>>> Stashed changes
     } catch (err) {
       const msg = err.response?.data?.message || 'Không thể xóa video này';
       showError('Xóa video thất bại', msg);
@@ -118,7 +103,7 @@ export default function ProfilePage() {
     const url = `${window.location.origin}/profile/${profile.username}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => {
-        showSuccess('Đã sao chép link!', 'Chia sẻ trang cá nhân với bạn bè');
+        showSuccess('Đã sao chép link! 🔗', 'Chia sẻ trang cá nhân với bạn bè');
       });
     }
   };
@@ -294,12 +279,12 @@ export default function ProfilePage() {
         <div className="p-3 grid grid-cols-5 gap-1">
           {activeTab === 'Videos' ? (
             localVideos.length > 0 ? (
-              localVideos.map((v, idx) => (
+              localVideos.map(v => (
                 <VideoThumb
                   key={v.id}
                   video={v}
                   isOwner={isMyProfile}
-                  onClick={() => setFeedModalIndex(idx)}
+                  onClick={() => setSelectedVideo(v)}
                   onDelete={handleDeleteVideo}
                 />
               ))
@@ -320,14 +305,6 @@ export default function ProfilePage() {
 
       </div>
 
-<<<<<<< Updated upstream
-      {/* ── Feed Modal (thay VideoModal cũ) ── */}
-      {feedModalIndex !== null && (
-        <ProfileVideoFeedModal
-          videos={localVideos}
-          initialIndex={feedModalIndex}
-          onClose={() => setFeedModalIndex(null)}
-=======
       {/* Modals */}
       {selectedVideo && (
         <VideoModal
@@ -335,11 +312,9 @@ export default function ProfilePage() {
           isOwner={isMyProfile}
           onClose={() => setSelectedVideo(null)}
           onDelete={handleDeleteVideo}
->>>>>>> Stashed changes
         />
       )}
 
-      {/* ── Follow List Modal ── */}
       {followModal && (
         <FollowListModal
           username={profile.username}
@@ -349,7 +324,6 @@ export default function ProfilePage() {
         />
       )}
 
-      {/* ── Edit Profile Modal ── */}
       {editOpen && (
         <EditProfileModal
           profile={profile}
