@@ -144,7 +144,7 @@ export default function NotificationPagePanel({ onClose }) {
     );
 }
 
-/* ── Group wrapper ── */
+/*  Group wrapper  */
 function NotifGroup({ label, items, onItemClick }) {
     return (
         <div>
@@ -158,7 +158,7 @@ function NotifGroup({ label, items, onItemClick }) {
     );
 }
 
-/* ── Single item ── */
+/*  Single item  */
 function NotifItem({ notif, onClick }) {
     const cfg = TYPE_CONFIG[notif.type] || TYPE_CONFIG.like;
     const name = notif.actor?.fullName || notif.actor?.username || 'Ai đó';
@@ -237,11 +237,11 @@ function LoadingSkeleton() {
     );
 }
 
-/* ── Empty state ── */
+/*  Empty state  */
 function EmptyState() {
     return (
         <div className="flex flex-col items-center justify-center h-full py-20 gap-3 text-text-subtle">
-            <span className="text-[40px]">🔔</span>
+        
             <p className="text-[13px] font-body">Chưa có thông báo nào</p>
         </div>
     );

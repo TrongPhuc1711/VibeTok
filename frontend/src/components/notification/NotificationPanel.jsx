@@ -26,7 +26,6 @@ export default function NotificationPanel({ notifications, loading, unreadCount,
       <div className="flex-1 overflow-auto">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-2 text-[#444]">
-            <span className="text-3xl">🔔</span>
             <p className="text-[12px] font-body">Chưa có thông báo nào</p>
           </div>
         ) : (

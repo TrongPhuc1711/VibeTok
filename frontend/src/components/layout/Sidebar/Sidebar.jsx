@@ -14,24 +14,27 @@ import SidebarSearch from './SidebarSearch';
 import SidebarNav from './SidebarNav';
 import SidebarFollowing from './SidebarFollowing';
 import SidebarFooter from './SidebarFooter';
+import { useNotifications } from '../../../hooks/useNotifications';
 
-/* ─── Collapsed (icon-only) sidebar ─── */
+/* Collapsed (icon-only) sidebar */
 function CollapsedSidebar({ onNotifClick, notifActive }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { unreadCount } = useNotifications();
 
   const NAV_ITEMS = [
-    { path: ROUTES.HOME, Icon: HomeIcon },
-    { path: ROUTES.EXPLORE, Icon: CompassIcon },
-    { path: ROUTES.FOLLOWING, Icon: UsersIcon },
-    { path: ROUTES.UPLOAD, Icon: UploadIcon },
-    { path: ROUTES.PROFILE, Icon: UserIcon },
+    { path: ROUTES.HOME,      Icon: HomeIcon    },
+    { path: ROUTES.EXPLORE,   Icon: CompassIcon },
+    { path: ROUTES.FOLLOWING, Icon: UsersIcon   },
+    { path: ROUTES.UPLOAD,    Icon: UploadIcon  },
+    { path: ROUTES.PROFILE,   Icon: UserIcon    },
   ];
 
   return (
-    <aside className="flex flex-col h-screen bg-base border-r border-border sticky top-0 shrink-0 transition-all duration-300"
-      style={{ width: 72 }}>
-
+    <aside
+      className="flex flex-col h-screen bg-base border-r border-border sticky top-0 shrink-0 transition-all duration-300"
+      style={{ width: 72 }}
+    >
       {/* Logo */}
       <div
         className="flex items-center justify-center py-[18px] border-b border-border cursor-pointer"
@@ -40,14 +43,17 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
         <span className="font-display font-extrabold text-[22px] text-primary leading-none">V</span>
       </div>
 
-      {/* Icon nav */}
+      {/* Icon nav — chỉ highlight icon nào đang active, tắt tất cả khi notif mở */}
       <nav className="flex-1 py-2 flex flex-col items-center">
         {NAV_ITEMS.map(({ path, Icon }) => {
-          const active = pathname === path;
+          /* Khi panel thông báo mở, không highlight item nào trong nav thường */
+          const active = !notifActive && pathname === path;
           return (
             <button
               key={path}
-              onClick={() => navigate(path)}
+              onClick={() => {
+                navigate(path);
+              }}
               className={`flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
                 ${active ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
             >
@@ -56,13 +62,18 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
           );
         })}
 
-        {/* Bell */}
+        {/* Bell — chỉ mình nó highlight khi notifActive */}
         <button
           onClick={onNotifClick}
           className={`relative flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
             ${notifActive ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
         >
           <BellIcon active={notifActive} />
+          {unreadCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 bg-primary text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-[0_0_0_1.5px_#0a0a0f]">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
       </nav>
 
@@ -79,7 +90,7 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
   );
 }
 
-/* ─── Full sidebar ─── */
+/* Full sidebar */
 export default function Sidebar({ className = '', collapsed = false, onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
 
