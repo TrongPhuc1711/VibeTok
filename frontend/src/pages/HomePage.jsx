@@ -12,7 +12,7 @@ function NavArrow({ direction, onClick, disabled }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:scale-105"
+      className="w-[38px] h-[38px] rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white/20 active:scale-95"
       style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', color: 'white' }}
     >
       {direction === 'up' ? (
@@ -72,109 +72,113 @@ export default function HomePage({ feedType = 'forYou' }) {
   const showComments = commentVideoId !== null;
   const containerSize = useVideoContainerSize(aspectRatio, showComments);
 
-  /* ── Chuyển video ── */
+  /* Giữ Comment khi lướt  */
   const go = useCallback((dir) => {
     const next = currentIdx + dir;
-
-    if (dir > 0 && next >= videos.length - 3 && hasMore) {
-      loadMore();
-    }
-
+    if (dir > 0 && next >= videos.length - 3 && hasMore) loadMore();
+    
     if (next >= 0 && next < videos.length) {
       setCurrentIdx(next);
-      setCommentVideoId(null);
+      
+      //  load bình luận của video mới
+      setCommentVideoId(prev => prev !== null ? videos[next].id : null);
+      
       setAspectRatio(9 / 16);
     }
-  }, [currentIdx, videos.length, hasMore, loadMore]);
+  }, [currentIdx, videos, hasMore, loadMore]);
 
-  /* ── Wheel scroll — chỉ chuyển video khi KHÔNG mở bình luận ── */
   const handleWheel = useCallback((e) => {
-    // Nếu panel bình luận đang mở → không làm gì, để panel tự scroll
-    if (showComments) return;
     e.preventDefault();
     go(e.deltaY > 0 ? 1 : -1);
-  }, [go, showComments]);
+  }, [go]);
 
-  /* ── Keyboard ── */
+  /*  Xử lý phím mũi tên ── */
   const handleKeyDown = useCallback((e) => {
-    // Nếu đang focus vào input (ô bình luận) → không chuyển video
     const tag = e.target?.tagName?.toLowerCase();
-    if (tag === 'input' || tag === 'textarea') return;
-    if (showComments) return;
 
+    if (tag === 'input' || tag === 'textarea') return;
+    
     if (e.key === 'ArrowDown' || e.key === 'j') go(1);
     if (e.key === 'ArrowUp'   || e.key === 'k') go(-1);
-  }, [go, showComments]);
+  }, [go]);
 
   return (
     <PageLayout noPadding>
       <div
-        className="relative w-full h-full flex items-center justify-center outline-none select-none overflow-hidden"
+        className="relative w-full h-full flex flex-row outline-none select-none overflow-hidden"
         style={{ background: '#08080f' }}
         tabIndex={0}
         onWheel={handleWheel}
         onKeyDown={handleKeyDown}
       >
         {loading ? (
-          <BounceDots />
+          <div className="flex-1 flex items-center justify-center"><BounceDots /></div>
         ) : current ? (
           <>
-            {/* ── Layout chính: Video + Actions ── */}
-            <div className="flex items-end" style={{ gap: 16 }}>
+            {/* Video + Actions ── */}
+            <div 
+              className="flex-1 relative flex items-center justify-center"
+              onWheel={handleWheel} 
+            >
 
-              {/* ── Video container ── */}
-              <div
-                className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-2xl"
-                style={{
-                  width:  containerSize.width,
-                  height: containerSize.height,
-                  background: '#000',
-                }}
-              >
-                <VideoCard
-                  key={current.id}
-                  video={current}
-                  isActive
-                  hideActions
-                  hideTopBar
-                  onRatio={(r) => setAspectRatio(r)}
-                  onComment={() => setCommentVideoId(current.id)}
-                />
+              {/* Video + Action Buttons */}
+              <div className="flex items-end relative" style={{ gap: 16 }}>
+
+                {/* Video container  */}
+                <div
+                  className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-2xl"
+                  style={{
+                    width:  containerSize.width,
+                    height: containerSize.height,
+                    background: '#000',
+                  }}
+                >
+                  <VideoCard
+                    key={current.id}
+                    video={current}
+                    isActive
+                    hideActions
+                    hideTopBar
+                    onRatio={(r) => setAspectRatio(r)}
+                    onComment={() => setCommentVideoId(current.id)}
+                  />
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex-shrink-0 flex flex-col items-center pb-3">
+                  <VideoCardActions
+                    key={current.id + '-actions'}
+                    video={current}
+                    inline
+                    onComment={() => setCommentVideoId(current.id)}
+                  />
+                </div>
               </div>
 
-              {/* ── Action buttons ── */}
-              <div className="flex-shrink-0 flex flex-col items-center" style={{ paddingBottom: 12 }}>
-                <VideoCardActions
-                  key={current.id + '-actions'}
-                  video={current}
-                  inline
-                  onComment={() => setCommentVideoId(current.id)}
-                />
-              </div>
-            </div>
-
-            {/* ── Mũi tên điều hướng — ẩn khi mở bình luận ── */}
-            {!showComments && (
-              <div
-                className="absolute flex flex-col gap-2 z-50"
-                style={{ right: 12, top: '50%', transform: 'translateY(-50%)' }}
-              >
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-[350]">
                 <NavArrow direction="up"   onClick={() => go(-1)} disabled={currentIdx === 0} />
                 <NavArrow direction="down" onClick={() => go(1)}  disabled={currentIdx === videos.length - 1} />
               </div>
-            )}
 
-            {/* ── Comment Panel ── */}
+            </div>
+
+            {/* Khung Bình luận ── */}
             {showComments && (
-              <CommentPanel
-                videoId={commentVideoId}
-                totalComments={current.comments}
-                onClose={() => setCommentVideoId(null)}
-              />
+              <div 
+                className="w-[420px] h-full bg-[#121212] border-l border-white/10 shrink-0 shadow-2xl z-40"
+                onWheel={(e) => e.stopPropagation()} 
+              >
+                <CommentPanel
+                  videoId={commentVideoId}
+                  totalComments={current.comments}
+                  onClose={() => setCommentVideoId(null)}
+                />
+              </div>
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center gap-3 font-body" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 font-body text-white/25">
+            <span className="text-[44px]">🎬</span>
             <p style={{ fontSize: 14 }}>Không có video nào. Hãy theo dõi thêm creator!</p>
           </div>
         )}
