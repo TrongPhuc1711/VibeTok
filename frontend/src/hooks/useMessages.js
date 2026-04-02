@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
 import * as msgSvc from '../services/messageService';
 import { getStoredUser } from '../utils/helpers';
+import { useToast } from '../components/ui/Toast';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Singleton socket
 let _socket = null;
 const getSocket = () => {
     if (!_socket) {
@@ -14,11 +14,11 @@ const getSocket = () => {
     return _socket;
 };
 
-/* ── useInbox: quản lý danh sách conversations ── */
 export function useInbox() {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
     const me = getStoredUser();
+    const toast = useToast();
 
     const load = useCallback(async () => {
         try {
@@ -36,8 +36,8 @@ export function useInbox() {
         const socket = getSocket();
         if (me?.id) socket.emit('join_user_room', me.id);
 
-        // Nhận tin nhắn mới → cập nhật inbox
         const onReceive = (msg) => {
+            // Cập nhật inbox
             setConversations(prev => {
                 const idx = prev.findIndex(c => c.partnerId === msg.senderId);
                 const updated = {
@@ -58,6 +58,21 @@ export function useInbox() {
                 }
                 return [updated, ...prev];
             });
+
+            // Hiện toast nếu đang không ở trang messages của người gửi đó
+            const currentPath = window.location.pathname + window.location.search;
+            const isInChat = currentPath.includes('/messages') &&
+                currentPath.includes(msg.sender.username);
+
+            if (!isInChat && toast?.showMessageToast) {
+                toast.showMessageToast({
+                    senderName: msg.sender.fullName || msg.sender.username,
+                    content: msg.content,
+                    avatar: msg.sender.avatar || msg.sender.anh_dai_dien || null,
+                    initials: msg.sender.initials || (msg.sender.fullName || msg.sender.username || 'U').charAt(0).toUpperCase(),
+                    username: msg.sender.username,
+                });
+            }
         };
 
         const onSent = (msg) => {
@@ -89,12 +104,11 @@ export function useInbox() {
             socket.off('receive_message', onReceive);
             socket.off('message_sent', onSent);
         };
-    }, [load, me?.id]);
+    }, [load, me?.id, toast]);
 
     return { conversations, loading, refresh: load };
 }
 
-/* ── useChat: quản lý 1 cuộc trò chuyện ── */
 export function useChat(partnerUsername) {
     const [messages, setMessages]   = useState([]);
     const [loading, setLoading]     = useState(true);
@@ -104,7 +118,6 @@ export function useChat(partnerUsername) {
     const typingTimer = useRef(null);
     const me = getStoredUser();
 
-    // Load lịch sử
     useEffect(() => {
         if (!partnerUsername) return;
         setLoading(true);
@@ -112,14 +125,12 @@ export function useChat(partnerUsername) {
         msgSvc.getConversation(partnerUsername)
             .then(res => {
                 setMessages(res.data.messages || []);
-                // Đánh dấu đã đọc
                 msgSvc.markRead(partnerUsername).catch(() => {});
             })
             .catch(() => setMessages([]))
             .finally(() => setLoading(false));
     }, [partnerUsername]);
 
-    // Socket events
     useEffect(() => {
         if (!me?.id) return;
         const socket = getSocket();
@@ -130,10 +141,6 @@ export function useChat(partnerUsername) {
                 setMessages(prev => [...prev, msg]);
                 msgSvc.markRead(partnerUsername).catch(() => {});
             }
-        };
-
-        const onSent = (msg) => {
-            // msg đã append optimistically, không cần append lại
         };
 
         const onTyping = ({ fromUserId }) => {
@@ -161,7 +168,6 @@ export function useChat(partnerUsername) {
         if (!content.trim() || sending) return;
         const tempId = `temp_${Date.now()}`;
 
-        // Optimistic insert
         const tempMsg = {
             id: tempId,
             senderId: String(me?.id),

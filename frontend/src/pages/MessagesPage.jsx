@@ -60,7 +60,7 @@ function ConversationItem({ conv, active, onClick, myId }) {
     );
 }
 
-/* ── MessageBubble ── */
+/* MessageBubble  */
 function MessageBubble({ msg, isMine, showAvatar, prevIsMine }) {
     return (
         <div className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'} ${prevIsMine === isMine ? 'mt-0.5' : 'mt-4'}`}>
@@ -93,7 +93,7 @@ function MessageBubble({ msg, isMine, showAvatar, prevIsMine }) {
     );
 }
 
-/* ── TypingIndicator ── */
+/*  TypingIndicator  */
 function TypingIndicator() {
     return (
         <div className="flex items-end gap-2 mt-4">
@@ -109,7 +109,7 @@ function TypingIndicator() {
     );
 }
 
-/* ── ChatWindow ── */
+/* ChatWindow */
 function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
     const me = getStoredUser();
     const { messages, loading, sending, isTyping, error, send, emitTyping, emitStopTyping } = useChat(partnerUsername);
@@ -167,10 +167,7 @@ function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                     <p className="text-[#555] text-[11px] font-body m-0">
                         @{partnerUsername}
                     </p>
-                </div>
-                <button className="w-8 h-8 rounded-full bg-[#1a1a2e] border-none cursor-pointer flex items-center justify-center text-[#555] hover:text-white hover:bg-[#252535] transition-colors">
-                    <InfoIcon />
-                </button>
+                </div>                
             </div>
 
             {/* Messages */}
@@ -235,9 +232,6 @@ function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                         <SendIcon active={!!input.trim()} />
                     </button>
                 </div>
-                <p className="text-[10px] text-[#333] text-center mt-1.5 font-body">
-                    Enter để gửi · Shift+Enter xuống dòng
-                </p>
             </div>
         </div>
     );
