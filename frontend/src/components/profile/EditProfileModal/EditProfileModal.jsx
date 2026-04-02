@@ -2,17 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { updateProfile } from '../../../services/userService';
 import { setStoredUser, getStoredUser } from '../../../utils/helpers';
 import api from '../../../api/api';
+import { useToast } from '../../ui/Toast';
 
-/**
- * EditProfileModal — Modal sửa hồ sơ kiểu TikTok
- *
- * Props:
- *  profile  – object (dữ liệu profile hiện tại)
- *  onClose  – () => void
- *  onSaved  – (updatedProfile) => void
- */
 export default function EditProfileModal({ profile, onClose, onSaved }) {
   const fileRef = useRef(null);
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [form, setForm] = useState({
     ten_hien_thi: profile?.fullName || '',
@@ -24,7 +18,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
   const [saving,        setSaving]        = useState(false);
   const [error,         setError]         = useState('');
 
-  // Đóng khi nhấn Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
@@ -40,24 +33,33 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setError('Chỉ chấp nhận file ảnh (jpg, png, webp...)');
+      const msg = 'Chỉ chấp nhận file ảnh (jpg, png, webp...)';
+      setError(msg);
+      showWarning('Định dạng không hợp lệ', msg);
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('Ảnh tối đa 5MB');
+      const msg = 'Ảnh tối đa 5MB';
+      setError(msg);
+      showWarning('File quá lớn', msg);
       return;
     }
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+    showInfo('Đã chọn ảnh', 'Nhấn Lưu để cập nhật ảnh đại diện');
   };
 
   const handleSave = async () => {
     if (!form.ten_hien_thi.trim()) {
-      setError('Tên không được để trống');
+      const msg = 'Tên không được để trống';
+      setError(msg);
+      showWarning('Thiếu thông tin', msg);
       return;
     }
     if (form.ten_hien_thi.trim().length > 50) {
-      setError('Tên tối đa 50 ký tự');
+      const msg = 'Tên tối đa 50 ký tự';
+      setError(msg);
+      showWarning('Tên quá dài', msg);
       return;
     }
 
@@ -67,7 +69,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
       let updatedUser = null;
 
       if (avatarFile) {
-        // Upload avatar + profile trong 1 request
         const fd = new FormData();
         fd.append('avatar',       avatarFile);
         fd.append('ten_hien_thi', form.ten_hien_thi.trim());
@@ -78,7 +79,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
         });
         updatedUser = res.data.user;
       } else {
-        // Chỉ cập nhật text
         const res = await updateProfile({
           ten_hien_thi: form.ten_hien_thi.trim(),
           tieu_su:      form.tieu_su.trim(),
@@ -87,7 +87,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
         updatedUser = res.data.user;
       }
 
-      // Sync localStorage
       const stored = getStoredUser();
       if (stored) {
         setStoredUser({
@@ -98,10 +97,13 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
         });
       }
 
+      showSuccess('Cập nhật hồ sơ thành công! ✨', 'Thông tin của bạn đã được lưu');
       onSaved?.(updatedUser);
       onClose();
     } catch (e) {
-      setError(e.response?.data?.message || e.message || 'Cập nhật thất bại');
+      const msg = e.response?.data?.message || e.message || 'Cập nhật thất bại';
+      setError(msg);
+      showError('Cập nhật thất bại', msg);
     } finally {
       setSaving(false);
     }
@@ -118,7 +120,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
     >
       <div className="w-full max-w-[680px] bg-[#121212] rounded-2xl border border-[#2a2a2a] shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2a] shrink-0">
           <h2 className="text-white text-[18px] font-semibold font-body">Sửa hồ sơ</h2>
           <button
@@ -129,7 +131,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
           </button>
         </div>
 
-        {/* ── Scrollable body ── */}
+        {/* Body */}
         <div className="flex-1 overflow-auto">
 
           {/* Avatar row */}
@@ -139,7 +141,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 className="relative group cursor-pointer"
                 onClick={() => fileRef.current?.click()}
               >
-                {/* Avatar circle */}
                 <div className="w-[96px] h-[96px] rounded-full overflow-hidden bg-gradient-to-br from-[#ff2d78] to-[#ff6b35] flex items-center justify-center text-2xl font-bold text-white border-2 border-[#2a2a2a]">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
@@ -147,13 +148,9 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                     <span>{initials}</span>
                   )}
                 </div>
-
-                {/* Hover overlay */}
                 <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <CameraIcon />
                 </div>
-
-                {/* Edit badge */}
                 <div className="absolute bottom-0 right-0 w-[28px] h-[28px] rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center shadow-md">
                   <PencilIcon />
                 </div>
@@ -169,7 +166,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
             </div>
           </Row>
 
-          {/* VibeTok ID — readonly */}
+          {/* VibeTok ID */}
           <Row label="VibeTok ID">
             <div>
               <input
@@ -180,9 +177,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
               />
               <p className="text-[#555] text-[12px] mt-1.5 font-body">
                 www.vibetok.app/@{profile?.username}
-              </p>
-              <p className="text-[#404040] text-[11px] mt-1 font-body leading-relaxed">
-                VibeTok ID chỉ có thể bao gồm chữ cái, chữ số, dấu gạch dưới và dấu chấm. Khi thay đổi VibeTok ID, liên kết hồ sơ của bạn cũng sẽ thay đổi.
               </p>
             </div>
           </Row>
@@ -236,7 +230,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
         </div>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div className="shrink-0 border-t border-[#2a2a2a] px-6 py-4 flex flex-col gap-2">
           {error && (
             <p className="text-red-400 text-[12px] font-body text-center">{error}</p>
@@ -265,21 +259,17 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
   );
 }
 
-/* ── Row layout helper ── */
 function Row({ label, children, noBorder = false }) {
   return (
     <div className={`grid grid-cols-[160px_1fr] gap-6 px-6 py-5 ${!noBorder ? 'border-b border-[#1e1e1e]' : ''}`}>
       <div className="flex items-start pt-3">
         <span className="text-white text-[14px] font-semibold font-body">{label}</span>
       </div>
-      <div className="flex flex-col">
-        {children}
-      </div>
+      <div className="flex flex-col">{children}</div>
     </div>
   );
 }
 
-/* ── Icons ── */
 function CameraIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round">
@@ -288,7 +278,6 @@ function CameraIcon() {
     </svg>
   );
 }
-
 function PencilIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#aaa" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -296,7 +285,6 @@ function PencilIcon() {
     </svg>
   );
 }
-
 function SpinIcon() {
   return (
     <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">

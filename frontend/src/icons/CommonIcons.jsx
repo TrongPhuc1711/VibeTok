@@ -233,3 +233,19 @@ export function EyeIcon() {
       </svg>
     );
   }
+
+  export function ArrowRightIcon() {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M5 3l4 4-4 4" />
+          </svg>
+    );
+  }
+  export function ArrowLeftIcon() {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M9 11L5 7L9 3" />
+          </svg>
+    );
+  }
+  

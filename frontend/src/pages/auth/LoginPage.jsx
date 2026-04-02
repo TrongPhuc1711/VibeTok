@@ -6,9 +6,11 @@ import { login } from '../../services/authService';
 import { useValidation } from '../../hooks/useValidation';
 import { loginSchema } from '../../utils/validators';
 import { ROUTES } from '../../utils/constants';
+import { useToast } from '../../components/ui/Toast';
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
     const { errors, validate, validateField, clearField } = useValidation(loginSchema);
     const [form, setForm] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
@@ -25,13 +27,18 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const { user } = await login(form);
-            if (user?.vai_tro === 'admin') {
-                navigate('/admin');
-            } else {
-                navigate(ROUTES.HOME);
-            }
+            showSuccess('Đăng nhập thành công!', `Chào mừng trở lại, ${user.fullName || user.username} 👋`);
+            setTimeout(() => {
+                if (user?.vai_tro === 'admin') {
+                    navigate('/admin');
+                } else {
+                    navigate(ROUTES.HOME);
+                }
+            }, 600);
         } catch (e) {
-            setApiError(e.message || 'Đăng nhập thất bại');
+            const msg = e.message || 'Đăng nhập thất bại';
+            setApiError(msg);
+            showError('Đăng nhập thất bại', msg);
         } finally {
             setLoading(false);
         }

@@ -13,6 +13,7 @@ import {
   HeartIcon, CommentIcon, ShareIcon, BookmarkIcon, MusicIcon,
 } from '../../../icons/ActionIcons';
 import { PlusIcon } from '../../../icons/NavIcons';
+import { useToast } from '../../ui/Toast';
 
 /* ─── localStorage helpers ─── */
 const LIKES_KEY     = 'vibetok_liked_videos';
@@ -41,16 +42,15 @@ export default function VideoCardActions({
 }) {
   const navigate = useNavigate();
   const me = getStoredUser();
+  const { showSuccess, showInfo, showWarning, showError } = useToast();
   const videoId = video?.id;
 
-  // Kiểm tra có phải video của chính mình không
   const isOwnVideo =
     me &&
     (String(me.id) === String(video?.user?.id) ||
       me.username === video?.user?.username ||
       me.ten_dang_nhap === video?.user?.username);
 
-  /* Khởi tạo state từ localStorage */
   const [liked,         setLiked]         = useState(() => isInStorage(LIKES_KEY, videoId));
   const [bookmarked,    setBookmarked]     = useState(() => isInStorage(BOOKMARKS_KEY, videoId));
   const [following,     setFollowing]      = useState(video?.user?.isFollowing ?? false);
@@ -58,7 +58,6 @@ export default function VideoCardActions({
   const [likeLoading,   setLikeLoading]    = useState(false);
   const [followLoading, setFollowLoading]  = useState(false);
 
-  /* Khi đổi video → đọc lại */
   useEffect(() => {
     setLiked(isInStorage(LIKES_KEY, videoId));
     setBookmarked(isInStorage(BOOKMARKS_KEY, videoId));
@@ -67,7 +66,11 @@ export default function VideoCardActions({
   }, [videoId, video?.likes, video?.user?.isFollowing]);
 
   const handleLike = async () => {
-    if (!isLoggedIn()) { navigate('/login'); return; }
+    if (!isLoggedIn()) {
+      showWarning('Cần đăng nhập', 'Đăng nhập để thích video này');
+      navigate('/login');
+      return;
+    }
     if (likeLoading) return;
 
     const was = liked;
@@ -77,34 +80,70 @@ export default function VideoCardActions({
     setLikeLoading(true);
     try {
       if (was) await unlikeVideo(videoId);
-      else     await likeVideo(videoId);
+      else {
+        await likeVideo(videoId);
+        showSuccess('Đã thích video ❤️', `Video của @${video?.user?.username}`);
+      }
     } catch {
       toggleStorageItem(LIKES_KEY, videoId);
       setLiked(was);
       setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
+      showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
     } finally {
       setLikeLoading(false);
     }
   };
 
   const handleBookmark = () => {
+    if (!isLoggedIn()) {
+      showWarning('Cần đăng nhập', 'Đăng nhập để lưu video');
+      navigate('/login');
+      return;
+    }
     const now = toggleStorageItem(BOOKMARKS_KEY, videoId);
     setBookmarked(now);
     onBookmark?.(videoId, now);
+    if (now) {
+      showSuccess('Đã lưu video 🔖', 'Video đã được thêm vào danh sách lưu');
+    } else {
+      showInfo('Đã bỏ lưu', 'Video đã được xóa khỏi danh sách lưu');
+    }
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/video/${videoId}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        showSuccess('Đã sao chép link! 🔗', 'Chia sẻ link video với bạn bè của bạn');
+      });
+    } else {
+      showInfo('Chia sẻ video', url);
+    }
+    onShare?.(videoId);
   };
 
   const handleFollow = async (e) => {
     e.stopPropagation();
-    if (!isLoggedIn()) { navigate('/login'); return; }
+    if (!isLoggedIn()) {
+      showWarning('Cần đăng nhập', 'Đăng nhập để theo dõi creator này');
+      navigate('/login');
+      return;
+    }
     if (followLoading) return;
     const was = following;
     setFollowing(!was);
     setFollowLoading(true);
     try {
-      if (was) await unfollowUser(video?.user?.username);
-      else     await followUser(video?.user?.username);
+      if (was) {
+        await unfollowUser(video?.user?.username);
+        showInfo('Đã bỏ follow', `@${video?.user?.username}`);
+      } else {
+        await followUser(video?.user?.username);
+        showSuccess('Đã follow! 🎉', `Bạn đang theo dõi @${video?.user?.username}`);
+      }
     } catch {
       setFollowing(was);
+      showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
     } finally {
       setFollowLoading(false);
     }
@@ -121,7 +160,6 @@ export default function VideoCardActions({
 
       {/* Avatar + Follow button */}
       <div className="relative mb-1">
-        {/* Avatar */}
         <div
           onClick={() => user.username && navigate(`/profile/${user.username}`)}
           className="w-[50px] h-[50px] rounded-full border-2 border-white/60 bg-brand-gradient flex items-center justify-center text-[14px] font-bold text-white cursor-pointer overflow-hidden"
@@ -132,12 +170,6 @@ export default function VideoCardActions({
           }
         </div>
 
-        {/*
-          Hiện nút "+" chỉ khi:
-          1. Không phải video của chính mình
-          2. Chưa follow người đăng
-          3. Đã đăng nhập (hoặc cho phép click để redirect login)
-        */}
         {!isOwnVideo && !following && (
           <button
             onClick={handleFollow}
@@ -172,7 +204,7 @@ export default function VideoCardActions({
       <ActionBtn
         icon={<ShareIcon />}
         count={formatCount(video?.shares)}
-        onClick={() => onShare?.(video?.id)}
+        onClick={handleShare}
         inline={inline}
       />
 

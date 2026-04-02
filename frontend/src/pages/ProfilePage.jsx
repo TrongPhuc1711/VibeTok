@@ -14,7 +14,8 @@ import { getSuggestedUsers } from '../services/userService';
 import { deleteVideo }       from '../services/videoService';
 import { formatCount }       from '../utils/formatters';
 import { getStoredUser }     from '../utils/helpers';
-import { BackIcon, ShareSmIcon } from '../icons/CommonIcons';
+import { BackIcon }          from '../icons/CommonIcons';
+import { useToast }          from '../components/ui/Toast';
 
 import VideoThumb from '../components/profile/VideoThumb';
 
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const { username } = useParams();
   const navigate     = useNavigate();
   const me           = getStoredUser();
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
 
   const target = username || me?.username || me?.ten_dang_nhap || 'me';
   const { profile, videos, loading, following, toggleFollow, setProfile } = useProfile(target);
@@ -32,12 +34,17 @@ export default function ProfilePage() {
   const [suggests,     setSuggests]     = useState([]);
   const [localVideos,  setLocalVideos]  = useState([]);
 
+<<<<<<< Updated upstream
   // Feed modal state
   const [feedModalIndex, setFeedModalIndex] = useState(null); // null = đóng, number = mở
 
   // Modals
   const [followModal, setFollowModal] = useState(null);
   const [editOpen,    setEditOpen]    = useState(false);
+=======
+  const [followModal, setFollowModal]   = useState(null);
+  const [editOpen,    setEditOpen]      = useState(false);
+>>>>>>> Stashed changes
 
   const isMyProfile =
     !username ||
@@ -58,13 +65,40 @@ export default function ProfilePage() {
       await deleteVideo(videoId);
       setLocalVideos(prev => prev.filter(v => v.id !== videoId));
       setProfile(p => ({ ...p, videos: Math.max(0, (p.videos || 0) - 1) }));
+<<<<<<< Updated upstream
       // Nếu đang xem video bị xóa trong modal → đóng modal
       if (feedModalIndex !== null && localVideos[feedModalIndex]?.id === videoId) {
         setFeedModalIndex(null);
       }
+=======
+      if (selectedVideo?.id === videoId) setSelectedVideo(null);
+      showSuccess('Đã xóa video', 'Video đã được xóa khỏi trang cá nhân của bạn');
+>>>>>>> Stashed changes
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể xóa video này');
+      const msg = err.response?.data?.message || 'Không thể xóa video này';
+      showError('Xóa video thất bại', msg);
     }
+  };
+
+  /* ─── Follow / Unfollow với toast ─── */
+  const handleToggleFollow = async () => {
+    const wasFollowing = following;
+    try {
+      await toggleFollow();
+      if (wasFollowing) {
+        showInfo('Đã bỏ follow', `@${profile.username}`);
+      } else {
+        showSuccess('Đã follow!', `Bạn đang theo dõi @${profile.username}`);
+      }
+    } catch {
+      showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
+    }
+  };
+
+  /* ─── Nhắn tin ─── */
+  const handleMessage = () => {
+    showInfo('Mở tin nhắn', `Bắt đầu chat với @${profile.username}`);
+    navigate(`/messages?u=${profile.username}`);
   };
 
   /* ─── Sau khi lưu edit profile ─── */
@@ -77,6 +111,16 @@ export default function ProfilePage() {
       location:     updatedUser.location     || updatedUser.vi_tri       || p.location,
       anh_dai_dien: updatedUser.anh_dai_dien || p.anh_dai_dien,
     }));
+  };
+
+  /* ─── Share profile ─── */
+  const handleShareProfile = () => {
+    const url = `${window.location.origin}/profile/${profile.username}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        showSuccess('Đã sao chép link!', 'Chia sẻ trang cá nhân với bạn bè');
+      });
+    }
   };
 
   /* ─── Right panel ─── */
@@ -103,7 +147,6 @@ export default function ProfilePage() {
     return (
       <PageLayout>
         <div className="flex items-center justify-center h-full text-text-subtle font-body flex-col gap-3">
-          
           <p>Không tìm thấy người dùng</p>
         </div>
       </PageLayout>
@@ -122,7 +165,7 @@ export default function ProfilePage() {
     <PageLayout rightPanel={rightPanel}>
       <div className="flex-1 overflow-auto">
 
-        {/* ── Back bar ── */}
+        {/* Back bar */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border sticky top-0 bg-base z-10">
           <button
             onClick={() => navigate(-1)}
@@ -133,12 +176,16 @@ export default function ProfilePage() {
           <span className="text-white text-[15px] font-semibold font-body flex-1 text-center">
             {profile.username}
           </span>
-          <button className="bg-transparent border-none text-text-secondary cursor-pointer text-xl">
+          <button
+            onClick={handleShareProfile}
+            className="bg-transparent border-none text-text-secondary cursor-pointer text-xl hover:text-white transition-colors"
+            title="Sao chép link hồ sơ"
+          >
             ···
           </button>
         </div>
 
-        {/* ── Cover ── */}
+        {/* Cover */}
         <div className="relative">
           <div
             className="h-[180px] relative overflow-hidden"
@@ -162,11 +209,7 @@ export default function ProfilePage() {
           {/* Action buttons */}
           <div className="absolute bottom-[-42px] right-8 flex gap-2 items-center">
             {!isMyProfile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/messages?u=${profile.username}`)}
-              >
+              <Button variant="ghost" size="sm" onClick={handleMessage}>
                 Nhắn tin
               </Button>
             )}
@@ -178,7 +221,7 @@ export default function ProfilePage() {
               <Button
                 variant={following ? 'ghost' : 'primary'}
                 size="sm"
-                onClick={toggleFollow}
+                onClick={handleToggleFollow}
               >
                 {following ? 'Đang follow' : 'Follow'}
               </Button>
@@ -186,7 +229,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── Profile Info ── */}
+        {/* Profile Info */}
         <div className="px-8 pt-16 pb-5">
           <div className="flex items-baseline gap-2 mb-0.5">
             <h1 className="font-display font-bold text-[22px] text-white m-0">
@@ -231,7 +274,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div className="flex border-b border-border px-8">
           {TABS.map(tab => (
             <button
@@ -247,7 +290,7 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {/* ── Video grid ── */}
+        {/* Video grid */}
         <div className="p-3 grid grid-cols-5 gap-1">
           {activeTab === 'Videos' ? (
             localVideos.length > 0 ? (
@@ -270,7 +313,6 @@ export default function ProfilePage() {
             )
           ) : (
             <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-              
               <p>Tính năng đang phát triển</p>
             </div>
           )}
@@ -278,12 +320,22 @@ export default function ProfilePage() {
 
       </div>
 
+<<<<<<< Updated upstream
       {/* ── Feed Modal (thay VideoModal cũ) ── */}
       {feedModalIndex !== null && (
         <ProfileVideoFeedModal
           videos={localVideos}
           initialIndex={feedModalIndex}
           onClose={() => setFeedModalIndex(null)}
+=======
+      {/* Modals */}
+      {selectedVideo && (
+        <VideoModal
+          video={selectedVideo}
+          isOwner={isMyProfile}
+          onClose={() => setSelectedVideo(null)}
+          onDelete={handleDeleteVideo}
+>>>>>>> Stashed changes
         />
       )}
 

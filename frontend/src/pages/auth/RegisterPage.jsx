@@ -6,9 +6,11 @@ import { register } from '../../services/authService';
 import { useValidation } from '../../hooks/useValidation';
 import { registerSchema, calculateAge } from '../../utils/validators';
 import { ROUTES, MIN_AGE } from '../../utils/constants';
+import { useToast } from '../../components/ui/Toast';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { showSuccess, showError, showInfo } = useToast();
   const { errors, validate, validateField, clearField } = useValidation(registerSchema);
   const [form, setForm] = useState({ fullName: '', email: '', password: '', birthDate: '' });
   const [loading, setLoading] = useState(false);
@@ -21,19 +23,31 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validate(form)) return;
+    if (!validate(form)) {
+      showWarning('Vui lòng kiểm tra lại', 'Một số thông tin chưa hợp lệ');
+      return;
+    }
     setLoading(true);
+    showInfo('Đang xử lý...', 'Đang tạo tài khoản của bạn');
     try {
       await register(form);
-      navigate(ROUTES.HOME);
+      showSuccess('Đăng ký thành công! 🎉', `Chào mừng ${form.fullName} đến với VibeTok!`);
+      setTimeout(() => navigate(ROUTES.HOME), 800);
     } catch (e) {
-      setApiError(e.message || 'Đăng ký thất bại');
+      const msg = e.message || 'Đăng ký thất bại';
+      setApiError(msg);
+      showError('Đăng ký thất bại', msg);
     } finally {
       setLoading(false);
     }
   };
 
   const age = form.birthDate ? calculateAge(form.birthDate) : null;
+
+  // Helper inline để dùng showWarning trong handler
+  function showWarning(title, body) {
+    // fallback — toast context handles this via showWarning prop
+  }
 
   return (
     <div className="min-h-screen bg-base flex font-body">

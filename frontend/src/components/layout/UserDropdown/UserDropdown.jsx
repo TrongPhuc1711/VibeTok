@@ -10,12 +10,14 @@ import {
   LogoutMenuIcon,
 } from '../../../icons/CommonIcons';
 import { ChevronIcon } from '../../../icons/NavIcons';
+import { useToast } from '../../ui/Toast';
 
 export default function UserDropdown({ placement = 'topbar' }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const user = getStoredUser();
+  const { showInfo, showSuccess } = useToast();
 
   useEffect(() => {
     const handler = (e) => {
@@ -33,8 +35,9 @@ export default function UserDropdown({ placement = 'topbar' }) {
 
   const handleLogout = async () => {
     setOpen(false);
+    showInfo('Đang đăng xuất...', 'Hẹn gặp lại bạn sớm!');
     await logout();
-    navigate(ROUTES.LOGIN);
+    setTimeout(() => navigate(ROUTES.LOGIN), 600);
   };
 
   const handleNavigate = (path) => {
@@ -54,7 +57,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
 
   const imgSrc = user?.anh_dai_dien || user?.avatar || null;
 
-  /* Avatar circle — dùng chung cho cả 2 placement */
   const AvatarCircle = ({ size = 'md', showBorder = false }) => {
     const sizeClass = size === 'sm'
       ? 'w-8 h-8 text-[10px]'

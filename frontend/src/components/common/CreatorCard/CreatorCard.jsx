@@ -6,16 +6,12 @@ import { formatCount } from '../../../utils/formatters';
 import { followUser, unfollowUser } from '../../../services/userService';
 import { getStoredUser } from '../../../utils/helpers';
 import { addFollowing, removeFollowing } from '../../../utils/following';
+import { useToast } from '../../ui/Toast';
 
-/**
- * CreatorCard
- * Props:
- *  user   – user object
- *  layout – 'card' | 'row'
- */
 export default function CreatorCard({ user, layout = 'card' }) {
   const navigate = useNavigate();
   const me = getStoredUser();
+  const { showSuccess, showInfo, showError } = useToast();
 
   const isSelf =
     me &&
@@ -34,7 +30,6 @@ export default function CreatorCard({ user, layout = 'card' }) {
     if (isSelf || loading) return;
 
     const wasFollowing = following;
-    // Optimistic UI + cache
     setFollowing(!wasFollowing);
     setFollowerCount(n => wasFollowing ? Math.max(0, n - 1) : n + 1);
     if (wasFollowing) {
@@ -47,11 +42,12 @@ export default function CreatorCard({ user, layout = 'card' }) {
     try {
       if (wasFollowing) {
         await unfollowUser(user.username);
+        showInfo('Đã bỏ follow', `@${user.username}`);
       } else {
         await followUser(user.username);
+        showSuccess('Đã follow!', `Bạn đang theo dõi @${user.username}`);
       }
     } catch {
-      // Rollback UI + cache
       setFollowing(wasFollowing);
       setFollowerCount(n => wasFollowing ? n + 1 : Math.max(0, n - 1));
       if (wasFollowing) {
@@ -59,6 +55,7 @@ export default function CreatorCard({ user, layout = 'card' }) {
       } else {
         removeFollowing(user.id);
       }
+      showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
     } finally {
       setLoading(false);
     }

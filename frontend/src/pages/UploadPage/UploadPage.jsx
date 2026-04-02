@@ -13,11 +13,17 @@ import MusicPanel from './MusicPanel';
 import { useUpload } from '../../hooks/useUpload';
 import { VIDEO_PRIVACY_LABELS, DUET_LABELS, DUET_OPTIONS, ROUTES } from '../../utils/constants';
 import { LocIcon } from '../../icons/CommonIcons';
+import { useToast } from '../../components/ui/Toast';
 
 export default function UploadPage() {
   const navigate = useNavigate();
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
+
   const { form, file, errors, uploading, progress, setField, selectFile, submit } = useUpload({
-    onSuccess: () => setTimeout(() => navigate(ROUTES.HOME), 800),
+    onSuccess: () => {
+      showSuccess('Đăng video thành công! 🎬', 'Video của bạn đang được xử lý và sẽ hiển thị trên feed sớm nhất');
+      setTimeout(() => navigate(ROUTES.HOME), 800);
+    },
   });
 
   const [trackId, setTrackId] = React.useState(form.music?.id);
@@ -25,6 +31,29 @@ export default function UploadPage() {
   const handleMusicSelect = (track) => {
     setTrackId(track.id);
     setField('music')(track);
+    showInfo('Đã chọn nhạc nền', `${track.title} — ${track.artist}`);
+  };
+
+  const handleFileSelect = (f) => {
+    selectFile(f);
+    if (f && f.type.startsWith('video/')) {
+      showInfo('Đã chọn video', f.name);
+    }
+  };
+
+  const handleSubmit = async (isDraft = false) => {
+    if (!file && !isDraft) {
+      showWarning('Chưa chọn video', 'Vui lòng chọn file video trước khi đăng');
+      return;
+    }
+    if (isDraft) {
+      const ok = await submit(true);
+      if (ok) showSuccess('Đã lưu nháp', 'Video của bạn đã được lưu vào bản nháp');
+      else if (errors.submit) showError('Lưu nháp thất bại', errors.submit);
+    } else {
+      const ok = await submit(false);
+      if (!ok && errors.submit) showError('Đăng video thất bại', errors.submit);
+    }
   };
 
   return (
@@ -44,7 +73,7 @@ export default function UploadPage() {
             <div className="shrink-0">
               {file
                 ? <VideoPreview file={file} />
-                : <DropZone error={errors.file} onSelect={selectFile} />
+                : <DropZone error={errors.file} onSelect={handleFileSelect} />
               }
             </div>
 
@@ -68,7 +97,6 @@ export default function UploadPage() {
                     className="w-full bg-transparent border-none outline-none text-white text-[13px] font-body p-3.5 resize-none"
                   />
 
-                  {/* Hashtag chips */}
                   {form.caption && (
                     <div className="px-3.5 pb-2.5 flex flex-wrap gap-1.5">
                       {(form.caption.match(/#[\w]+/g) || []).map((tag) => (
@@ -174,14 +202,14 @@ export default function UploadPage() {
               <div className="flex gap-3 mt-1">
                 <Button
                   variant="ghost"
-                  onClick={() => submit(true)}
+                  onClick={() => handleSubmit(true)}
                   disabled={uploading}
                   className="flex-1"
                 >
                   Lưu nháp
                 </Button>
                 <Button
-                  onClick={() => submit(false)}
+                  onClick={() => handleSubmit(false)}
                   loading={uploading}
                   className="flex-[2]"
                 >
