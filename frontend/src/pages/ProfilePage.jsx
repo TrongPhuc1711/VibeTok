@@ -98,7 +98,7 @@ export default function ProfilePage() {
     return (
       <PageLayout>
         <div className="flex items-center justify-center h-full text-text-subtle font-body flex-col gap-3">
-          <span className="text-4xl">👤</span>
+          
           <p>Không tìm thấy người dùng</p>
         </div>
       </PageLayout>
@@ -162,7 +162,7 @@ export default function ProfilePage() {
                 size="sm"
                 onClick={() => navigate(`/messages?u=${profile.username}`)}
               >
-                💬 Nhắn tin
+                Nhắn tin
               </Button>
             )}
             {isMyProfile ? (
@@ -178,9 +178,6 @@ export default function ProfilePage() {
                 {following ? 'Đang follow' : 'Follow'}
               </Button>
             )}
-            <button className="w-[34px] h-[34px] flex items-center justify-center bg-transparent border border-border2 rounded-md cursor-pointer text-text-secondary hover:border-primary/40 transition-colors">
-              <ShareSmIcon />
-            </button>
           </div>
         </div>
 
@@ -260,7 +257,6 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-                <span className="text-[32px]">🎬</span>
                 <p>{isMyProfile ? 'Bạn chưa đăng video nào' : 'Người dùng chưa đăng video nào'}</p>
                 {isMyProfile && (
                   <Button onClick={() => navigate('/upload')}>Đăng video đầu tiên</Button>
@@ -269,7 +265,7 @@ export default function ProfilePage() {
             )
           ) : (
             <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-              <span className="text-[32px]">🔒</span>
+              
               <p>Tính năng đang phát triển</p>
             </div>
           )}
