@@ -3,18 +3,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 import { NotificationBadge } from '../../notification';
 import {
-  HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon, BellIcon,
+  HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon,
 } from '../../../icons/NavIcons';
 
 const NAV = [
-  { path: ROUTES.HOME,      label: 'Đề xuất',   Icon: HomeIcon },
-  { path: ROUTES.EXPLORE,   label: 'Khám phá',  Icon: CompassIcon },
+  { path: ROUTES.HOME, label: 'Đề xuất', Icon: HomeIcon },
+  { path: ROUTES.EXPLORE, label: 'Khám phá', Icon: CompassIcon },
   { path: ROUTES.FOLLOWING, label: 'Đã follow', Icon: UsersIcon },
-  { path: ROUTES.UPLOAD,    label: 'Tải lên',   Icon: UploadIcon },
-  { path: ROUTES.PROFILE,   label: 'Hồ sơ',     Icon: UserIcon },
+  { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
+  { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
 ];
 
-export default function SidebarNav() {
+export default function SidebarNav({ onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -46,7 +46,9 @@ export default function SidebarNav() {
           </button>
         );
       })}
-      <NotificationBadge />
+
+      {/* Notification item */}
+      <NotificationBadge onNotifClick={onNotifClick} notifActive={notifActive} />
     </nav>
   );
 }
