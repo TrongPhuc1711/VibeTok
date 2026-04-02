@@ -2,8 +2,9 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 import { NotificationBadge } from '../../notification';
+import { useUnreadMessageCount } from '../../../hooks/useMessages';
 import {
-  HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon,MessageIcon,
+HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon, MessageIcon
 } from '../../../icons/NavIcons';
 
 const NAV = [
@@ -12,17 +13,19 @@ const NAV = [
   { path: ROUTES.FOLLOWING, label: 'Đã follow', Icon: UsersIcon },
   { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
   { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
-  { path: ROUTES.MESSAGE, label: 'Tin nhắn',  Icon: MessageIcon },
+  { path: ROUTES.MESSAGE, label: 'Tin nhắn', Icon: MessageIcon },
 ];
 
 export default function SidebarNav({ onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
+  const { unreadCount } = useUnreadMessageCount();
   return (
     <nav className="py-1.5">
       {NAV.map(({ path, label, Icon }) => {
         const active = pathname === path;
+        // Kiểm tra xem item hiện tại có phải là mục Tin nhắn không
+        const isMessageItem = path === ROUTES.MESSAGE;
         return (
           <button
             key={path}
@@ -34,10 +37,15 @@ export default function SidebarNav({ onNotifClick, notifActive = false }) {
             `}
           >
             <div
-              className={`flex items-center justify-center w-7 h-7 rounded-lg transition-colors
+              className={`relative flex items-center justify-center w-7 h-7 rounded-lg transition-colors
                 ${active ? 'bg-primary/15' : ''}`}
             >
               <Icon active={active} />
+              {isMessageItem && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-[0_0_0_2px_#0a0a0f]">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </div>
             <span
               className={`font-body text-sm ${active ? 'text-primary font-semibold' : 'text-text-secondary'}`}

@@ -110,11 +110,11 @@ export function useInbox() {
 }
 
 export function useChat(partnerUsername) {
-    const [messages, setMessages]   = useState([]);
-    const [loading, setLoading]     = useState(true);
-    const [sending, setSending]     = useState(false);
-    const [isTyping, setIsTyping]   = useState(false);
-    const [error, setError]         = useState('');
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const [error, setError] = useState('');
     const typingTimer = useRef(null);
     const me = getStoredUser();
 
@@ -125,7 +125,7 @@ export function useChat(partnerUsername) {
         msgSvc.getConversation(partnerUsername)
             .then(res => {
                 setMessages(res.data.messages || []);
-                msgSvc.markRead(partnerUsername).catch(() => {});
+                msgSvc.markRead(partnerUsername).catch(() => { });
             })
             .catch(() => setMessages([]))
             .finally(() => setLoading(false));
@@ -139,7 +139,7 @@ export function useChat(partnerUsername) {
         const onReceive = (msg) => {
             if (msg.sender.username === partnerUsername) {
                 setMessages(prev => [...prev, msg]);
-                msgSvc.markRead(partnerUsername).catch(() => {});
+                msgSvc.markRead(partnerUsername).catch(() => { });
             }
         };
 
@@ -209,4 +209,52 @@ export function useChat(partnerUsername) {
     }, [me?.id]);
 
     return { messages, loading, sending, isTyping, error, send, emitTyping, emitStopTyping };
+}
+export function useUnreadMessageCount() {
+    const [unreadCount, setUnreadCount] = useState(0);
+    const me = getStoredUser();
+
+    const loadCount = useCallback(async () => {
+        try {
+            const count = await msgSvc.getUnreadCount();
+            setUnreadCount(count || 0);
+        } catch (error) {
+            console.error('Lỗi lấy số tin nhắn chưa đọc:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!me?.id) return;
+
+        // Gọi API lấy số lượng tin nhắn chưa đọc lúc mới vào app
+        loadCount();
+
+        const socket = getSocket();
+        
+        // Lắng nghe khi có tin nhắn mới tới -> Tự động +1 vào cục đỏ
+        const onReceive = (msg) => {
+            // Chỉ cộng thêm nếu tin nhắn đó không phải do mình gửi
+            if (msg.senderId !== String(me.id)) {
+                setUnreadCount(prev => prev + 1);
+            }
+        };
+
+        socket.on('receive_message', onReceive);
+
+        // (Tùy chọn) Nếu backend của bạn có gửi event báo đã đọc tin nhắn
+        const onRead = () => loadCount();
+        socket.on('messages_read', onRead);
+
+        return () => {
+            socket.off('receive_message', onReceive);
+            socket.off('messages_read', onRead);
+        };
+    }, [me?.id, loadCount]);
+
+    // Hàm gọi thủ công để reset số sau khi user click vào đọc tin nhắn
+    const decreaseCount = useCallback(() => {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+    }, []);
+
+    return { unreadCount, decreaseCount, refreshCount: loadCount };
 }
