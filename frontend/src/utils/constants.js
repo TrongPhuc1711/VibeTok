@@ -59,6 +59,7 @@ export const ROUTES = {
   PROFILE: '/profile',
   NOTIFICATION: '/notification',
   FOLLOWING: '/following',
+  MESSAGE: '/messages'
 };
 
 // Categories

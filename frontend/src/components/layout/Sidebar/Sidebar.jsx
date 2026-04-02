@@ -9,6 +9,7 @@ import {
   UserIcon,
   BellIcon,
   PlusIcon,
+  MessageIcon,
 } from '../../../icons/NavIcons';
 import SidebarSearch from './SidebarSearch';
 import SidebarNav from './SidebarNav';
@@ -23,11 +24,12 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
   const { unreadCount } = useNotifications();
 
   const NAV_ITEMS = [
-    { path: ROUTES.HOME,      Icon: HomeIcon    },
-    { path: ROUTES.EXPLORE,   Icon: CompassIcon },
-    { path: ROUTES.FOLLOWING, Icon: UsersIcon   },
-    { path: ROUTES.UPLOAD,    Icon: UploadIcon  },
-    { path: ROUTES.PROFILE,   Icon: UserIcon    },
+    { path: ROUTES.HOME, Icon: HomeIcon },
+    { path: ROUTES.EXPLORE, Icon: CompassIcon },
+    { path: ROUTES.FOLLOWING, Icon: UsersIcon },
+    { path: ROUTES.UPLOAD, Icon: UploadIcon },
+    { path: ROUTES.PROFILE, Icon: UserIcon },
+    { path: ROUTES.MESSAGE, Icon: MessageIcon }
   ];
 
   return (
