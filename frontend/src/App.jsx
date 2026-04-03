@@ -5,9 +5,10 @@ import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
 import { PetVibeTok } from './components/notification';
 // Auth
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-
+import LoginPage from './pages/Auth/LoginPage'
+import RegisterPage from './pages/Auth/RegisterPage';
+import ChangePasswordPage from './pages/Auth/ChangePasswordPage';
+import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 // App pages
 import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
@@ -20,7 +21,6 @@ import AdminRoutes from './pages/Admin/AdminRoutes';
 
 // Component bắt lỗi giao diện
 import ErrorBoundary from './components/common/ErrorBoundary';
-import VibeTokPet from './components/notification/PetVibeTok';
 
 /*  Route guards  */
 function PrivateRoute({ children }) {
@@ -51,6 +51,8 @@ export default function App() {
             {/* Auth */}
             <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
+            <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+            <Route path='/forgot-password' element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
             {/* Admin */}
             <Route path="/admin/*" element={
@@ -66,17 +68,18 @@ export default function App() {
             <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/profile/:username" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage /></PrivateRoute>} />
-            <Route path={ROUTES.LIVE} element={<PrivateRoute><HomePage /></PrivateRoute>} />
+            
 
             {/* Messages */}
             <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
             <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
 
+           
             {/* Fallback */}
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </ErrorBoundary>
-        <PetVibeTok />
+        {isLoggedIn() && <PetVibeTok />}
       </ToastProvider>
     </BrowserRouter>
   );

@@ -46,7 +46,7 @@ export const DUET_LABELS = {
 export const FEED_TABS = {
   FOR_YOU: 'forYou',
   FOLLOWING: 'following',
-  LIVE: 'live',
+  
 };
 
 // Navigation routes
@@ -59,7 +59,9 @@ export const ROUTES = {
   PROFILE: '/profile',
   NOTIFICATION: '/notification',
   FOLLOWING: '/following',
-  MESSAGE: '/messages'
+  MESSAGE: '/messages',
+  CHANGE_PASSWORD: '/change-password',
+  FORGOT_PASSWORD: '/forgot-password'
 };
 
 // Categories

@@ -79,7 +79,7 @@ export default function ProfilePage() {
     }));
   };
 
-  /* ─── Right panel ─── */
+  /* Right panel */
   const rightPanel = (
     <div className="p-[18px]">
       <h3 className="text-text-secondary text-[13px] font-body mb-4 tracking-[0.3px]">
@@ -103,7 +103,6 @@ export default function ProfilePage() {
     return (
       <PageLayout>
         <div className="flex items-center justify-center h-full text-text-subtle font-body flex-col gap-3">
-          <span className="text-4xl">👤</span>
           <p>Không tìm thấy người dùng</p>
         </div>
       </PageLayout>
@@ -122,7 +121,7 @@ export default function ProfilePage() {
     <PageLayout rightPanel={rightPanel}>
       <div className="flex-1 overflow-auto">
 
-        {/* ── Back bar ── */}
+        {/*  Back bar  */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border sticky top-0 bg-base z-10">
           <button
             onClick={() => navigate(-1)}
@@ -167,7 +166,7 @@ export default function ProfilePage() {
                 size="sm"
                 onClick={() => navigate(`/messages?u=${profile.username}`)}
               >
-                💬 Nhắn tin
+                Nhắn tin
               </Button>
             )}
             {isMyProfile ? (
@@ -189,7 +188,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── Profile Info ── */}
+        {/*  Profile Info  */}
         <div className="px-8 pt-16 pb-5">
           <div className="flex items-baseline gap-2 mb-0.5">
             <h1 className="font-display font-bold text-[22px] text-white m-0">
@@ -197,7 +196,7 @@ export default function ProfilePage() {
             </h1>
             {profile.isCreator && (
               <span className="text-transparent bg-clip-text bg-brand-gradient text-[13px] font-semibold font-body">
-                ✦ Creator
+                ✦Creator
               </span>
             )}
           </div>
@@ -265,7 +264,6 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-                <span className="text-[32px]">🎬</span>
                 <p>{isMyProfile ? 'Bạn chưa đăng video nào' : 'Người dùng chưa đăng video nào'}</p>
                 {isMyProfile && (
                   <Button onClick={() => navigate('/upload')}>Đăng video đầu tiên</Button>
@@ -274,7 +272,6 @@ export default function ProfilePage() {
             )
           ) : (
             <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-              <span className="text-[32px]">🔒</span>
               <p>Tính năng đang phát triển</p>
             </div>
           )}

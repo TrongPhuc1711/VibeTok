@@ -85,7 +85,9 @@ export default function LoginPage() {
                     icon={<LockIcon />} required />
 
                 <div className="text-right -mt-1">
-                    <button className="bg-transparent border-none text-primary text-sm cursor-pointer font-body hover:underline">
+                    <button type='button'
+                            onClick={() => navigate('/forgot-password')}
+                    className="bg-transparent border-none text-primary text-sm cursor-pointer font-body hover:underline">
                         Quên mật khẩu?
                     </button>
                 </div>

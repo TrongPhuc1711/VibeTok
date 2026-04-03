@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
-
+import nodemailer from 'nodemailer';
 // ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
@@ -139,6 +139,150 @@ export const getMe = async (req, res) => {
 
     } catch (error) {
         console.error('Lỗi API getMe:', error);
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+};
+
+// ĐỔI MẬT KHẨU
+export const changePassword = async (req, res) => {
+    try {
+        const { mat_khau_cu, mat_khau_moi } = req.body;
+ 
+        if (!mat_khau_cu || !mat_khau_moi) {
+            return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới!' });
+        }
+ 
+        if (mat_khau_moi.length < 8) {
+            return res.status(400).json({ message: 'Mật khẩu mới tối thiểu 8 ký tự!' });
+        }
+ 
+        const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
+        }
+ 
+        const user = users[0];
+        const isMatch = await bcrypt.compare(mat_khau_cu, user.mat_khau);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
+        }
+ 
+        if (mat_khau_cu === mat_khau_moi) {
+            return res.status(400).json({ message: 'Mật khẩu mới phải khác mật khẩu hiện tại!' });
+        }
+ 
+        const salt = await bcrypt.genSalt(10);
+        const hashedNew = await bcrypt.hash(mat_khau_moi, salt);
+ 
+        await pool.query('UPDATE users SET mat_khau = ? WHERE id = ?', [hashedNew, req.user.id]);
+ 
+        res.json({ message: 'Đổi mật khẩu thành công!' });
+    } catch (error) {
+        console.error('Lỗi API changePassword:', error);
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+};
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
+    }
+});
+
+// YÊU CẦU GỬI MÃ OTP QUÊN MẬT KHẨU
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Vui lòng nhập email!' });
+        }
+
+        // 1. Kiểm tra xem email có tồn tại trong bảng users không
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'Email không tồn tại trong hệ thống!' });
+        }
+
+        // 2. Tạo mã OTP 6 số và tính toán thời gian hết hạn (10 phút)
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60000); 
+
+        // 3. Dọn dẹp: Xóa các mã OTP cũ của email này (nếu có) để tránh lỗi trùng lặp
+        await pool.query('DELETE FROM password_resets WHERE email = ?', [email]);
+
+        // 4. Lưu OTP mới vào bảng password_resets
+        await pool.query(
+            'INSERT INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)', 
+            [email, otp, otpExpires]
+        );
+
+        // 5. Gửi email chứa mã OTP
+        const mailOptions = {
+            from: `"VibeTok" <${process.env.MAIL_USER}>`,
+            to: email,
+            subject: 'Mã OTP Đặt Lại Mật Khẩu - VibeTok',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+                    <h2>Đặt Lại Mật Khẩu VibeTok</h2>
+                    <p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã OTP dưới đây:</p>
+                    <h1 style="color: #4CAF50; letter-spacing: 5px;">${otp}</h1>
+                    <p>Mã này có hiệu lực trong vòng <strong>10 phút</strong>.</p>
+                    <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này để bảo vệ tài khoản.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
+
+    } catch (error) {
+        console.error('Lỗi API forgotPassword:', error);
+        res.status(500).json({ message: 'Lỗi server khi gửi email', error: error.message });
+    }
+};
+
+// ĐẶT LẠI MẬT KHẨU VỚI OTP
+export const resetPasswordWithOTP = async (req, res) => {
+    try {
+        const { email, otp, mat_khau_moi } = req.body;
+
+        if (!email || !otp || !mat_khau_moi) {
+            return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin (email, otp, mật khẩu mới)!' });
+        }
+
+        if (mat_khau_moi.length < 8) {
+            return res.status(400).json({ message: 'Mật khẩu mới tối thiểu 8 ký tự!' });
+        }
+
+        // 1. Kiểm tra OTP trong bảng password_resets (phải đúng mã và chưa hết hạn)
+        // Dùng NOW() của MySQL để so sánh thời gian hiện tại
+        const [resetRequests] = await pool.query(
+            'SELECT * FROM password_resets WHERE email = ? AND otp = ? AND expires_at > NOW()', 
+            [email, otp]
+        );
+
+        if (resetRequests.length === 0) {
+            return res.status(400).json({ message: 'Mã OTP không hợp lệ hoặc đã hết hạn!' });
+        }
+
+        // 2. Mã hóa mật khẩu mới
+        const salt = await bcrypt.genSalt(10);
+        const hashedNew = await bcrypt.hash(mat_khau_moi, salt);
+
+        // 3. Cập nhật mật khẩu mới vào bảng users
+        await pool.query(
+            'UPDATE users SET mat_khau = ? WHERE email = ?',
+            [hashedNew, email]
+        );
+
+        // 4. Dọn dẹp: Xóa mã OTP đã sử dụng trong bảng password_resets
+        await pool.query('DELETE FROM password_resets WHERE email = ?', [email]);
+
+        res.json({ message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập.' });
+
+    } catch (error) {
+        console.error('Lỗi API resetPasswordWithOTP:', error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 };
