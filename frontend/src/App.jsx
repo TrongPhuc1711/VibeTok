@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { isLoggedIn, getStoredUser } from './utils/helpers';
 import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
+import { PetVibeTok } from './components/notification';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -19,6 +20,7 @@ import AdminRoutes from './pages/Admin/AdminRoutes';
 
 // Component bắt lỗi giao diện
 import ErrorBoundary from './components/common/ErrorBoundary';
+import VibeTokPet from './components/notification/PetVibeTok';
 
 /*  Route guards  */
 function PrivateRoute({ children }) {
@@ -74,6 +76,7 @@ export default function App() {
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </ErrorBoundary>
+        <PetVibeTok />
       </ToastProvider>
     </BrowserRouter>
   );
