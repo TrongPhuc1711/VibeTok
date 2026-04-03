@@ -5,10 +5,10 @@ import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
 import { PetVibeTok } from './components/notification';
 // Auth
-import LoginPage from './pages/Auth/LoginPage'
-import RegisterPage from './pages/Auth/RegisterPage';
-import ChangePasswordPage from './pages/Auth/ChangePasswordPage';
-import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ChangePasswordPage from './pages/auth/ChangePasswordPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 // App pages
 import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
