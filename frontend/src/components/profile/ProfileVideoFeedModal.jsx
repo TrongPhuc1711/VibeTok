@@ -405,16 +405,13 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
   /* Keyboard */
   useEffect(() => {
     const handler = (e) => {
-      const tag = e.target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea') return;
-
       if (e.key === 'Escape') handleClose();
       if (e.key === 'ArrowUp' || e.key === 'k') go(-1);
       if (e.key === 'ArrowDown' || e.key === 'j') go(1);
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [currentIdx, go]);
+  }, [currentIdx]);
 
   const handleClose = () => {
     setVisible(false);
