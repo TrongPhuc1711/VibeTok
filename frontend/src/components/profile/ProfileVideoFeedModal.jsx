@@ -18,6 +18,12 @@ const toggleLikeLocal = (id) => {
   localStorage.setItem(LIKES_KEY, JSON.stringify([...s]));
   return s.has(sid);
 };
+const syncLikeStorage = (id, isLiked) => {
+  const s = getLikedSet();
+  const sid = String(id);
+  if (isLiked) s.add(sid); else s.delete(sid);
+  localStorage.setItem(LIKES_KEY, JSON.stringify([...s]));
+};
 
 /* ── Comment Section ── */
 function CommentSection({ videoId, totalComments }) {
@@ -346,29 +352,45 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
   const current = videos[currentIdx];
   const [aspectRatio, setAspectRatio] = useState(9 / 16);
 
-  // Like state
-  const [liked, setLiked] = useState(() => getLikedSet().has(String(current?.id)));
+  // ── FIX 1: Like state — ưu tiên isLiked từ DB, fallback localStorage ──
+  const [liked, setLiked] = useState(() => {
+    if (!current) return false;
+    if (current.isLiked !== undefined) {
+      syncLikeStorage(current.id, current.isLiked);
+      return current.isLiked;
+    }
+    return getLikedSet().has(String(current?.id));
+  });
   const [likeCount, setLikeCount] = useState(current?.likes ?? 0);
   const [likeLoading, setLikeLoading] = useState(false);
 
-  // Follow state
-  const [following, setFollowing] = useState(current?.user?.isFollowing ?? false);
+  // ── FIX 2: Follow state — dùng Map theo username để đồng bộ tất cả video cùng user ──
+  const [followMap, setFollowMap] = useState(() => {
+    const map = {};
+    videos.forEach(v => {
+      if (v.user?.username) {
+        map[v.user.username] = v.user?.isFollowing ?? false;
+      }
+    });
+    return map;
+  });
   const [followLoading, setFollowLoading] = useState(false);
 
-  /* Sync states when video changes */
+  // following của video hiện tại lấy từ map
+  const following = followMap[current?.user?.username] ?? false;
+
+  /* Sync like/count khi chuyển video */
   useEffect(() => {
     if (!current) return;
-
-    const isCurrentlyLiked = current.isLiked !== undefined 
-      ? current.isLiked 
+    const isCurrentlyLiked = current.isLiked !== undefined
+      ? current.isLiked
       : getLikedSet().has(String(current.id));
-
+    syncLikeStorage(current.id, isCurrentlyLiked);
     setLiked(isCurrentlyLiked);
     setLikeCount(current.likes ?? 0);
-    setFollowing(current.user?.isFollowing ?? false);
     setProgress(0);
     setDuration(0);
-  }, [currentIdx, current]);
+  }, [currentIdx]); // chỉ phụ thuộc vào currentIdx, không phụ thuộc current để tránh loop
 
   /* Mount animation */
   useEffect(() => {
@@ -460,17 +482,18 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     window.addEventListener('mouseup', onUp);
   };
 
-  /* Like */
+  // ── FIX 3: handleLike — sync đúng với DB và localStorage ──
   const handleLike = async () => {
     if (!isLoggedIn() || likeLoading) return;
     const was = liked;
     const nowLiked = toggleLikeLocal(current.id);
-    
-    // Cập nhật State UI ngay lập tức
+
+    // Optimistic update UI
     setLiked(nowLiked);
     const newCount = was ? Math.max(0, likeCount - 1) : likeCount + 1;
     setLikeCount(newCount);
 
+    // Cập nhật object gốc trong mảng videos để khi quay lại vẫn đúng
     if (current) {
       current.isLiked = nowLiked;
       current.likes = newCount;
@@ -481,7 +504,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
       if (was) await unlikeVideo(current.id);
       else await likeVideo(current.id);
     } catch {
-      // Hoàn tác nếu lỗi mạng
+      // Rollback nếu API lỗi
       toggleLikeLocal(current.id);
       setLiked(was);
       setLikeCount(likeCount);
@@ -492,31 +515,30 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     } finally { setLikeLoading(false); }
   };
 
-  /* Follow */
+  // ── FIX 4: handleFollowToggle — cập nhật followMap theo username ──
   const handleFollowToggle = async () => {
     if (!current?.user?.username || followLoading) return;
-    const was = following;
-    const nowFollowing = !was;
+    const username = current.user.username;
+    const was = followMap[username] ?? false;
 
-    // Cập nhật State giao diện
-    setFollowing(nowFollowing);
-
+    // Optimistic update: cập nhật tất cả video cùng user cùng lúc
+    setFollowMap(prev => ({ ...prev, [username]: !was }));
     videos.forEach(v => {
-      if (v.user?.username === current.user.username) {
+      if (v.user?.username === username) {
         if (!v.user) v.user = {};
-        v.user.isFollowing = nowFollowing;
+        v.user.isFollowing = !was;
       }
     });
 
     setFollowLoading(true);
     try {
-      if (was) await unfollowUser(current.user.username);
-      else await followUser(current.user.username);
+      if (was) await unfollowUser(username);
+      else await followUser(username);
     } catch {
-      // Hoàn tác nếu lỗi
-      setFollowing(was);
+      // Rollback nếu API lỗi
+      setFollowMap(prev => ({ ...prev, [username]: was }));
       videos.forEach(v => {
-        if (v.user?.username === current.user.username) {
+        if (v.user?.username === username) {
           v.user.isFollowing = was;
         }
       });
@@ -568,9 +590,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
           <NavBtn direction="down" onClick={() => go(1)} disabled={currentIdx === videos.length - 1} />
         </div>
 
-      
-
-        {/* Video wrapper — aspect ratio 9:16 centered */}
+        {/* Video wrapper */}
         <div
           className="relative overflow-hidden"
           style={{

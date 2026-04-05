@@ -48,7 +48,8 @@ export const getVideosByUser = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 12;
-        const videos = await VideoModel.getByUserId(req.params.userId, { page, limit });
+        const currentUserId = req.user?.id ?? null;
+        const videos = await VideoModel.getByUserId(req.params.userId, { page, limit ,currentUserId});
         res.json({ videos });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi lấy video user', error: e.message });
