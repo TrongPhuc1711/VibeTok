@@ -8,26 +8,26 @@ import { ArrowLeftIcon, ArrowRightIcon } from '../icons/CommonIcons';
 
 /* ── Danh mục tab với từ khóa tìm kiếm tương ứng ── */
 const CATEGORY_TABS = [
-  { id: 'all',       label: 'Tất cả',                keywords: []                                          },
-  { id: 'music',     label: 'Ca hát & Khiêu vũ',     keywords: ['dance','nhảy','ca','hát','music','nhạc']  },
-  { id: 'giaitri',   label: 'Giải Trí',               keywords: ['funny','hài','vui','giải trí','entertainment'] },
-  { id: 'sports',    label: 'Thể Thao',               keywords: ['sport','thểthao','bóng','gym','fitness']  },
-  { id: 'anime',     label: 'Truyện tranh & Hoạt hình',keywords: ['anime','manga','cartoon','hoạthình']     },
-  { id: 'love',      label: 'Mối quan hệ',            keywords: ['love','tình','yêu','couple']              },
-  { id: 'show',      label: 'Chương trình',            keywords: ['show','gameshow','reality']               },
-  { id: 'lipsync',   label: 'Hát nhép',               keywords: ['lipsync','cover','nhép']                  },
-  { id: 'lifestyle', label: 'Đời Sống',               keywords: ['lifestyle','sống','daily','vlog']         },
-  { id: 'comedy',    label: 'Hài hước',               keywords: ['comedy','hài','joke','funny','cười']      },
-  { id: 'food',      label: 'Ẩm Thực',                keywords: ['food','ăn','ẩmthực','cooking','nấu']      },
-  { id: 'travel',    label: 'Du Lịch',                keywords: ['travel','dulịch','trip','phượt','tour']   },
-  { id: 'beauty',    label: 'Làm Đẹp',               keywords: ['beauty','makeup','skincare','làmđẹp']     },
-  { id: 'gaming',    label: 'Game',                   keywords: ['game','gaming','esport','stream']          },
+  { id: 'all', label: 'Tất cả', keywords: [] },
+  { id: 'music', label: 'Ca hát & Khiêu vũ', keywords: ['dance', 'nhảy', 'ca', 'hát', 'music', 'nhạc'] },
+  { id: 'giaitri', label: 'Giải Trí', keywords: ['funny', 'hài', 'vui', 'giải trí', 'entertainment'] },
+  { id: 'sports', label: 'Thể Thao', keywords: ['sport', 'thểthao', 'bóng', 'gym', 'fitness'] },
+  { id: 'anime', label: 'Truyện tranh & Hoạt hình', keywords: ['anime', 'manga', 'cartoon', 'hoạthình'] },
+  { id: 'love', label: 'Mối quan hệ', keywords: ['love', 'tình', 'yêu', 'couple'] },
+  { id: 'show', label: 'Chương trình', keywords: ['show', 'gameshow', 'reality'] },
+  { id: 'lipsync', label: 'Hát nhép', keywords: ['lipsync', 'cover', 'nhép'] },
+  { id: 'lifestyle', label: 'Đời Sống', keywords: ['lifestyle', 'sống', 'daily', 'vlog'] },
+  { id: 'comedy', label: 'Hài hước', keywords: ['comedy', 'hài', 'joke', 'funny', 'cười'] },
+  { id: 'food', label: 'Ẩm Thực', keywords: ['food', 'ăn', 'ẩmthực', 'cooking', 'nấu'] },
+  { id: 'travel', label: 'Du Lịch', keywords: ['travel', 'dulịch', 'trip', 'phượt', 'tour'] },
+  { id: 'beauty', label: 'Làm Đẹp', keywords: ['beauty', 'makeup', 'skincare', 'làmđẹp'] },
+  { id: 'gaming', label: 'Game', keywords: ['game', 'gaming', 'esport', 'stream'] },
 ];
 
 const THUMB_GRADIENTS = [
-  ['#1a0520','#3d0b3d'],['#050f1a','#0b2d3d'],['#0a1505','#1a3d0b'],
-  ['#1a0505','#3d1a0b'],['#05051a','#0b0b3d'],['#0f0a00','#2d1e00'],
-  ['#001a1a','#003d3d'],['#1a0014','#3d0033'],
+  ['#1a0520', '#3d0b3d'], ['#050f1a', '#0b2d3d'], ['#0a1505', '#1a3d0b'],
+  ['#1a0505', '#3d1a0b'], ['#05051a', '#0b0b3d'], ['#0f0a00', '#2d1e00'],
+  ['#001a1a', '#003d3d'], ['#1a0014', '#3d0033'],
 ];
 
 /* ── Hàm lọc video theo danh mục ── */
@@ -49,7 +49,7 @@ function VideoThumbnail({ video, style = {} }) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (hovered) v.play().catch(() => {});
+    if (hovered) v.play().catch(() => { });
     else { v.pause(); v.currentTime = 0; }
   }, [hovered]);
 
@@ -100,7 +100,7 @@ function VideoThumbnail({ video, style = {} }) {
       {!hovered && (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M5 3l14 9-14 9V3z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M5 3l14 9-14 9V3z" /></svg>
           </div>
         </div>
       )}
@@ -180,7 +180,7 @@ function SearchBar({ value, onChange, onSubmit, onClear }) {
   return (
     <form onSubmit={onSubmit} className="flex items-center gap-2 bg-[#1a1a26] border border-[#2a2a3e] rounded-lg px-3.5 py-2 w-[240px]">
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#555" strokeWidth="1.2" strokeLinecap="round">
-        <circle cx="5.5" cy="5.5" r="4.5"/><path d="M9 9l3 3"/>
+        <circle cx="5.5" cy="5.5" r="4.5" /><path d="M9 9l3 3" />
       </svg>
       <input
         type="text" value={value} onChange={e => onChange(e.target.value)}
@@ -371,7 +371,7 @@ export default function ExplorePage() {
                 className="text-[#555] text-[12px] font-body hover:text-white transition-colors bg-transparent border-none cursor-pointer flex items-center gap-2"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M12 5v14M5 12l7 7 7-7"/>
+                  <path d="M12 5v14M5 12l7 7 7-7" />
                 </svg>
                 Tải thêm
               </button>
