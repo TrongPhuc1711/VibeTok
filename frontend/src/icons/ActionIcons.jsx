@@ -17,7 +17,7 @@ export function HeartIcon({ filled = false }) {
       <svg
         width="24" height="24" viewBox="0 0 24 24"
         fill={filled ? '#ff2d78' : 'none'}
-        stroke={filled ? '#ff2d78' : 'rgba(255,255,255,.8)'}
+        stroke={filled ? '#ff2d78' : 'currentColor'}
         strokeWidth="1.5"
       >
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -29,7 +29,7 @@ export function HeartIcon({ filled = false }) {
     return (
       <svg
         width="24" height="24" viewBox="0 0 24 24"
-        fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.5"
+        fill="none" stroke='currentColor' strokeWidth="1.5"
       >
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
       </svg>
@@ -40,7 +40,7 @@ export function HeartIcon({ filled = false }) {
     return (
       <svg
         width="24" height="24" viewBox="0 0 24 24"
-        fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.5" strokeLinecap="round"
+        fill="none" stroke='currentColor' strokeWidth="1.5" strokeLinecap="round"
       >
         <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
       </svg>
@@ -52,7 +52,7 @@ export function HeartIcon({ filled = false }) {
       <svg
         width="24" height="24" viewBox="0 0 24 24"
         fill={filled ? '#ff2d78' : 'none'}
-        stroke={filled ? '#ff2d78' : 'rgba(255,255,255,.8)'}
+        stroke={filled ? '#ff2d78' : 'currentColor'}
         strokeWidth="1.5"
       >
         <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />

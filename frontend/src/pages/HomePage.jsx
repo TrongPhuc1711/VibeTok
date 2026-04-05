@@ -59,14 +59,14 @@ function useVideoContainerSize(aspectRatio, showComments) {
 }
 
 /* ── Main component ── */
-// ✅ FIX: Nhận prop feedType để phân biệt "forYou" và "following"
+// Nhận prop feedType để phân biệt "forYou" và "following"
 export default function HomePage({ feedType = 'forYou' }) {
     const { videos, loading, loadMore, hasMore } = useVideoFeed(feedType);
     const [currentIdx,     setCurrentIdx]     = useState(0);
     const [commentVideoId, setCommentVideoId] = useState(null);
     const [aspectRatio,    setAspectRatio]    = useState(9 / 16);
 
-    // ✅ Reset index khi feedType thay đổi (chuyển tab Following ↔ For You)
+    //Reset index khi feedType thay đổi (chuyển tab Following ↔ For You)
     useEffect(() => {
         setCurrentIdx(0);
         setCommentVideoId(null);
@@ -98,7 +98,7 @@ export default function HomePage({ feedType = 'forYou' }) {
         if (e.key === 'ArrowUp'   || e.key === 'k') go(-1);
     }, [go]);
 
-    // ✅ Tiêu đề tab Following khác For You
+    // Tiêu đề tab Following khác For You
     const emptyMessage = feedType === 'following'
         ? 'Những người bạn follow chưa đăng video nào'
         : 'Không có video nào. Hãy theo dõi thêm creator!';
@@ -106,8 +106,7 @@ export default function HomePage({ feedType = 'forYou' }) {
     return (
         <PageLayout noPadding>
             <div
-                className="relative w-full h-full flex flex-row outline-none select-none overflow-hidden"
-                style={{ background: '#08080f' }}
+                className="relative w-full h-full flex flex-row outline-none select-none overflow-hidden bg-base"
                 tabIndex={0}
                 onWheel={handleWheel}
                 onKeyDown={handleKeyDown}

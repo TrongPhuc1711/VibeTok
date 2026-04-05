@@ -291,19 +291,27 @@ function ActionBtn({ icon, count, active, onClick, loading, inline, animateOnCli
     <button
       onClick={handleClick}
       disabled={loading}
-      className="flex flex-col items-center gap-[3px] bg-transparent border-none cursor-pointer disabled:opacity-50 transition-transform active:scale-90"
-      style={{ transform: bounce ? 'scale(1.3)' : 'scale(1)', transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)' }}
+      className="flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer disabled:opacity-50 active:scale-90"
+      style={{
+        transform: bounce ? 'scale(1.3)' : 'scale(1)',
+        transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)',
+      }}
     >
-      <div className={`
-        rounded-full flex items-center justify-center transition-colors
-        ${inline
-          ? 'w-[52px] h-[52px] bg-white/10 hover:bg-white/20'
-          : 'w-[48px] h-[48px] bg-black/30 backdrop-blur-[2px] hover:bg-white/15'
-        }
-      `}>
+      <div
+        className={`
+          w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors
+          ${inline
+            ? 'bg-black/8 hover:bg-black/15 dark:bg-white/10 dark:hover:bg-white/20'
+            : 'hover:bg-white/10'
+          }
+        `}
+      >
         {icon}
       </div>
-      <span className={`text-[12px] font-semibold font-body leading-none drop-shadow text-white ${active ? 'text-primary' : ''}`}>
+      <span
+        className="text-[13px] font-semibold font-body leading-none"
+        style={{ color: active ? '#ff2d78' : 'var(--color-text-primary)' }}
+      >
         {count ?? '0'}
       </span>
     </button>
