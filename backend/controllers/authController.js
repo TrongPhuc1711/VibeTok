@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
-import { Resend } from 'resend';
+
 // ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
@@ -183,7 +183,7 @@ export const changePassword = async (req, res) => {
     }
 };
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+
 // YÊU CẦU GỬI MÃ OTP QUÊN MẬT KHẨU
 export const forgotPassword = async (req, res) => {
     try {
@@ -199,20 +199,40 @@ export const forgotPassword = async (req, res) => {
         const otpExpires = new Date(Date.now() + 10 * 60000);
 
         try {
-            await resend.emails.send({
-                from: 'VibeTok <onboarding@resend.dev>',
-                to: email,
-                subject: 'Mã OTP Đặt Lại Mật Khẩu - VibeTok',
-                html: `
-                    <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-                        <h2>Đặt Lại Mật Khẩu VibeTok</h2>
-                        <p>Mã OTP của bạn:</p>
-                        <h1 style="color: #ff2d78; letter-spacing: 5px;">${otp}</h1>
-                        <p>Có hiệu lực trong <strong>10 phút</strong>.</p>
-                    </div>
-                `
+            // Gọi trực tiếp API của Brevo
+            const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY
+                },
+                body: JSON.stringify({
+                    sender: {
+                        name: 'VibeTok Support',
+                        email: process.env.BREVO_SENDER_EMAIL // Phải khớp với email đã đăng ký Brevo
+                    },
+                    to: [{ email: email }], // Email của người dùng quên mật khẩu
+                    subject: 'Mã OTP Đặt Lại Mật Khẩu - VibeTok',
+                    htmlContent: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+                            <h2>Đặt Lại Mật Khẩu VibeTok</h2>
+                            <p>Mã OTP của bạn:</p>
+                            <h1 style="color: #ff2d78; letter-spacing: 5px;">${otp}</h1>
+                            <p>Có hiệu lực trong <strong>10 phút</strong>.</p>
+                        </div>
+                    `
+                })
             });
 
+            // Kiểm tra xem Brevo có từ chối không
+            if (!brevoResponse.ok) {
+                const errorData = await brevoResponse.json();
+                console.error('❌ Lỗi từ Brevo:', errorData);
+                throw new Error('Gửi mail thất bại từ phía Brevo');
+            }
+
+            // Nếu gửi mail OK thì mới lưu OTP vào Database
             await pool.query('DELETE FROM password_resets WHERE email = ?', [email]);
             await pool.query(
                 'INSERT INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)',
@@ -221,11 +241,12 @@ export const forgotPassword = async (req, res) => {
 
             res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
         } catch (emailError) {
-            console.error('❌ Lỗi Resend:', emailError.message);
+            console.error('❌ Lỗi gửi email:', emailError.message);
             return res.status(500).json({ message: 'Không thể gửi email. Vui lòng thử lại sau.' });
         }
 
     } catch (error) {
+        console.error('❌ Lỗi API forgotPassword:', error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 };
