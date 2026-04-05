@@ -183,13 +183,16 @@ export const changePassword = async (req, res) => {
     }
 };
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com', // Chỉ định rõ máy chủ của Google
+    port: 465,              // Bắt buộc dùng cổng 465 (Bảo mật SSL)
+    secure: true,           // true cho cổng 465
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
     },
-    connectionTimeout: 10000,
-    socketTimeout: 15000
+    tls: {
+        rejectUnauthorized: false // Giúp vượt qua các rào cản SSL khắt khe trên server
+    }
 });
 
 // YÊU CẦU GỬI MÃ OTP QUÊN MẬT KHẨU

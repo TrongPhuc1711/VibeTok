@@ -15,6 +15,8 @@ import ExplorePage from './pages/ExplorePage';
 import ProfilePage from './pages/ProfilePage';
 import UploadPage from './pages/UploadPage/UploadPage';
 import MessagesPage from './pages/MessagesPage';
+import NotFoundPage from './pages/NotFoundPage';
+import VideoDetailPage from './pages/VideoDetailPage';
 
 // Admin
 import AdminRoutes from './pages/Admin/AdminRoutes';
@@ -67,8 +69,8 @@ export default function App() {
             <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
             <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/profile/:username" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage /></PrivateRoute>} />
-            
+            <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
+            <Route path="/video/:id" element={<PrivateRoute><VideoDetailPage /></PrivateRoute>} />
 
             {/* Messages */}
             <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
@@ -76,7 +78,7 @@ export default function App() {
 
            
             {/* Fallback */}
-            <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </ErrorBoundary>
         {isLoggedIn() && <PetVibeTok />}
