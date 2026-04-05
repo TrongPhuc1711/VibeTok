@@ -187,7 +187,9 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
-    }
+    },
+    connectionTimeout: 10000,
+    socketTimeout: 15000
 });
 
 // YÊU CẦU GỬI MÃ OTP QUÊN MẬT KHẨU
@@ -197,7 +199,10 @@ export const forgotPassword = async (req, res) => {
         if (!email) {
             return res.status(400).json({ message: 'Vui lòng nhập email!' });
         }
-
+        if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+            console.error('❌ Thiếu MAIL_USER hoặc MAIL_PASS trong .env');
+            return res.status(500).json({ message: 'Chức năng email chưa được cấu hình trên server!' });
+        }
         // 1. Kiểm tra xem email có tồn tại trong bảng users không
         const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
         if (users.length === 0) {

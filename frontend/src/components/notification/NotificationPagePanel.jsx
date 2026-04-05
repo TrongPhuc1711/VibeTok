@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useNotifications } from '../../hooks/useNotifications';
 import { formatTimeAgo } from '../../utils/formatters';
 import {
@@ -147,12 +148,13 @@ export default function NotificationPagePanel({ onClose }) {
       </div>
 
       {/* ── Video Detail Overlay ── */}
-      {overlayVideoId && (
+      {overlayVideoId && ReactDOM.createPortal(
         <VideoDetailOverlay
           videoId={overlayVideoId}
           highlightComment={overlayHighlight}
           onClose={() => { setOverlayVideoId(null); setOverlayHighlight(false); }}
-        />
+        />,
+        document.body
       )}
     </>
   );
@@ -220,15 +222,24 @@ function NotifItem({ notif, onClick }) {
 
       {/* Video thumb — hiển thị nút xem nếu có videoId */}
       {hasVideo ? (
-        <div className="relative w-10 h-14 rounded shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0a0a1a] border border-border2 flex items-center justify-center group">
-          <span className="text-[13px] group-hover:hidden">🎬</span>
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-              <path d="M5 3l14 9-14 9V3z"/>
-            </svg>
-          </div>
-        </div>
-      ) : null}
+  <div className="relative w-10 h-14 rounded shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0a0a1a] border border-border2 group">
+    {notif.meta?.videoThumb ? (
+      <img
+        src={notif.meta.videoThumb}
+        alt=""
+        className="w-full h-full object-cover"
+        onError={(e) => { e.target.style.display = 'none'; }}
+      />
+    ) : (
+      <div className="w-full h-full flex items-center justify-center text-[13px]">🎬</div>
+    )}
+    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+        <path d="M5 3l14 9-14 9V3z"/>
+      </svg>
+    </div>
+  </div>
+) : null}
 
       {/* Unread dot */}
       {!notif.read && (

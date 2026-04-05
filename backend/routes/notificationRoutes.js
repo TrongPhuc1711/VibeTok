@@ -7,7 +7,8 @@ const router = express.Router();
 router.use(verifyToken);
 
 router.get('/', getNotifications);
-router.patch('/:id/read', markAsRead);
 router.patch('/read-all', markAllAsRead);
+router.patch('/:id/read', markAsRead);
+
 
 export default router;

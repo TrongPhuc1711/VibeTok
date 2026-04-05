@@ -10,7 +10,7 @@ import { useToast } from '../../components/ui/Toast';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { showSuccess, showError, showInfo } = useToast();
+  const { showSuccess, showError, showInfo, showWarning} = useToast();
   const { errors, validate, validateField, clearField } = useValidation(registerSchema);
   const [form, setForm] = useState({ fullName: '', email: '', password: '', birthDate: '' });
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ export default function RegisterPage() {
     showInfo('Đang xử lý...', 'Đang tạo tài khoản của bạn');
     try {
       await register(form);
-      showSuccess('Đăng ký thành công! 🎉', `Chào mừng ${form.fullName} đến với VibeTok!`);
+      showSuccess('Đăng ký thành công!', `Chào mừng ${form.fullName} đến với VibeTok!`);
       setTimeout(() => navigate(ROUTES.HOME), 800);
     } catch (e) {
       const msg = e.message || 'Đăng ký thất bại';
@@ -44,10 +44,6 @@ export default function RegisterPage() {
 
   const age = form.birthDate ? calculateAge(form.birthDate) : null;
 
-  // Helper inline để dùng showWarning trong handler
-  function showWarning(title, body) {
-    // fallback — toast context handles this via showWarning prop
-  }
 
   return (
     <div className="min-h-screen bg-base flex font-body">
@@ -77,7 +73,7 @@ export default function RegisterPage() {
       <div className="w-[480px] bg-surface border-l border-border flex flex-col justify-center px-10 py-12 gap-4 overflow-auto">
         <div>
           <h2 className="font-display font-bold text-[28px] text-white mb-1.5">
-            Tạo tài khoản 🎬
+            Tạo tài khoản
           </h2>
           <p className="text-text-faint text-sm">Bắt đầu hành trình sáng tạo của bạn</p>
         </div>

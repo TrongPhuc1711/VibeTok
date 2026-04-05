@@ -26,7 +26,8 @@ export const getNotifications = async (req, res) => {
             },
             meta: {
                 videoId: row.videoId,
-                commentId: row.commentId
+                commentId: row.commentId,
+                videoThumb: row.videoThumb
             }
         }));
 

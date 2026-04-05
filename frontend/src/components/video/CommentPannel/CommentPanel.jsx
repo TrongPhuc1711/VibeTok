@@ -21,6 +21,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
   const [visible, setVisible] = useState(false);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const submittingRef = useRef(false);
 
   // animation mount
   useEffect(() => {
@@ -48,23 +49,26 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
   };
 
   const handleSubmit = async () => {
-    if (!isNotEmpty(input)) { setError('Vui lòng nhập bình luận'); return; }
-    if (!hasMaxLength(input, 300)) { setError('Bình luận tối đa 300 ký tự'); return; }
+  // Dùng ref để chặn ngay lập tức, không chờ setState
+  if (submittingRef.current) return;
+  if (!isNotEmpty(input)) { setError('Vui lòng nhập bình luận'); return; }
+  if (!hasMaxLength(input, 300)) { setError('Bình luận tối đa 300 ký tự'); return; }
 
-    setError('');
-    setSubmitting(true);
-    try {
-      const r = await postComment(videoId, { content: input });
-      setComments((p) => [r.data.comment, ...p]);
-      setInput('');
-      // cuộn lên đầu
-      listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (e) {
-      setError(e.message || 'Vui lòng đăng nhập để bình luận');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  submittingRef.current = true;
+  setError('');
+  setSubmitting(true);
+  try {
+    const r = await postComment(videoId, { content: input });
+    setComments((p) => [r.data.comment, ...p]);
+    setInput('');
+    listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    setError(e.message || 'Vui lòng đăng nhập để bình luận');
+  } finally {
+    submittingRef.current = false;
+    setSubmitting(false);
+  }
+};
 
   const totalCount = totalComments || comments.length;
 
@@ -122,7 +126,6 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
             </div>
           ) : comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <span className="text-[40px]">💬</span>
               <p className="text-[#555] text-[13px] font-body text-center">
                 Chưa có bình luận nào.<br />Hãy là người đầu tiên!
               </p>
@@ -160,7 +163,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
               type="text"
               value={input}
               onChange={(e) => { setInput(e.target.value); if (error) setError(''); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) handleSubmit(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey)  handleSubmit(); }}
               placeholder="Thêm bình luận..."
               className="flex-1 bg-transparent border-none outline-none text-white text-[14px] font-body placeholder:text-[#555]"
             />

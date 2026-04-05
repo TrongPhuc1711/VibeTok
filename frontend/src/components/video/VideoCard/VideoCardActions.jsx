@@ -5,17 +5,12 @@ import { followUser, unfollowUser } from '../../../services/userService';
 import { likeVideo, unlikeVideo } from '../../../services/videoService';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
 import {
-  isFollowingUser,
-  addFollowing,
-  removeFollowing,
-} from '../../../utils/following';
-import {
   HeartIcon, CommentIcon, ShareIcon, BookmarkIcon, MusicIcon,
 } from '../../../icons/ActionIcons';
 import { PlusIcon } from '../../../icons/NavIcons';
 import { useToast } from '../../ui/Toast';
 
-/* ─── localStorage helpers ─── */
+/* localStorage helpers */
 const LIKES_KEY     = 'vibetok_liked_videos';
 const BOOKMARKS_KEY = 'vibetok_bookmarked_videos';
 
@@ -32,7 +27,19 @@ const toggleStorageItem = (key, id) => {
 };
 const isInStorage = (key, id) => getStorageSet(key).has(String(id));
 
-/* ─── Component ─── */
+/*  Sync localStorage với trạng thái từ DB  */
+const syncLikeStorage = (videoId, isLiked) => {
+  const set = getStorageSet(LIKES_KEY);
+  const sid = String(videoId);
+  if (isLiked) {
+    set.add(sid);
+  } else {
+    set.delete(sid);
+  }
+  localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+};
+
+/*  Component  */
 export default function VideoCardActions({
   video,
   onComment,
@@ -51,19 +58,36 @@ export default function VideoCardActions({
       me.username === video?.user?.username ||
       me.ten_dang_nhap === video?.user?.username);
 
-  const [liked,         setLiked]         = useState(() => isInStorage(LIKES_KEY, videoId));
+  // Ưu tiên isLiked từ DB (video.isLiked), fallback localStorage
+  const getInitialLiked = () => {
+    if (video?.isLiked !== undefined) {
+      // Sync localStorage theo DB để nhất quán
+      syncLikeStorage(videoId, video.isLiked);
+      return video.isLiked;
+    }
+    // Fallback localStorage nếu DB chưa trả về isLiked
+    return isInStorage(LIKES_KEY, videoId);
+  };
+
+  const [liked,         setLiked]         = useState(getInitialLiked);
   const [bookmarked,    setBookmarked]     = useState(() => isInStorage(BOOKMARKS_KEY, videoId));
   const [following,     setFollowing]      = useState(video?.user?.isFollowing ?? false);
   const [localLikes,    setLocalLikes]     = useState(video?.likes ?? 0);
   const [likeLoading,   setLikeLoading]    = useState(false);
   const [followLoading, setFollowLoading]  = useState(false);
 
+  // Khi video thay đổi (scroll sang video khác), sync lại state từ DB
   useEffect(() => {
-    setLiked(isInStorage(LIKES_KEY, videoId));
+    if (video?.isLiked !== undefined) {
+      syncLikeStorage(videoId, video.isLiked);
+      setLiked(video.isLiked);
+    } else {
+      setLiked(isInStorage(LIKES_KEY, videoId));
+    }
     setBookmarked(isInStorage(BOOKMARKS_KEY, videoId));
     setLocalLikes(video?.likes ?? 0);
     setFollowing(video?.user?.isFollowing ?? false);
-  }, [videoId, video?.likes, video?.user?.isFollowing]);
+  }, [videoId, video?.isLiked, video?.likes, video?.user?.isFollowing]);
 
   const handleLike = async () => {
     if (!isLoggedIn()) {
@@ -74,20 +98,24 @@ export default function VideoCardActions({
     if (likeLoading) return;
 
     const was = liked;
-    const nowLiked = toggleStorageItem(LIKES_KEY, videoId);
-    setLiked(nowLiked);
+    // Optimistic update
+    setLiked(!was);
     setLocalLikes(n => was ? Math.max(0, n - 1) : n + 1);
+    syncLikeStorage(videoId, !was);
+
     setLikeLoading(true);
     try {
-      if (was) await unlikeVideo(videoId);
-      else {
+      if (was) {
+        await unlikeVideo(videoId);
+      } else {
         await likeVideo(videoId);
         showSuccess('Đã thích video ❤️', `Video của @${video?.user?.username}`);
       }
     } catch {
-      toggleStorageItem(LIKES_KEY, videoId);
+      // Rollback nếu lỗi
       setLiked(was);
       setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
+      syncLikeStorage(videoId, was);
       showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
     } finally {
       setLikeLoading(false);
@@ -104,7 +132,7 @@ export default function VideoCardActions({
     setBookmarked(now);
     onBookmark?.(videoId, now);
     if (now) {
-      showSuccess('Đã lưu video 🔖', 'Video đã được thêm vào danh sách lưu');
+      showSuccess('Đã lưu video', 'Video đã được thêm vào danh sách lưu');
     } else {
       showInfo('Đã bỏ lưu', 'Video đã được xóa khỏi danh sách lưu');
     }
@@ -114,7 +142,7 @@ export default function VideoCardActions({
     const url = `${window.location.origin}/video/${videoId}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => {
-        showSuccess('Đã sao chép link! 🔗', 'Chia sẻ link video với bạn bè của bạn');
+        showSuccess('Đã sao chép link!', 'Chia sẻ link video với bạn bè của bạn');
       });
     } else {
       showInfo('Chia sẻ video', url);
@@ -139,7 +167,7 @@ export default function VideoCardActions({
         showInfo('Đã bỏ follow', `@${video?.user?.username}`);
       } else {
         await followUser(video?.user?.username);
-        showSuccess('Đã follow! 🎉', `Bạn đang theo dõi @${video?.user?.username}`);
+        showSuccess('Đã follow!', `Bạn đang theo dõi @${video?.user?.username}`);
       }
     } catch {
       setFollowing(was);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../utils/constants';
+import { ROUTES } from '../utils/constants';
 
 export default function NotFoundPage() {
     const navigate = useNavigate();
