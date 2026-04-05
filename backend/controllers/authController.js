@@ -253,9 +253,6 @@ export const forgotPassword = async (req, res) => {
             });
           }
 
-        await transporter.sendMail(mailOptions);
-        return res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
-
     } catch (error) {
         console.error('Lỗi API forgotPassword:', error);
         return res.status(500).json({ message: 'Lỗi server khi gửi email', error: error.message });
