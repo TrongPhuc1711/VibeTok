@@ -10,18 +10,18 @@ import {
 const router = express.Router();
 
 // Public — dùng optionalAuth để lấy currentUserId khi đã login
-router.get('/feed', optionalAuth, getFeed);
-router.get('/search', searchVideos);
-router.get('/user/:userId', getVideosByUser);
-router.get('/:id/comments', getComments);
-router.get('/:id', getVideoById);
+router.get('/feed',           optionalAuth, getFeed);
+router.get('/search',         searchVideos);
+// Thêm optionalAuth để backend biết currentUserId → tính is_liked, is_following từ DB
+router.get('/user/:userId',   optionalAuth, getVideosByUser);
+router.get('/:id/comments',  getComments);
+router.get('/:id',            optionalAuth, getVideoById);
 
 // Protected (cần đăng nhập)
-router.get('/feed', verifyToken, getFeed);
-router.post('/upload', verifyToken, uploadVideoMiddleware, uploadVideo);
-router.post('/:id/comments', verifyToken, postComment);
-router.post('/:id/like', verifyToken, likeVideo);
-router.delete('/:id/like', verifyToken, unlikeVideo);
-router.delete('/:id', verifyToken, deleteVideo);
+router.post('/upload',        verifyToken, uploadVideoMiddleware, uploadVideo);
+router.post('/:id/comments',  verifyToken, postComment);
+router.post('/:id/like',      verifyToken, likeVideo);
+router.delete('/:id/like',    verifyToken, unlikeVideo);
+router.delete('/:id',         verifyToken, deleteVideo);
 
 export default router;

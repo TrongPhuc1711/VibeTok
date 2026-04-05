@@ -11,7 +11,6 @@ export const getFeed = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 100;
         const currentUserId = req.user?.id ?? null;
-        // ✅ FIX: nhận type từ query (forYou | following)
         const type = req.query.type || 'forYou';
         const data = await VideoModel.getFeed({ page, limit, currentUserId, type });
         res.json(data);
@@ -44,6 +43,7 @@ export const getVideoById = async (req, res) => {
 };
 
 // GET /api/videos/user/:userId
+// ✅ FIX: Truyền currentUserId để DB tính is_liked, is_following đúng cho từng user
 export const getVideosByUser = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;

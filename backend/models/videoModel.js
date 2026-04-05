@@ -22,6 +22,7 @@ export const normalizeVideo = (v) => {
         isDraft:   Boolean(v.la_ban_nhap),
         createdAt: v.ngay_tao,
         isLiked:   Boolean(v.is_liked),
+        isFollowing: Boolean(v.is_following),
         user: v.user_id ? {
             id:        String(v.user_id),
             username:  v.ten_dang_nhap,
@@ -64,19 +65,8 @@ const buildVideoQuery = (currentUserId = null) => {
     `;
 };
 
-const VIDEO_JOIN_QUERY = `
-    SELECT v.*,
-        u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
-        m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si,
-        0 AS is_following,
-        0 AS is_liked
-    FROM videos v
-    LEFT JOIN users u ON v.ma_nguoi_dung = u.id
-    LEFT JOIN music m ON v.ma_am_nhac = m.id
-`;
-
 export const VideoModel = {
-    // ✅ FIX: Hỗ trợ type = 'following' → chỉ lấy video từ người đang follow
+    // Hỗ trợ type = 'following' → chỉ lấy video từ người đang follow
     async getFeed({ page = 1, limit = 5, currentUserId = null, type = 'forYou' } = {}) {
         const offset = (page - 1) * limit;
         const query = buildVideoQuery(currentUserId);
@@ -86,7 +76,6 @@ export const VideoModel = {
         let queryParams = [limit, offset];
         let countParams = [];
 
-        // Nếu là tab "following" và đã đăng nhập → lọc chỉ lấy video từ người đang follow
         if (type === 'following' && currentUserId) {
             whereClause += ` AND v.ma_nguoi_dung IN (
                 SELECT ma_nguoi_duoc_theo_doi 
@@ -118,10 +107,12 @@ export const VideoModel = {
         };
     },
 
-    async getByUserId(userId, { page = 1, limit = 12 } = {}) {
+    // ✅ FIX: Dùng buildVideoQuery với currentUserId để lấy is_liked, is_following từ DB
+    async getByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
         const offset = (page - 1) * limit;
+        const query = buildVideoQuery(currentUserId);
         const [rows] = await pool.query(
-            `${VIDEO_JOIN_QUERY}
+            `${query}
              WHERE v.ma_nguoi_dung = ? AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
              ORDER BY v.ngay_tao DESC
              LIMIT ? OFFSET ?`,
@@ -132,7 +123,7 @@ export const VideoModel = {
 
     async findById(id) {
         const [rows] = await pool.query(
-            `${VIDEO_JOIN_QUERY} WHERE v.id = ? AND v.hoat_dong = 1`,
+            `${buildVideoQuery(null)} WHERE v.id = ? AND v.hoat_dong = 1`,
             [id]
         );
         return normalizeVideo(rows[0]) || null;
@@ -141,8 +132,9 @@ export const VideoModel = {
     async search({ q = '', page = 1, limit = 10 } = {}) {
         const offset = (page - 1) * limit;
         const like   = `%${q}%`;
+        const query  = buildVideoQuery(null);
         const [rows] = await pool.query(
-            `${VIDEO_JOIN_QUERY}
+            `${query}
              WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
                AND (v.mo_ta LIKE ? OR v.tieu_de LIKE ?)
              ORDER BY v.luot_xem DESC
