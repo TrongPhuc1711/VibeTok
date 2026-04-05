@@ -10,17 +10,18 @@ import {
 const router = express.Router();
 
 // Public — dùng optionalAuth để lấy currentUserId khi đã login
-router.get('/feed',          optionalAuth, getFeed);
-router.get('/search',        searchVideos);
-router.get('/user/:userId',  getVideosByUser);
-router.get('/:id/comments',  getComments);
-router.get('/:id',           getVideoById);
+router.get('/feed', optionalAuth, getFeed);
+router.get('/search', searchVideos);
+router.get('/user/:userId', getVideosByUser);
+router.get('/:id/comments', getComments);
+router.get('/:id', getVideoById);
 
 // Protected (cần đăng nhập)
+router.get('/feed', verifyToken, getFeed);
 router.post('/upload', verifyToken, uploadVideoMiddleware, uploadVideo);
 router.post('/:id/comments', verifyToken, postComment);
-router.post('/:id/like',     verifyToken, likeVideo);
-router.delete('/:id/like',   verifyToken, unlikeVideo);
-router.delete('/:id',        verifyToken, deleteVideo);
+router.post('/:id/like', verifyToken, likeVideo);
+router.delete('/:id/like', verifyToken, unlikeVideo);
+router.delete('/:id', verifyToken, deleteVideo);
 
 export default router;

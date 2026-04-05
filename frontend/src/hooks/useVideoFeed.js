@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getFeed } from '../services/videoService';
 
-// ✅ FIX: Hook hỗ trợ feedType "forYou" và "following"
+//Hook hỗ trợ feedType "forYou" và "following"
 export function useVideoFeed(type = 'forYou') {
     const [videos,      setVideos]      = useState([]);
     const [loading,     setLoading]     = useState(true);
@@ -12,6 +12,7 @@ export function useVideoFeed(type = 'forYou') {
 
     const fetchVideos = useCallback(async (p = 1, reset = false) => {
         try {
+            console.log('🚀 Fetching feed type:', type);
             if (p === 1) setLoading(true); else setLoadingMore(true);
             const res = await getFeed({ type, page: p });
             const incoming = res.data.videos || [];

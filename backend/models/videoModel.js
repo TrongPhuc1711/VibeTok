@@ -21,9 +21,7 @@ export const normalizeVideo = (v) => {
         location:  v.vi_tri || '',
         isDraft:   Boolean(v.la_ban_nhap),
         createdAt: v.ngay_tao,
-        // ✅ FIX: isLiked lấy từ DB
         isLiked:   Boolean(v.is_liked),
-        // user được join
         user: v.user_id ? {
             id:        String(v.user_id),
             username:  v.ten_dang_nhap,
@@ -33,7 +31,6 @@ export const normalizeVideo = (v) => {
             initials:  (v.ten_hien_thi || '').trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U',
             isFollowing: Boolean(v.is_following),
         } : null,
-        // music được join
         music: v.music_id ? {
             id:     String(v.music_id),
             title:  v.tieu_de_nhac,
@@ -42,7 +39,6 @@ export const normalizeVideo = (v) => {
     };
 };
 
-// FIX: Query join có cả isFollowing lẫn isLiked theo currentUserId
 const buildVideoQuery = (currentUserId = null) => {
     const followingSubquery = currentUserId
         ? `(SELECT COUNT(*) FROM follows 
@@ -50,7 +46,6 @@ const buildVideoQuery = (currentUserId = null) => {
            AND ma_nguoi_duoc_theo_doi = v.ma_nguoi_dung) > 0`
         : `0`;
 
-    // THÊM MỚI: subquery kiểm tra user đã like video chưa
     const likedSubquery = currentUserId
         ? `(SELECT COUNT(*) FROM likes 
            WHERE ma_nguoi_dung = ${pool.escape(currentUserId)} 
@@ -69,7 +64,6 @@ const buildVideoQuery = (currentUserId = null) => {
     `;
 };
 
-// Query join KHÔNG có isFollowing / isLiked (dùng cho các route không cần)
 const VIDEO_JOIN_QUERY = `
     SELECT v.*,
         u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
@@ -82,21 +76,40 @@ const VIDEO_JOIN_QUERY = `
 `;
 
 export const VideoModel = {
-    // Feed công khai — có isFollowing + isLiked theo currentUserId
-    async getFeed({ page = 1, limit = 5, currentUserId = null } = {}) {
+    // ✅ FIX: Hỗ trợ type = 'following' → chỉ lấy video từ người đang follow
+    async getFeed({ page = 1, limit = 5, currentUserId = null, type = 'forYou' } = {}) {
         const offset = (page - 1) * limit;
         const query = buildVideoQuery(currentUserId);
 
+        let whereClause = `WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0`;
+        let countWhere  = `WHERE quyen_rieng_tu='public' AND hoat_dong=1 AND la_ban_nhap=0`;
+        let queryParams = [limit, offset];
+        let countParams = [];
+
+        // Nếu là tab "following" và đã đăng nhập → lọc chỉ lấy video từ người đang follow
+        if (type === 'following' && currentUserId) {
+            whereClause += ` AND v.ma_nguoi_dung IN (
+                SELECT ma_nguoi_duoc_theo_doi 
+                FROM follows 
+                WHERE ma_nguoi_theo_doi = ${pool.escape(currentUserId)}
+            )`;
+            countWhere += ` AND ma_nguoi_dung IN (
+                SELECT ma_nguoi_duoc_theo_doi 
+                FROM follows 
+                WHERE ma_nguoi_theo_doi = ${pool.escape(currentUserId)}
+            )`;
+        }
+
         const [rows] = await pool.query(
-            `${query}
-             WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
-             ORDER BY v.ngay_tao DESC
-             LIMIT ? OFFSET ?`,
-            [limit, offset]
+            `${query} ${whereClause} ORDER BY v.ngay_tao DESC LIMIT ? OFFSET ?`,
+            queryParams
         );
+
         const [countRows] = await pool.query(
-            "SELECT COUNT(*) AS total FROM videos WHERE quyen_rieng_tu='public' AND hoat_dong=1 AND la_ban_nhap=0"
+            `SELECT COUNT(*) AS total FROM videos ${countWhere}`,
+            countParams
         );
+
         const total = countRows[0].total;
         return {
             videos:  rows.map(normalizeVideo),
@@ -105,7 +118,6 @@ export const VideoModel = {
         };
     },
 
-    // Video theo userId
     async getByUserId(userId, { page = 1, limit = 12 } = {}) {
         const offset = (page - 1) * limit;
         const [rows] = await pool.query(
@@ -118,7 +130,6 @@ export const VideoModel = {
         return rows.map(normalizeVideo);
     },
 
-    // Tìm video theo id
     async findById(id) {
         const [rows] = await pool.query(
             `${VIDEO_JOIN_QUERY} WHERE v.id = ? AND v.hoat_dong = 1`,
@@ -127,7 +138,6 @@ export const VideoModel = {
         return normalizeVideo(rows[0]) || null;
     },
 
-    // Tìm kiếm
     async search({ q = '', page = 1, limit = 10 } = {}) {
         const offset = (page - 1) * limit;
         const like   = `%${q}%`;
@@ -142,7 +152,6 @@ export const VideoModel = {
         return rows.map(normalizeVideo);
     },
 
-    // Tạo video mới
     async create({ userId, musicId, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt }) {
         const [result] = await pool.query(
             `INSERT INTO videos (ma_nguoi_dung, ma_am_nhac, mo_ta, duong_dan_video, anh_thu_nho,
@@ -156,7 +165,6 @@ export const VideoModel = {
         return result.insertId;
     },
 
-    // Xóa video
     async softDelete(videoId, userId) {
         const [result] = await pool.query(
             'UPDATE videos SET hoat_dong = 0 WHERE id = ? AND ma_nguoi_dung = ?',
@@ -165,12 +173,10 @@ export const VideoModel = {
         return result.affectedRows > 0;
     },
 
-    // Tăng lượt xem
     async incrementViews(videoId) {
         await pool.query('UPDATE videos SET luot_xem = luot_xem + 1 WHERE id = ?', [videoId]);
     },
 
-    // Cập nhật số like
     async updateLikeCount(videoId, delta = 1) {
         await pool.query(
             'UPDATE videos SET luot_thich = GREATEST(0, luot_thich + ?) WHERE id = ?',
@@ -178,7 +184,6 @@ export const VideoModel = {
         );
     },
 
-    // Cập nhật số comment
     async updateCommentCount(videoId, delta = 1) {
         await pool.query(
             'UPDATE videos SET luot_binh_luan = GREATEST(0, luot_binh_luan + ?) WHERE id = ?',

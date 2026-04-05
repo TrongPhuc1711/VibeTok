@@ -10,9 +10,10 @@ export const getFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 100;
-        // Truyền currentUserId để backend tính isFollowing ngay trong query
         const currentUserId = req.user?.id ?? null;
-        const data = await VideoModel.getFeed({ page, limit, currentUserId });
+        // ✅ FIX: nhận type từ query (forYou | following)
+        const type = req.query.type || 'forYou';
+        const data = await VideoModel.getFeed({ page, limit, currentUserId, type });
         res.json(data);
     } catch (e) {
         res.status(500).json({ message: 'Lỗi tải feed', error: e.message });
@@ -35,7 +36,6 @@ export const getVideoById = async (req, res) => {
     try {
         const video = await VideoModel.findById(req.params.id);
         if (!video) return res.status(404).json({ message: 'Video không tồn tại' });
-        // Tăng lượt xem (async, không chặn response)
         VideoModel.incrementViews(req.params.id).catch(() => { });
         res.json({ video });
     } catch (e) {
@@ -48,14 +48,15 @@ export const getVideosByUser = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 12;
-        const videos = await VideoModel.getByUserId(req.params.userId, { page, limit });
+        const currentUserId = req.user?.id ?? null;
+        const videos = await VideoModel.getByUserId(req.params.userId, { page, limit, currentUserId });
         res.json({ videos });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi lấy video user', error: e.message });
     }
 };
 
-// POST /api/videos/upload (cần verifyToken + uploadVideo middleware)
+// POST /api/videos/upload
 export const uploadVideo = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Vui lòng chọn file video' });
@@ -103,7 +104,7 @@ export const getComments = async (req, res) => {
     }
 };
 
-// POST /api/videos/:id/comments (cần verifyToken)
+// POST /api/videos/:id/comments
 export const postComment = async (req, res) => {
     try {
         const { content, parentId } = req.body;
@@ -128,7 +129,7 @@ export const postComment = async (req, res) => {
     }
 };
 
-// POST /api/videos/:id/like (cần verifyToken)
+// POST /api/videos/:id/like
 export const likeVideo = async (req, res) => {
     try {
         const liked = await LikeModel.like(req.user.id, req.params.id);
@@ -144,7 +145,7 @@ export const likeVideo = async (req, res) => {
     }
 };
 
-// DELETE /api/videos/:id/like (cần verifyToken)
+// DELETE /api/videos/:id/like
 export const unlikeVideo = async (req, res) => {
     try {
         await LikeModel.unlike(req.user.id, req.params.id);
@@ -154,7 +155,7 @@ export const unlikeVideo = async (req, res) => {
     }
 };
 
-// DELETE /api/videos/:id (cần verifyToken)
+// DELETE /api/videos/:id
 export const deleteVideo = async (req, res) => {
     try {
         const ok = await VideoModel.softDelete(req.params.id, req.user.id);

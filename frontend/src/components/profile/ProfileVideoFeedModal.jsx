@@ -7,16 +7,28 @@ import { isLoggedIn, getStoredUser } from '../../utils/helpers';
 
 /* ── Like localStorage helpers ── */
 const LIKES_KEY = 'vibetok_liked_videos';
+
 const getLikedSet = () => {
   try { return new Set(JSON.parse(localStorage.getItem(LIKES_KEY) || '[]')); }
   catch { return new Set(); }
 };
-const toggleLikeLocal = (id) => {
-  const s = getLikedSet();
-  const sid = String(id);
-  if (s.has(sid)) s.delete(sid); else s.add(sid);
-  localStorage.setItem(LIKES_KEY, JSON.stringify([...s]));
-  return s.has(sid);
+
+const saveLikedSet = (set) => {
+  localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+};
+
+// ✅ FIX: Ưu tiên localStorage — chỉ đồng bộ từ server nếu server nói liked=true
+const getInitialLikedState = (videoId, serverIsLiked) => {
+  // localStorage là nguồn tin cậy nhất (cập nhật ngay khi user tương tác)
+  if (getLikedSet().has(String(videoId))) return true;
+  // Nếu server nói liked, thêm vào localStorage và return true
+  if (serverIsLiked) {
+    const set = getLikedSet();
+    set.add(String(videoId));
+    saveLikedSet(set);
+    return true;
+  }
+  return false;
 };
 
 /* ── Comment Section ── */
@@ -52,7 +64,6 @@ function CommentSection({ videoId, totalComments }) {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Comments list */}
       <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a3e transparent' }}>
         {loading ? (
           <div className="flex flex-col gap-4 pt-2">
@@ -80,7 +91,6 @@ function CommentSection({ videoId, totalComments }) {
         )}
       </div>
 
-      {/* Input */}
       <div className="px-4 py-3 shrink-0 border-t border-white/6">
         {isLoggedIn() ? (
           <div className="flex items-center gap-2.5">
@@ -178,7 +188,7 @@ function CommentRow({ comment }) {
   );
 }
 
-/* ── Right Panel: Info + Actions + Comments ── */
+/* ── Right Panel ── */
 function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount, onClose }) {
   const navigate = useNavigate();
   const me = getStoredUser();
@@ -198,7 +208,7 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
       className="flex flex-col h-full"
       style={{ background: '#111118', borderLeft: '1px solid rgba(255,255,255,0.06)' }}
     >
-      {/* ── User header ── */}
+      {/* User header */}
       <div className="flex items-center gap-3 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div
           className="w-11 h-11 rounded-full flex-shrink-0 overflow-hidden cursor-pointer ring-2 ring-white/10 hover:ring-primary/50 transition-all"
@@ -233,7 +243,7 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
         )}
       </div>
 
-      {/* ── Caption & Hashtags ── */}
+      {/* Caption & Hashtags */}
       <div className="px-5 py-3.5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {captionTxt && (
           <p className="text-white/85 text-[13px] font-body leading-relaxed m-0 mb-2 line-clamp-3">
@@ -258,7 +268,7 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
         <p className="text-white/25 text-[11px] font-body mt-2">{formatTimeAgo(video?.createdAt)}</p>
       </div>
 
-      {/* ── Action buttons ── */}
+      {/* Action buttons */}
       <div className="flex items-center gap-6 px-5 py-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {/* Like */}
         <button
@@ -314,14 +324,14 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
         </div>
       </div>
 
-      {/* ── Comments label ── */}
+      {/* Comments label */}
       <div className="px-5 py-2.5 shrink-0 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
         <p className="text-white/40 text-[11px] font-body uppercase tracking-[0.5px] m-0">
           Bình luận ({formatCount(video?.comments)})
         </p>
       </div>
 
-      {/* ── Comments ── */}
+      {/* Comments */}
       <CommentSection videoId={video?.id} totalComments={video?.comments} />
     </div>
   );
@@ -346,36 +356,42 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
   const current = videos[currentIdx];
   const [aspectRatio, setAspectRatio] = useState(9 / 16);
 
-  // Like state
-  const [liked, setLiked] = useState(() => getLikedSet().has(String(current?.id)));
+  // ✅ FIX: Khởi tạo liked — ưu tiên localStorage, không ghi đè bằng server value
+  const [liked, setLiked] = useState(() => {
+    if (!current) return false;
+    return getInitialLikedState(current.id, current.isLiked);
+  });
   const [likeCount, setLikeCount] = useState(current?.likes ?? 0);
   const [likeLoading, setLikeLoading] = useState(false);
 
-  // Follow state
-  const [following, setFollowing] = useState(current?.user?.isFollowing ?? false);
+  const [followMap, setFollowMap] = useState(() => {
+    const map = {};
+    videos.forEach(v => {
+      if (v.user?.username) {
+        map[v.user.username] = v.user?.isFollowing ?? false;
+      }
+    });
+    return map;
+  });
   const [followLoading, setFollowLoading] = useState(false);
 
-  /* Sync states when video changes */
+  const following = followMap[current?.user?.username] ?? false;
+
+  // ✅ FIX: Sync like/count khi chuyển video — không ghi đè localStorage bằng server value cũ
   useEffect(() => {
     if (!current) return;
-
-    const isCurrentlyLiked = current.isLiked !== undefined 
-      ? current.isLiked 
-      : getLikedSet().has(String(current.id));
-
+    // Dùng helper mới: ưu tiên localStorage
+    const isCurrentlyLiked = getInitialLikedState(current.id, current.isLiked);
     setLiked(isCurrentlyLiked);
     setLikeCount(current.likes ?? 0);
-    setFollowing(current.user?.isFollowing ?? false);
     setProgress(0);
     setDuration(0);
-  }, [currentIdx, current]);
+  }, [currentIdx]);
 
-  /* Mount animation */
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  /* Auto-play */
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !current?.videoUrl) return;
@@ -383,7 +399,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
   }, [currentIdx]);
 
-  /* Track progress */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -394,7 +409,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     return () => { v.removeEventListener('timeupdate', onTime); v.removeEventListener('loadedmetadata', onMeta); };
   }, [dragging]);
 
-  /* Volume sync */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -402,7 +416,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     v.muted = muted;
   }, [volume, muted]);
 
-  /* Keyboard */
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Escape') handleClose();
@@ -435,7 +448,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     else { v.pause(); setPlaying(false); }
   };
 
-  /* Seek */
   const seekToRatio = useCallback((ratio) => {
     const v = videoRef.current;
     if (!v || !v.duration) return;
@@ -460,19 +472,28 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     window.addEventListener('mouseup', onUp);
   };
 
-  /* Like */
+  // ✅ FIX: handleLike — cập nhật localStorage trực tiếp thay vì dùng toggleVideoLike
   const handleLike = async () => {
     if (!isLoggedIn() || likeLoading) return;
     const was = liked;
-    const nowLiked = toggleLikeLocal(current.id);
-    
-    // Cập nhật State UI ngay lập tức
-    setLiked(nowLiked);
+
+    // Cập nhật localStorage ngay lập tức
+    const set = getLikedSet();
+    if (was) {
+      set.delete(String(current.id));
+    } else {
+      set.add(String(current.id));
+    }
+    saveLikedSet(set);
+
+    // Optimistic UI update
+    setLiked(!was);
     const newCount = was ? Math.max(0, likeCount - 1) : likeCount + 1;
     setLikeCount(newCount);
 
+    // Cập nhật object gốc để khi quay lại vẫn đúng
     if (current) {
-      current.isLiked = nowLiked;
+      current.isLiked = !was;
       current.likes = newCount;
     }
 
@@ -481,8 +502,12 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
       if (was) await unlikeVideo(current.id);
       else await likeVideo(current.id);
     } catch {
-      // Hoàn tác nếu lỗi mạng
-      toggleLikeLocal(current.id);
+      // Rollback
+      const setRollback = getLikedSet();
+      if (was) setRollback.add(String(current.id));
+      else setRollback.delete(String(current.id));
+      saveLikedSet(setRollback);
+
       setLiked(was);
       setLikeCount(likeCount);
       if (current) {
@@ -492,33 +517,27 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     } finally { setLikeLoading(false); }
   };
 
-  /* Follow */
   const handleFollowToggle = async () => {
     if (!current?.user?.username || followLoading) return;
-    const was = following;
-    const nowFollowing = !was;
+    const username = current.user.username;
+    const was = followMap[username] ?? false;
 
-    // Cập nhật State giao diện
-    setFollowing(nowFollowing);
-
+    setFollowMap(prev => ({ ...prev, [username]: !was }));
     videos.forEach(v => {
-      if (v.user?.username === current.user.username) {
+      if (v.user?.username === username) {
         if (!v.user) v.user = {};
-        v.user.isFollowing = nowFollowing;
+        v.user.isFollowing = !was;
       }
     });
 
     setFollowLoading(true);
     try {
-      if (was) await unfollowUser(current.user.username);
-      else await followUser(current.user.username);
+      if (was) await unfollowUser(username);
+      else await followUser(username);
     } catch {
-      // Hoàn tác nếu lỗi
-      setFollowing(was);
+      setFollowMap(prev => ({ ...prev, [username]: was }));
       videos.forEach(v => {
-        if (v.user?.username === current.user.username) {
-          v.user.isFollowing = was;
-        }
+        if (v.user?.username === username) v.user.isFollowing = was;
       });
     } finally { setFollowLoading(false); }
   };
@@ -540,7 +559,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         transition: 'opacity 0.26s ease',
       }}
     >
-      {/* ══ LEFT: Close + Video ══ */}
+      {/* LEFT: Close + Video */}
       <div
         className="flex flex-col items-center justify-center"
         style={{
@@ -551,7 +570,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
           position: 'relative',
         }}
       >
-        {/* Close button */}
         <button
           onClick={handleClose}
           className="absolute top-5 left-5 z-20 flex items-center gap-2 border-none cursor-pointer transition-all"
@@ -562,15 +580,11 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
           </svg>
         </button>
 
-        {/* Video navigation arrows */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2.5">
           <NavBtn direction="up" onClick={() => go(-1)} disabled={currentIdx === 0} />
           <NavBtn direction="down" onClick={() => go(1)} disabled={currentIdx === videos.length - 1} />
         </div>
 
-      
-
-        {/* Video wrapper — aspect ratio 9:16 centered */}
         <div
           className="relative overflow-hidden"
           style={{
@@ -607,7 +621,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
             </div>
           )}
 
-          {/* Pause overlay */}
           {!playing && (
             <div
               className="absolute inset-0 flex items-center justify-center cursor-pointer"
@@ -625,7 +638,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
             </div>
           )}
 
-          {/* Bottom overlay: caption */}
           <div
             className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-20 pointer-events-none"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}
@@ -636,17 +648,8 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
             >
               @{current.user?.username}
             </p>
-            {stripHashtags(current.caption || '') && (
-              <p className="text-white/80 text-[13px] font-body leading-snug m-0 line-clamp-2">
-                {stripHashtags(current.caption || '')}
-                {parseHashtags(current.caption || '').map(h => (
-                  <span key={h} className="text-white font-bold ml-1">{h}</span>
-                ))}
-              </p>
-            )}
           </div>
 
-          {/* Volume control */}
           <div
             className="absolute top-3.5 right-12 flex items-center gap-2 z-10 px-3 py-2 rounded-full opacity-0 hover:opacity-100 transition-opacity"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
@@ -661,14 +664,12 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
             />
           </div>
 
-          {/* Progress bar */}
           <div
             ref={progressBarRef}
             className="absolute bottom-0 left-0 right-0 z-10 cursor-pointer"
             style={{ height: 20, display: 'flex', alignItems: 'flex-end' }}
             onMouseDown={handleProgressMouseDown}
           >
-            {/* Tooltip */}
             <div
               className="absolute bottom-5 text-[10px] text-white font-body px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap"
               style={{
@@ -693,7 +694,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
           </div>
         </div>
 
-        {/* Dot pagination */}
         {videos.length > 1 && (
           <div
             className="absolute bottom-8 left-0 right-0 flex justify-center gap-1.5 pointer-events-none"
@@ -716,7 +716,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         )}
       </div>
 
-      {/* ══ RIGHT: Info + Comments ══ */}
+      {/* RIGHT: Info + Comments */}
       <div style={{ width: 400, minWidth: 400, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <RightPanel
           video={current}
@@ -732,7 +732,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
   );
 }
 
-/* ── Nav Button ── */
 function NavBtn({ direction, onClick, disabled }) {
   return (
     <button

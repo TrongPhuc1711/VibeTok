@@ -27,19 +27,20 @@ const toggleStorageItem = (key, id) => {
 };
 const isInStorage = (key, id) => getStorageSet(key).has(String(id));
 
-/*  Sync localStorage với trạng thái từ DB  */
-const syncLikeStorage = (videoId, isLiked) => {
+// ✅ FIX: Sync localStorage — chỉ thêm nếu isLiked=true, không xóa nếu đã có trong localStorage
+// Điều này tránh ghi đè tương tác của user bởi giá trị server cũ
+const syncLikeStorageSafe = (videoId, serverIsLiked) => {
   const set = getStorageSet(LIKES_KEY);
   const sid = String(videoId);
-  if (isLiked) {
+  // Chỉ ghi đè nếu server nói đã liked (thêm vào set)
+  // Không xóa khỏi set nếu server nói chưa liked (vì user có thể đã like sau khi server trả về)
+  if (serverIsLiked) {
     set.add(sid);
-  } else {
-    set.delete(sid);
+    localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
   }
-  localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+  // Nếu server nói chưa liked, không làm gì — giữ nguyên localStorage
 };
 
-/*  Component  */
 export default function VideoCardActions({
   video,
   onComment,
@@ -58,15 +59,13 @@ export default function VideoCardActions({
       me.username === video?.user?.username ||
       me.ten_dang_nhap === video?.user?.username);
 
-  // Ưu tiên isLiked từ DB (video.isLiked), fallback localStorage
+  // ✅ FIX: Ưu tiên localStorage (tương tác mới nhất của user)
+  // Chỉ fallback sang server value nếu localStorage không có gì
   const getInitialLiked = () => {
-    if (video?.isLiked !== undefined) {
-      // Sync localStorage theo DB để nhất quán
-      syncLikeStorage(videoId, video.isLiked);
-      return video.isLiked;
-    }
-    // Fallback localStorage nếu DB chưa trả về isLiked
-    return isInStorage(LIKES_KEY, videoId);
+    // localStorage là nguồn tin cậy nhất (cập nhật ngay khi user tương tác)
+    if (isInStorage(LIKES_KEY, videoId)) return true;
+    // Nếu localStorage không có, dùng giá trị server
+    return video?.isLiked ?? false;
   };
 
   const [liked,         setLiked]         = useState(getInitialLiked);
@@ -76,18 +75,26 @@ export default function VideoCardActions({
   const [likeLoading,   setLikeLoading]    = useState(false);
   const [followLoading, setFollowLoading]  = useState(false);
 
-  // Khi video thay đổi (scroll sang video khác), sync lại state từ DB
+  // ✅ FIX: Khi chuyển sang video mới, sync đúng — không ghi đè localStorage bằng server value cũ
   useEffect(() => {
-    if (video?.isLiked !== undefined) {
-      syncLikeStorage(videoId, video.isLiked);
-      setLiked(video.isLiked);
+    // Kiểm tra localStorage trước
+    const localLiked = isInStorage(LIKES_KEY, videoId);
+    if (localLiked) {
+      // User đã like (localStorage có) → tin tưởng localStorage
+      setLiked(true);
+    } else if (video?.isLiked) {
+      // Server nói liked → đồng bộ vào localStorage rồi set state
+      syncLikeStorageSafe(videoId, true);
+      setLiked(true);
     } else {
-      setLiked(isInStorage(LIKES_KEY, videoId));
+      // Cả 2 đều chưa liked
+      setLiked(false);
     }
+
     setBookmarked(isInStorage(BOOKMARKS_KEY, videoId));
     setLocalLikes(video?.likes ?? 0);
     setFollowing(video?.user?.isFollowing ?? false);
-  }, [videoId, video?.isLiked, video?.likes, video?.user?.isFollowing]);
+  }, [videoId]); // ✅ Chỉ phụ thuộc videoId, không phụ thuộc video?.isLiked
 
   const handleLike = async () => {
     if (!isLoggedIn()) {
@@ -101,7 +108,17 @@ export default function VideoCardActions({
     // Optimistic update
     setLiked(!was);
     setLocalLikes(n => was ? Math.max(0, n - 1) : n + 1);
-    syncLikeStorage(videoId, !was);
+
+    // Cập nhật localStorage ngay lập tức
+    if (was) {
+      const set = getStorageSet(LIKES_KEY);
+      set.delete(String(videoId));
+      localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+    } else {
+      const set = getStorageSet(LIKES_KEY);
+      set.add(String(videoId));
+      localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+    }
 
     setLikeLoading(true);
     try {
@@ -115,7 +132,15 @@ export default function VideoCardActions({
       // Rollback nếu lỗi
       setLiked(was);
       setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
-      syncLikeStorage(videoId, was);
+      if (was) {
+        const set = getStorageSet(LIKES_KEY);
+        set.add(String(videoId));
+        localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+      } else {
+        const set = getStorageSet(LIKES_KEY);
+        set.delete(String(videoId));
+        localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+      }
       showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
     } finally {
       setLikeLoading(false);
@@ -251,7 +276,6 @@ export default function VideoCardActions({
   );
 }
 
-/* ── ActionBtn ── */
 function ActionBtn({ icon, count, active, onClick, loading, inline, animateOnClick }) {
   const [bounce, setBounce] = useState(false);
 
@@ -286,7 +310,6 @@ function ActionBtn({ icon, count, active, onClick, loading, inline, animateOnCli
   );
 }
 
-/* ── MusicDisc ── */
 function MusicDisc({ track }) {
   return (
     <div title={track ? `${track.title} – ${track.artist}` : 'Nhạc nền'} className="mt-1">
