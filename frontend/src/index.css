@@ -2,9 +2,8 @@
 
 @import "tailwindcss";
 
-/* Định nghĩa lại theme của bạn theo chuẩn v4 tại đây */
+/* ── DARK MODE (default) ── */
 @theme {
-  /* Colors */
   --color-primary: #ff2d78;
   --color-accent: #ff6b35;
   --color-base: #0a0a0f;
@@ -12,7 +11,7 @@
   --color-elevated: #1a1a26;
   --color-border: #1e1e2e;
   --color-border2: #2a2a3e;
-  
+
   --color-text-primary: #ffffff;
   --color-text-secondary: #888888;
   --color-text-muted: #666666;
@@ -20,17 +19,49 @@
   --color-text-subtle: #444444;
   --color-text-dim: #333333;
 
-  /* Fonts */
   --font-display: "Syne", sans-serif;
   --font-body: "DM Sans", sans-serif;
 
-  /* Background Images */
   --background-image-brand-gradient: linear-gradient(135deg, #ff2d78, #ff6b35);
+}
+
+/* ── LIGHT MODE overrides ── */
+html[data-theme="light"] {
+  --color-base: #f0f0f5;
+  --color-surface: #ffffff;
+  --color-elevated: #f5f5fa;
+  --color-border: #e2e2ee;
+  --color-border2: #d0d0e0;
+
+  --color-text-primary: #0a0a0f;
+  --color-text-secondary: #333344;
+  --color-text-muted: #555566;
+  --color-text-faint: #777788;
+  --color-text-subtle: #999aaa;
+  --color-text-dim: #bbbbcc;
+}
+
+/* light mode: text-white → text-near-black; bg-base → bg-light */
+html[data-theme="light"] body {
+  background-color: var(--color-base);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar */
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: var(--color-border2);
 }
 
 @layer base {
   html, body, #root { @apply h-full w-full overflow-hidden; }
   body { @apply bg-base text-white font-body antialiased; }
+
+  /* Light mode text override — text-white becomes dark */
+  html[data-theme="light"] body,
+  html[data-theme="light"] .text-white {
+    color: var(--color-text-primary) !important;
+  }
+
   ::selection { background: rgba(255,45,120,.3); color:#fff; }
   :focus-visible { @apply outline outline-2 outline-offset-2 outline-primary/50 rounded; }
   input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(.4); cursor:pointer; }
@@ -53,3 +84,31 @@
 
 @keyframes fadeIn    { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 @keyframes slideRight{ from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+
+/* ── Light mode component fixes ── */
+html[data-theme="light"] {
+  /* Sidebar & nav */
+  .bg-base { background-color: #f0f0f5; }
+  .bg-surface { background-color: #ffffff; }
+  .bg-elevated { background-color: #f5f5fa; }
+  .border-border { border-color: #e2e2ee; }
+  .border-border2 { border-color: #d0d0e0; }
+
+  /* Text */
+  .text-text-secondary { color: #333344; }
+  .text-text-faint { color: #777788; }
+  .text-text-subtle { color: #999aaa; }
+  .text-text-dim { color: #bbbbcc; }
+
+  /* Video card overlay backgrounds */
+  .bg-black\/40 { background-color: rgba(255,255,255,0.4); }
+  .bg-black\/30 { background-color: rgba(255,255,255,0.3); }
+
+  /* Input backgrounds */
+  input:not([type="range"]), textarea {
+    color: #0a0a0f;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #999aaa;
+  }
+}

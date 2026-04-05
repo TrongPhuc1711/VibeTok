@@ -4,6 +4,7 @@ import { isLoggedIn, getStoredUser } from './utils/helpers';
 import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
 import { PetVibeTok } from './components/notification';
+import { ThemeProvider } from './contexts/ThemeContext';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -46,6 +47,7 @@ function AdminRoute({ children }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <ToastProvider>
         <ErrorBoundary>
@@ -84,5 +86,6 @@ export default function App() {
         {isLoggedIn() && <PetVibeTok />}
       </ToastProvider>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }

@@ -7,6 +7,7 @@ import { useValidation } from '../../hooks/useValidation';
 import { loginSchema } from '../../utils/validators';
 import { ROUTES } from '../../utils/constants';
 import { useToast } from '../../components/ui/Toast';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function LoginPage() {
     const [form, setForm] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [apiError, setApiError] = useState('');
+    const { isDark, toggleTheme } = useTheme();
 
     const set = (field) => (value) => {
         setForm(p => ({ ...p, [field]: value }));
@@ -45,27 +47,62 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-base flex font-body">
-            {/* Left branding */}
+        <div className={`min-h-screen flex font-body transition-colors duration-300
+            ${isDark ? 'bg-base' : 'bg-[#f0f0f5]'}`}>
+
+            {/* ── Theme toggle — góc trên bên trái ── */}
+            <button
+                onClick={toggleTheme}
+                title={isDark ? 'Chuyển sang Light Mode' : 'Chuyển sang Dark Mode'}
+                className={`
+                    fixed top-4 left-4 z-50 flex items-center gap-2
+                    px-3 py-2 rounded-xl border text-[12px] font-body font-medium
+                    transition-all duration-200 cursor-pointer backdrop-blur-sm
+                    ${isDark
+                        ? 'bg-[#111118]/80 border-[#2a2a3e] text-[#888] hover:border-primary/50 hover:text-primary'
+                        : 'bg-white/80 border-[#d0d0e0] text-[#555] hover:border-primary/50 hover:text-primary shadow-sm'
+                    }
+                `}
+            >
+                {isDark ? <SunIcon /> : <MoonIcon />}
+                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+
+            {/* ── Left branding ── */}
             <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+                {/* Decorative rings */}
                 {[960, 700, 500, 340, 200].map((s, i) => (
                     <div key={s} className="absolute rounded-full border border-primary/[0.1] pointer-events-none"
                         style={{ width: s, height: s, opacity: 1 - i * 0.12 }} />
                 ))}
                 <div className="relative z-10 text-center select-none">
                     <h1 className="font-display font-extrabold text-[72px] text-primary tracking-tight leading-none mb-4">VibeTok</h1>
-                    <p className="text-text-subtle text-[13px] tracking-[2.34px] mb-10 uppercase">FEEL THE VIBE</p>
-                    <p className="text-text-faint text-sm leading-relaxed max-w-[280px] mx-auto">
+                    <p className={`text-[13px] tracking-[2.34px] mb-10 uppercase
+                        ${isDark ? 'text-text-subtle' : 'text-[#999]'}`}>
+                        FEEL THE VIBE
+                    </p>
+                    <p className={`text-sm leading-relaxed max-w-[280px] mx-auto
+                        ${isDark ? 'text-text-faint' : 'text-[#777]'}`}>
                         Nền tảng chia sẻ video ngắn dành cho thế hệ sáng tạo Việt Nam
                     </p>
                 </div>
             </div>
 
-            {/* Right form */}
-            <div className="w-[480px] bg-surface border-l border-border flex flex-col justify-center px-10 py-16 gap-5 overflow-auto">
+            {/* ── Right form ── */}
+            <div className={`w-[480px] border-l flex flex-col justify-center px-10 py-16 gap-5 overflow-auto transition-colors duration-300
+                ${isDark
+                    ? 'bg-surface border-border'
+                    : 'bg-white border-[#e2e2ee] shadow-[-8px_0_32px_rgba(0,0,0,0.06)]'
+                }`}>
+
                 <div>
-                    <h2 className="font-display font-bold text-[32px] text-white mb-1.5">Chào mừng trở lại 👋</h2>
-                    <p className="text-text-faint text-sm">Đăng nhập để tiếp tục khám phá</p>
+                    <h2 className={`font-display font-bold text-[32px] mb-1.5
+                        ${isDark ? 'text-white' : 'text-[#0a0a0f]'}`}>
+                        Chào mừng trở lại 👋
+                    </h2>
+                    <p className={isDark ? 'text-text-faint text-sm' : 'text-[#777] text-sm'}>
+                        Đăng nhập để tiếp tục khám phá
+                    </p>
                 </div>
 
                 {apiError && (
@@ -86,8 +123,8 @@ export default function LoginPage() {
 
                 <div className="text-right -mt-1">
                     <button type='button'
-                            onClick={() => navigate('/forgot-password')}
-                    className="bg-transparent border-none text-primary text-sm cursor-pointer font-body hover:underline">
+                        onClick={() => navigate('/forgot-password')}
+                        className="bg-transparent border-none text-primary text-sm cursor-pointer font-body hover:underline">
                         Quên mật khẩu?
                     </button>
                 </div>
@@ -97,21 +134,27 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-text-dim text-[13px]">hoặc đăng nhập bằng</span>
-                    <div className="flex-1 h-px bg-border" />
+                    <div className={`flex-1 h-px ${isDark ? 'bg-border' : 'bg-[#e2e2ee]'}`} />
+                    <span className={`text-[13px] ${isDark ? 'text-text-dim' : 'text-[#aaa]'}`}>
+                        hoặc đăng nhập bằng
+                    </span>
+                    <div className={`flex-1 h-px ${isDark ? 'bg-border' : 'bg-[#e2e2ee]'}`} />
                 </div>
 
                 <div className="flex gap-2.5">
                     {['Facebook', 'Google'].map(p => (
                         <button key={p}
-                            className="flex-1 bg-elevated border border-border2 rounded-lg py-2.5 text-text-secondary text-[13px] font-body cursor-pointer flex items-center justify-center gap-2 hover:border-primary/40 transition-colors">
+                            className={`flex-1 rounded-lg py-2.5 text-[13px] font-body cursor-pointer flex items-center justify-center gap-2 transition-colors border
+                                ${isDark
+                                    ? 'bg-elevated border-border2 text-text-secondary hover:border-primary/40'
+                                    : 'bg-[#f5f5fa] border-[#d0d0e0] text-[#555] hover:border-primary/40'
+                                }`}>
                             {p === 'Facebook' ? '𝕗' : 'G'} {p}
                         </button>
                     ))}
                 </div>
 
-                <p className="text-center text-text-faint text-sm m-0">
+                <p className={`text-center text-sm m-0 ${isDark ? 'text-text-faint' : 'text-[#777]'}`}>
                     Chưa có tài khoản?{' '}
                     <button onClick={() => navigate(ROUTES.REGISTER)}
                         className="bg-transparent border-none text-primary text-sm font-semibold cursor-pointer">
@@ -119,7 +162,7 @@ export default function LoginPage() {
                     </button>
                 </p>
 
-                <p className="text-center text-[#2a2a3a] text-[11px] leading-relaxed m-0">
+                <p className={`text-center text-[11px] leading-relaxed m-0 ${isDark ? 'text-[#2a2a3a]' : 'text-[#ccc]'}`}>
                     Bằng cách đăng nhập, bạn đồng ý với Điều khoản &amp; Chính sách của VibeTok
                 </p>
             </div>
@@ -127,6 +170,23 @@ export default function LoginPage() {
     );
 }
 
+function SunIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+    );
+}
+function MoonIcon() {
+    return (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+    );
+}
 function EmailIcon() {
     return <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#666" strokeWidth="1.2">
         <path d="M2 4h12v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
