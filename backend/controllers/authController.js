@@ -198,7 +198,6 @@ const transporter = nodemailer.createTransport({
 
 // YÊU CẦU GỬI MÃ OTP QUÊN MẬT KHẨU
 export const forgotPassword = async (req, res) => {
-    
     try {
         const { email } = req.body;
         if (!email) {
@@ -208,26 +207,18 @@ export const forgotPassword = async (req, res) => {
             console.error('❌ Thiếu MAIL_USER hoặc MAIL_PASS trong .env');
             return res.status(500).json({ message: 'Chức năng email chưa được cấu hình trên server!' });
         }
-        // 1. Kiểm tra xem email có tồn tại trong bảng users không
+ 
+        // 1. Kiểm tra email tồn tại
         const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'Email không tồn tại trong hệ thống!' });
         }
-
-        // 2. Tạo mã OTP 6 số và tính toán thời gian hết hạn (10 phút)
+ 
+        // 2. Tạo OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = new Date(Date.now() + 10 * 60000); 
-
-        // 3. Dọn dẹp: Xóa các mã OTP cũ của email này (nếu có) để tránh lỗi trùng lặp
-        await pool.query('DELETE FROM password_resets WHERE email = ?', [email]);
-
-        // 4. Lưu OTP mới vào bảng password_resets
-        await pool.query(
-            'INSERT INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)', 
-            [email, otp, otpExpires]
-        );
-
-        // 5. Gửi email chứa mã OTP
+        const otpExpires = new Date(Date.now() + 10 * 60000);
+ 
+        // 3. Chuẩn bị email TRƯỚC khi lưu DB
         const mailOptions = {
             from: `"VibeTok" <${process.env.MAIL_USER}>`,
             to: email,
@@ -236,23 +227,34 @@ export const forgotPassword = async (req, res) => {
                 <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
                     <h2>Đặt Lại Mật Khẩu VibeTok</h2>
                     <p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã OTP dưới đây:</p>
-                    <h1 style="color: #4CAF50; letter-spacing: 5px;">${otp}</h1>
+                    <h1 style="color: #ff2d78; letter-spacing: 5px;">${otp}</h1>
                     <p>Mã này có hiệu lực trong vòng <strong>10 phút</strong>.</p>
-                    <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này để bảo vệ tài khoản.</p>
+                    <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
                 </div>
             `
         };
+ 
+        // 4. Gửi email TRƯỚC — chỉ lưu DB nếu thành công
         try {
             await transporter.sendMail(mailOptions);
             console.log('✅ Email gửi thành công tới:', email);
+ 
+            // 5. Email OK → xóa OTP cũ + lưu OTP mới
+            await pool.query('DELETE FROM password_resets WHERE email = ?', [email]);
+            await pool.query(
+                'INSERT INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)',
+                [email, otp, otpExpires]
+            );
+ 
             res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
-          } catch (emailError) {
+        } catch (emailError) {
             console.error('❌ Lỗi sendMail:', emailError.code, emailError.message);
-            return res.status(500).json({ 
-              message: 'Lỗi gửi email: ' + emailError.message 
+            // Email thất bại → KHÔNG lưu DB
+            return res.status(500).json({
+                message: 'Không thể gửi email xác nhận. OTP chưa được tạo. Vui lòng thử lại sau.'
             });
-          }
-
+        }
+ 
     } catch (error) {
         console.error('Lỗi API forgotPassword:', error);
         return res.status(500).json({ message: 'Lỗi server khi gửi email', error: error.message });

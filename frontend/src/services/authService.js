@@ -47,7 +47,7 @@ export const register = async ({ fullName, email, password }) => {
 /* POST /api/auth/logout */
 export const logout = async () => {
     try {
-        // ✅ FIX: Reset socket connection khi logout để tránh leak
+        // Reset socket connection khi logout để tránh leak
         // Import dynamic để tránh circular dependency
         const { resetSocket } = await import('../hooks/useMessages.js');
         resetSocket();
