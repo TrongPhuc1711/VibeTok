@@ -184,8 +184,8 @@ export const changePassword = async (req, res) => {
 };
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com', // Chỉ định rõ máy chủ của Google
-    port: 465,              // Bắt buộc dùng cổng 465 (Bảo mật SSL)
-    secure: true,           // true cho cổng 465
+    port: 587,              // Bắt buộc dùng cổng 465 (Bảo mật SSL)
+    secure: false,           // true cho cổng 465
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
@@ -193,10 +193,12 @@ const transporter = nodemailer.createTransport({
     tls: {
         rejectUnauthorized: false // Giúp vượt qua các rào cản SSL khắt khe trên server
     }
+    
 });
 
 // YÊU CẦU GỬI MÃ OTP QUÊN MẬT KHẨU
 export const forgotPassword = async (req, res) => {
+    
     try {
         const { email } = req.body;
         if (!email) {
@@ -240,13 +242,23 @@ export const forgotPassword = async (req, res) => {
                 </div>
             `
         };
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('✅ Email gửi thành công tới:', email);
+            res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
+          } catch (emailError) {
+            console.error('❌ Lỗi sendMail:', emailError.code, emailError.message);
+            return res.status(500).json({ 
+              message: 'Lỗi gửi email: ' + emailError.message 
+            });
+          }
 
         await transporter.sendMail(mailOptions);
-        res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
+        return res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
 
     } catch (error) {
         console.error('Lỗi API forgotPassword:', error);
-        res.status(500).json({ message: 'Lỗi server khi gửi email', error: error.message });
+        return res.status(500).json({ message: 'Lỗi server khi gửi email', error: error.message });
     }
 };
 
