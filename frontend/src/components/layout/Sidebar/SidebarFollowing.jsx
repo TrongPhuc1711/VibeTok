@@ -73,7 +73,7 @@ export default function SidebarFollowing() {
                     </div>
 
                     <span className="font-body text-[13px] text-text-secondary flex-1 text-left truncate">
-                        @{user.username}
+                        {user.fullName}
                     </span>
 
                     {/* Có thể thêm "LIVE" badge nếu backend hỗ trợ sau */}
