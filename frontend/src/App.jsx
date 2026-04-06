@@ -5,6 +5,8 @@ import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
 import { PetVibeTok } from './components/notification';
 import { ThemeProvider } from './contexts/ThemeContext';
+
+import { PWAInstallBanner, OfflineBanner, UpdateBanner } from './hooks/usePWA';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -51,6 +53,9 @@ export default function App() {
     <BrowserRouter>
       <ToastProvider>
         <ErrorBoundary>
+        <OfflineBanner />
+            <UpdateBanner />
+            {isLoggedIn() && <PWAInstallBanner />}
           <Routes>
             {/* Auth */}
             <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
