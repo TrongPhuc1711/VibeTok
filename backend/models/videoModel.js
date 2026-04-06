@@ -148,8 +148,8 @@ export const VideoModel = {
         const [result] = await pool.query(
             `INSERT INTO videos (ma_nguoi_dung, ma_am_nhac, mo_ta, duong_dan_video, anh_thu_nho,
                 thoi_luong_giay, quyen_rieng_tu, cho_phep_duet, cho_phep_stitch, vi_tri,
-                ngay_len_lich, la_ban_nhap)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                ngay_len_lich, la_ban_nhap, hoat_dong)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [userId, musicId || null, caption, videoUrl, thumbnail || null,
              duration || 0, privacy || 'public', allowDuet ? 1 : 0, allowStitch ? 1 : 0,
              location || null, scheduleAt || null, isDraft ? 1 : 0]
