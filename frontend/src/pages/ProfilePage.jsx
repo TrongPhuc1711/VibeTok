@@ -14,7 +14,7 @@ import { getSuggestedUsers } from '../services/userService';
 import { deleteVideo }       from '../services/videoService';
 import { formatCount }       from '../utils/formatters';
 import { getStoredUser }     from '../utils/helpers';
-import { BackIcon, ShareSmIcon } from '../icons/CommonIcons';
+import { ShareSmIcon }       from '../icons/CommonIcons';
 
 import VideoThumb from '../components/profile/VideoThumb';
 
@@ -31,11 +31,7 @@ export default function ProfilePage() {
   const [activeTab,    setActiveTab]    = useState('Videos');
   const [suggests,     setSuggests]     = useState([]);
   const [localVideos,  setLocalVideos]  = useState([]);
-
-  // Feed modal state
-  const [feedModalIndex, setFeedModalIndex] = useState(null); // null = đóng, number = mở
-
-  // Modals
+  const [feedModalIndex, setFeedModalIndex] = useState(null);
   const [followModal, setFollowModal] = useState(null);
   const [editOpen,    setEditOpen]    = useState(false);
 
@@ -52,13 +48,11 @@ export default function ProfilePage() {
       .catch(() => {});
   }, [target]);
 
-  /* ─── Xóa video ─── */
   const handleDeleteVideo = async (videoId) => {
     try {
       await deleteVideo(videoId);
       setLocalVideos(prev => prev.filter(v => v.id !== videoId));
       setProfile(p => ({ ...p, videos: Math.max(0, (p.videos || 0) - 1) }));
-      // Nếu đang xem video bị xóa trong modal → đóng modal
       if (feedModalIndex !== null && localVideos[feedModalIndex]?.id === videoId) {
         setFeedModalIndex(null);
       }
@@ -67,7 +61,6 @@ export default function ProfilePage() {
     }
   };
 
-  /* ─── Sau khi lưu edit profile ─── */
   const handleProfileSaved = (updatedUser) => {
     if (!updatedUser) return;
     setProfile(p => ({
@@ -79,7 +72,7 @@ export default function ProfilePage() {
     }));
   };
 
-  /* Right panel */
+  /* Desktop right panel */
   const rightPanel = (
     <div className="p-[18px]">
       <h3 className="text-text-secondary text-[13px] font-body mb-4 tracking-[0.3px]">
@@ -113,7 +106,7 @@ export default function ProfilePage() {
   const stats = [
     { label: 'Videos',    value: formatCount(displayVideoCount), clickable: false },
     { label: 'Follower',  value: formatCount(profile.followers), clickable: true, modalType: 'followers' },
-    { label: 'Đã follow', value: formatCount(profile.following), clickable: true, modalType: 'following' },
+    { label: 'Đang theo', value: formatCount(profile.following), clickable: true, modalType: 'following' },
     { label: 'Thích',     value: formatCount(profile.likes),     clickable: false },
   ];
 
@@ -121,36 +114,41 @@ export default function ProfilePage() {
     <PageLayout rightPanel={rightPanel}>
       <div className="flex-1 overflow-auto">
 
-        {/*  Back bar  */}
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border sticky top-0 bg-base z-10">
+        {/* ── Top bar ── */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border sticky top-0 bg-base z-10">
           <button
             onClick={() => navigate(-1)}
-            className="bg-transparent border-none text-text-secondary cursor-pointer flex items-center gap-2 text-sm font-body hover:text-white transition-colors"
+            className="md:flex hidden bg-transparent border-none text-text-secondary cursor-pointer items-center gap-2 text-sm font-body hover:text-white transition-colors"
           >
-            <BackIcon /> Quay lại
+            ← Quay lại
           </button>
-          <span className="text-white text-[15px] font-semibold font-body flex-1 text-center">
+          <span className="text-white text-[16px] font-semibold font-body flex-1 text-center md:text-center">
             {profile.username}
           </span>
-          <button className="bg-transparent border-none text-text-secondary cursor-pointer text-xl">
+          {/* Share button */}
+          <button className="bg-transparent border-none text-text-secondary cursor-pointer text-xl w-8 h-8 flex items-center justify-center">
             ···
           </button>
         </div>
 
-        {/* ── Cover ── */}
+        {/* ── Cover / Header ── */}
         <div className="relative">
           <div
-            className="h-[180px] relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg,#1a0a1e,#0d0d25 50%,#1a0a10)' }}
+            className="relative overflow-hidden"
+            style={{
+              height: 120,
+              background: 'linear-gradient(135deg,#1a0a1e,#0d0d25 50%,#1a0a10)',
+            }}
           >
-            <div
-              className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full"
-              style={{ background: 'radial-gradient(circle,rgba(255,45,120,.15),transparent 70%)' }}
-            />
+            <div className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full"
+              style={{ background: 'radial-gradient(circle,rgba(255,45,120,.15),transparent 70%)' }} />
           </div>
 
           {/* Avatar */}
-          <div className="absolute bottom-[-45px] left-8 w-[90px] h-[90px] rounded-full bg-brand-gradient flex items-center justify-center text-[28px] font-bold text-white border-[3px] border-base overflow-hidden">
+          <div
+            className="absolute w-[78px] h-[78px] md:w-[90px] md:h-[90px] rounded-full bg-brand-gradient flex items-center justify-center font-bold text-white border-[3px] border-base overflow-hidden"
+            style={{ bottom: -38, left: 16, fontSize: 24 }}
+          >
             {profile.anh_dai_dien ? (
               <img src={profile.anh_dai_dien} alt={profile.username} className="w-full h-full object-cover" />
             ) : (
@@ -158,21 +156,23 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Action buttons */}
-          <div className="absolute bottom-[-42px] right-8 flex gap-2 items-center">
+          {/* Action buttons top-right */}
+          <div className="absolute flex gap-2 items-center" style={{ bottom: -38 + 4, right: 12 }}>
             {!isMyProfile && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => navigate(`/messages?u=${profile.username}`)}
+                className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-white hover:border-white/30"
               >
                 Nhắn tin
-              </Button>
+              </button>
             )}
             {isMyProfile ? (
-              <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
-                Chỉnh sửa hồ sơ
-              </Button>
+              <button
+                onClick={() => setEditOpen(true)}
+                className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-white"
+              >
+                Chỉnh sửa
+              </button>
             ) : (
               <Button
                 variant={following ? 'ghost' : 'primary'}
@@ -182,64 +182,61 @@ export default function ProfilePage() {
                 {following ? 'Đang follow' : 'Follow'}
               </Button>
             )}
-            <button className="w-[34px] h-[34px] flex items-center justify-center bg-transparent border border-border2 rounded-md cursor-pointer text-text-secondary hover:border-primary/40 transition-colors">
-              <ShareSmIcon />
-            </button>
           </div>
         </div>
 
-        {/*  Profile Info  */}
-        <div className="px-8 pt-16 pb-5">
+        {/* ── Profile info ── */}
+        <div className="px-4 pt-14 pb-4">
           <div className="flex items-baseline gap-2 mb-0.5">
-            <h1 className="font-display font-bold text-[22px] text-white m-0">
+            <h1 className="font-display font-bold text-[20px] md:text-[22px] text-white m-0">
               {profile.fullName}
             </h1>
             {profile.isCreator && (
-              <span className="text-transparent bg-clip-text bg-brand-gradient text-[13px] font-semibold font-body">
+              <span className="text-transparent bg-clip-text bg-brand-gradient text-[12px] font-semibold font-body">
                 ✦Creator
               </span>
             )}
           </div>
 
-          <p className="text-text-faint text-[13px] font-body mb-3">
+          <p className="text-text-faint text-[13px] font-body mb-2">
             @{profile.username}
             {profile.location && ` · ${profile.location}`}
           </p>
 
           {profile.bio && (
-            <p className="text-text-secondary text-[13px] font-body leading-relaxed max-w-[480px] mb-4">
+            <p className="text-text-secondary text-[13px] font-body leading-relaxed max-w-[480px] mb-3">
               {profile.bio}
             </p>
           )}
 
-          {/* Stats */}
-          <div className="flex items-center gap-0">
+          {/* Stats row - horizontal scroll on mobile */}
+          <div className="flex items-center overflow-x-auto gap-0 pb-1" style={{ scrollbarWidth: 'none' }}>
             {stats.map((s, i) => (
               <React.Fragment key={s.label}>
                 <div
-                  className={`flex flex-col items-center px-5 first:pl-0 ${s.clickable ? 'cursor-pointer group' : ''}`}
+                  className={`flex flex-col items-center px-4 first:pl-0 shrink-0 ${s.clickable ? 'cursor-pointer' : ''}`}
                   onClick={s.clickable ? () => setFollowModal(s.modalType) : undefined}
                 >
-                  <p className={`font-display font-bold text-[20px] m-0 mb-0.5 transition-colors ${s.clickable ? 'text-white group-hover:text-primary' : 'text-white'}`}>
+                  <p className={`font-display font-bold text-[18px] md:text-[20px] m-0 mb-0.5 ${s.clickable ? 'text-white' : 'text-white'}`}>
                     {s.value}
                   </p>
-                  <p className={`text-xs font-body m-0 transition-colors ${s.clickable ? 'text-text-faint group-hover:text-primary/70' : 'text-text-faint'}`}>
+                  <p className="text-[11px] font-body m-0 text-text-faint whitespace-nowrap">
                     {s.label}
                   </p>
                 </div>
-                {i < stats.length - 1 && <div className="w-px h-8 bg-border2 mx-1" />}
+                {i < stats.length - 1 && <div className="w-px h-7 bg-border2 mx-1 shrink-0" />}
               </React.Fragment>
             ))}
           </div>
         </div>
 
         {/* ── Tabs ── */}
-        <div className="flex border-b border-border px-8">
+        <div className="flex border-b border-border px-2 md:px-8 sticky top-[49px] bg-base z-10">
           {TABS.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`bg-transparent border-none px-5 py-3 text-sm font-body cursor-pointer transition-all border-b-2
+              className={`flex-1 md:flex-none bg-transparent border-none px-3 md:px-5 py-3 text-[13px] font-body cursor-pointer transition-all border-b-2
                 ${activeTab === tab
                   ? 'text-white font-semibold border-primary'
                   : 'text-text-faint border-transparent hover:text-text-secondary'}`}
@@ -250,7 +247,8 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Video grid ── */}
-        <div className="p-3 grid grid-cols-5 gap-1">
+        {/* Mobile: 3 columns, Desktop: 5 columns */}
+        <div className="p-1 md:p-3 grid grid-cols-3 md:grid-cols-5 gap-0.5 md:gap-1">
           {activeTab === 'Videos' ? (
             localVideos.length > 0 ? (
               localVideos.map((v, idx) => (
@@ -263,23 +261,23 @@ export default function ProfilePage() {
                 />
               ))
             ) : (
-              <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-                <p>{isMyProfile ? 'Bạn chưa đăng video nào' : 'Người dùng chưa đăng video nào'}</p>
+              <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+                <span className="text-4xl">🎬</span>
+                <p className="text-sm">{isMyProfile ? 'Bạn chưa đăng video nào' : 'Người dùng chưa đăng video nào'}</p>
                 {isMyProfile && (
                   <Button onClick={() => navigate('/upload')}>Đăng video đầu tiên</Button>
                 )}
               </div>
             )
           ) : (
-            <div className="col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-              <p>Tính năng đang phát triển</p>
+            <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+              <p className="text-sm">Tính năng đang phát triển</p>
             </div>
           )}
         </div>
 
       </div>
 
-      {/* ── Feed Modal ── */}
       {feedModalIndex !== null && (
         <ProfileVideoFeedModal
           videos={localVideos}
@@ -288,7 +286,6 @@ export default function ProfilePage() {
         />
       )}
 
-      {/* ── Follow List Modal ── */}
       {followModal && (
         <FollowListModal
           username={profile.username}
@@ -298,7 +295,6 @@ export default function ProfilePage() {
         />
       )}
 
-      {/* ── Edit Profile Modal ── */}
       {editOpen && (
         <EditProfileModal
           profile={profile}
