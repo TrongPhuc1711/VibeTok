@@ -240,22 +240,25 @@ export default function HomePage({ feedType = 'forYou' }) {
     return (
         <PageLayout noPadding>
             {/* ── MOBILE layout ── */}
-            <div className="md:hidden flex-1 flex flex-col overflow-hidden h-full">
-                <MobileFeed
-                    videos={videos}
-                    loading={loading}
-                    hasMore={hasMore}
-                    loadMore={loadMore}
-                />
-            </div>
+            {isMobile && (
+                <div className="md:hidden flex-1 flex flex-col overflow-hidden h-full">
+                    <MobileFeed
+                        videos={videos}
+                        loading={loading}
+                        hasMore={hasMore}
+                        loadMore={loadMore}
+                    />
+                </div>
+            )}
 
             {/* ── DESKTOP layout ── */}
-            <div
-                className="hidden md:flex relative w-full h-full flex-row outline-none select-none overflow-hidden bg-base"
-                tabIndex={0}
-                onWheel={handleWheel}
-                onKeyDown={handleKeyDown}
-            >
+            {!isMobile && (
+                <div
+                    className="hidden md:flex relative w-full h-full flex-row outline-none select-none overflow-hidden bg-base"
+                    tabIndex={0}
+                    onWheel={handleWheel}
+                    onKeyDown={handleKeyDown}
+                >
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center"><BounceDots /></div>
                 ) : current ? (
@@ -309,6 +312,7 @@ export default function HomePage({ feedType = 'forYou' }) {
                     </div>
                 )}
             </div>
+            )}
         </PageLayout>
     );
 }
