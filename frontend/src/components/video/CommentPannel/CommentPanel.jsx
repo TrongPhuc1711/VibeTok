@@ -3,6 +3,7 @@ import { getComments, postComment } from '../../../services/videoService';
 import { formatCount, formatTimeAgo } from '../../../utils/formatters';
 import { isNotEmpty, hasMaxLength } from '../../../utils/validators';
 import { SendIcon } from '../../../icons/ActionIcons';
+import { getStoredUser } from '../../../utils/helpers';
 
 /**
  * CommentPanel — giống TikTok: overlay panel trượt từ phải
@@ -13,6 +14,7 @@ import { SendIcon } from '../../../icons/ActionIcons';
  *  onClose       – () => void
  */
 export default function CommentPanel({ videoId, totalComments, onClose }) {
+  const me = getStoredUser();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
@@ -153,10 +155,13 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
           >
             {/* Avatar mini */}
             <div
-              className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white"
-              style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
+              className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white overflow-hidden"
+              style={{ background: me?.anh_dai_dien ? undefined : 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
             >
-              B
+              {me?.anh_dai_dien
+                ? <img src={me.anh_dai_dien} alt="" className="w-full h-full object-cover" />
+                : (me?.initials || me?.fullName?.[0]?.toUpperCase() || 'U')
+              }
             </div>
             <input
               ref={inputRef}

@@ -37,7 +37,7 @@ function filterVideosByCategory(videos, category) {
   });
 }
 
-function VideoThumbnail({ video, style = {} }) {
+function VideoThumbnail({ video, style = {}, onClick }) {
   const [hovered, setHovered] = useState(false);
   const videoRef = useRef(null);
   const idx = (parseInt(String(video.id).slice(-2) || '0', 16) || 0) % THUMB_GRADIENTS.length;
@@ -56,6 +56,7 @@ function VideoThumbnail({ video, style = {} }) {
       style={{ ...style, background: `linear-gradient(160deg, ${g1}, ${g2})` }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
     >
       {video.thumbnail && (
         <img src={video.thumbnail} alt={video.caption}
@@ -101,6 +102,7 @@ function VideoCredit({ video }) {
 }
 
 function VideoGrid({ videos, loading }) {
+  const navigate = useNavigate();
   if (loading) {
     return (
       <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
@@ -131,7 +133,7 @@ function VideoGrid({ videos, loading }) {
     <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
       {videos.map((v, i) => (
         <div key={v.id ?? i}>
-          <VideoThumbnail video={v} style={{ aspectRatio: '9/16', width: '100%' }} />
+          <VideoThumbnail video={v} style={{ aspectRatio: '9/16', width: '100%' }} onClick={() => v.id && navigate(`/video/${v.id}`)} />
           <VideoCredit video={v} />
         </div>
       ))}

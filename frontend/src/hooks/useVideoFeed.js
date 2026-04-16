@@ -12,7 +12,6 @@ export function useVideoFeed(type = 'forYou') {
 
     const fetchVideos = useCallback(async (p = 1, reset = false) => {
         try {
-            console.log('🚀 Fetching feed type:', type);
             if (p === 1) setLoading(true); else setLoadingMore(true);
             const res = await getFeed({ type, page: p });
             const incoming = res.data.videos || [];
@@ -23,8 +22,7 @@ export function useVideoFeed(type = 'forYou') {
         } catch (e) {
             setError(e.message || 'Lỗi khi tải video');
         } finally {
-            setLoading(false);
-            setLoadingMore(false);
+            if (p === 1) setLoading(false); else setLoadingMore(false);
         }
     }, [type]);
 

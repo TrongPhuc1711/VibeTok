@@ -60,16 +60,29 @@ export default function VideoCard({
     }
   }, [volume, muted]);
 
-  /* ── auto play / pause ── */
+  /* ── auto play / pause based on isActive ── */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     if (isActive) {
-      v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      v.play().then(() => setPlaying(true)).catch(() => {});
     } else {
-      v.pause(); v.currentTime = 0; setPlaying(false); setProgress(0);
+      v.pause();
+      setPlaying(false);
     }
   }, [isActive]);
+
+  /* ── cleanup on unmount ── */
+  useEffect(() => {
+    return () => {
+      const v = videoRef.current;
+      if (v) {
+        v.pause();
+        v.src = '';
+        v.load();
+      }
+    };
+  }, []);
 
   /* ── track progress ── */
   useEffect(() => {

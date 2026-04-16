@@ -60,6 +60,12 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
     const touchStartTime = useRef(0);
     const isAnimating = useRef(false);
 
+    // Reset về đầu khi videos bị reset (khi switch feedType)
+    useEffect(() => {
+        setCurrentIdx(0);
+        setCommentVideoId(null);
+    }, [videos.length === 0 ? null : videos[0]?.id]);
+
     const go = useCallback((dir) => {
         if (isAnimating.current) return;
         const next = currentIdx + dir;
@@ -175,7 +181,13 @@ export default function HomePage({ feedType = 'forYou' }) {
     const [currentIdx,     setCurrentIdx]     = useState(0);
     const [commentVideoId, setCommentVideoId] = useState(null);
     const [aspectRatio,    setAspectRatio]    = useState(9 / 16);
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         setCurrentIdx(0);

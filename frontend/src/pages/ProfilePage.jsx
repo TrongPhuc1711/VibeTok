@@ -25,8 +25,9 @@ export default function ProfilePage() {
   const navigate     = useNavigate();
   const me           = getStoredUser();
 
-  const target = username || me?.username || me?.ten_dang_nhap || 'me';
-  const { profile, videos, loading, following, toggleFollow, setProfile } = useProfile(target);
+  const target = username || me?.username || me?.ten_dang_nhap;
+  const { profile, videos, loading, following, toggleFollow, setProfile } = useProfile(target || '');
+
 
   const [activeTab,    setActiveTab]    = useState('Videos');
   const [suggests,     setSuggests]     = useState([]);

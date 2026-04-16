@@ -37,7 +37,7 @@ export const sendMessage = async (req, res) => {
         if (!partner) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         if (partner.id === req.user.id) return res.status(400).json({ message: 'Không thể nhắn tin cho chính mình' });
 
-        const message = await MessageModel.create({
+        const newMessage = await MessageModel.create({
             senderId: req.user.id,
             receiverId: partner.id,
             content: content.trim(),
@@ -46,11 +46,11 @@ export const sendMessage = async (req, res) => {
         // Push realtime đến cả 2 phía
         const io = getIO();
         if (io) {
-            io.to(`user_${partner.id}`).emit('receive_message', message);
-            io.to(`user_${req.user.id}`).emit('message_sent', message);
+            io.to(`user_${partner.id}`).emit('receive_message', newMessage);
+            io.to(`user_${req.user.id}`).emit('message_sent', newMessage);
         }
 
-        res.status(201).json({ message });
+        res.status(201).json({ message: newMessage });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi gửi tin nhắn', error: e.message });
     }

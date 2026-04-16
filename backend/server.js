@@ -11,7 +11,7 @@ import contentRoutes from './routes/contentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import { initSocket } from './utils/socket.js';
 import messageRoutes from './routes/messageRoutes.js';
-import followListRoutes from './routes/followListRoutes.js';
+
 dotenv.config();
 
 const app = express();
@@ -35,7 +35,7 @@ app.get('/api/check-db', async (req, res) => {
 
 app.use('/api/auth',    authRoutes);
 app.use('/api/videos',  videoRoutes);
-app.use('/api/users', followListRoutes);
+
 app.use('/api/users',   userRoutes);
 app.use('/api', contentRoutes);
 app.use('/api/notifications', notificationRoutes);

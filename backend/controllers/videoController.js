@@ -2,10 +2,22 @@ import { VideoModel } from '../models/videoModel.js';
 import { CommentModel } from '../models/commentModel.js';
 import { LikeModel } from '../models/follow/followLikeModel.js';
 import { HashtagModel } from '../models/contentModel.js';
-import { UserModel } from '../models/userModel.js';
+import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
 
-// GET /api/videos/feed
+// Helper: Build sender object with all needed fields from JWT user
+const buildSender = async (reqUser) => {
+    const dbUser = await UserModel.findById(reqUser.id);
+    if (!dbUser) return { id: reqUser.id, username: reqUser.ten_dang_nhap };
+    const normalized = normalizeUser(dbUser);
+    return {
+        id: normalized.id,
+        username: normalized.username,
+        fullName: normalized.fullName,
+        anh_dai_dien: normalized.anh_dai_dien,
+        initials: normalized.initials,
+    };
+};// GET /api/videos/feed
 export const getFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;

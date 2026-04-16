@@ -4,11 +4,13 @@ import * as msgSvc from '../services/messageService';
 import { getStoredUser, getToken } from '../utils/helpers';
 import { useToast } from '../components/ui/Toast';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
+    || import.meta.env.VITE_API_URL
+    || 'http://localhost:5000';
 
 let _socket = null;
 
-// ✅ FIX: Gửi JWT token khi kết nối socket để server xác thực
+// Gửi JWT token khi kết nối socket để server xác thực
 const getSocket = () => {
     if (!_socket) {
         const token = getToken();

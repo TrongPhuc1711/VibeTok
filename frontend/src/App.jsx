@@ -3,10 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { isLoggedIn, getStoredUser } from './utils/helpers';
 import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
-import { PetVibeTok } from './components/notification';
 import { ThemeProvider } from './contexts/ThemeContext';
 
-import { PWAInstallBanner, OfflineBanner, UpdateBanner } from './hooks/usePWA';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -50,47 +48,42 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
-    <BrowserRouter>
-      <ToastProvider>
-        <ErrorBoundary>
-        <OfflineBanner />
-            <UpdateBanner />
-            {isLoggedIn() && <PWAInstallBanner />}
-          <Routes>
-            {/* Auth */}
-            <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
-            <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
-            <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
-            <Route path='/forgot-password' element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+      <BrowserRouter>
+        <ToastProvider>
+          <ErrorBoundary>
+            <Routes>
+              {/* Auth */}
+              <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
+              <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
+              <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+              <Route path='/forgot-password' element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
-            {/* Admin */}
-            <Route path="/admin/*" element={
-              <AdminRoute>
-                <AdminRoutes />
-              </AdminRoute>
-            } />
+              {/* Admin */}
+              <Route path="/admin/*" element={
+                <AdminRoute>
+                  <AdminRoutes />
+                </AdminRoute>
+              } />
 
-            {/* App */}
-            <Route path={ROUTES.HOME} element={<PrivateRoute><HomePage /></PrivateRoute>} />
-            <Route path={ROUTES.EXPLORE} element={<PrivateRoute><ExplorePage /></PrivateRoute>} />
-            <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
-            <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route path="/profile/:username" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
-            <Route path="/video/:id" element={<PrivateRoute><VideoDetailPage /></PrivateRoute>} />
+              {/* App */}
+              <Route path={ROUTES.HOME} element={<PrivateRoute><HomePage /></PrivateRoute>} />
+              <Route path={ROUTES.EXPLORE} element={<PrivateRoute><ExplorePage /></PrivateRoute>} />
+              <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
+              <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route path="/profile/:username" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
+              <Route path="/video/:id" element={<PrivateRoute><VideoDetailPage /></PrivateRoute>} />
 
-            {/* Messages */}
-            <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
-            <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+              {/* Messages */}
+              <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+              <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
 
-           
-            {/* Fallback */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </ErrorBoundary>
-        {isLoggedIn() && <PetVibeTok />}
-      </ToastProvider>
-    </BrowserRouter>
+              {/* Fallback */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </ErrorBoundary>
+        </ToastProvider>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

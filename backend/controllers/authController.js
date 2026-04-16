@@ -216,7 +216,7 @@ export const forgotPassword = async (req, res) => {
                     subject: 'Mã OTP Đặt Lại Mật Khẩu - VibeTok',
                     htmlContent: `
                         <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-                            <h2>Đặt Lại Mật Khẩu VibeTok</h2>
+                            <h2>Đặt Lại Mật Khẩu - VibeTok</h2>
                             <p>Mã OTP của bạn:</p>
                             <h1 style="color: #ff2d78; letter-spacing: 5px;">${otp}</h1>
                             <p>Có hiệu lực trong <strong>10 phút</strong>.</p>

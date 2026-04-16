@@ -22,11 +22,11 @@ const pool = mysql.createPool(dbConfig);
 
 pool.getConnection()
     .then(connection => {
-        console.log('✅ Kết nối Database VibeTok thành công!');
+        console.log('<--Kết nối Database VibeTok thành công!-->');
         connection.release();
     })
     .catch(err => {
-        console.error('❌ Lỗi kết nối Database:', err.message);
+        console.error('Lỗi kết nối Database:', err.message);
     });
 
 export default pool;
