@@ -16,20 +16,24 @@ import SidebarNav from './SidebarNav';
 import SidebarFollowing from './SidebarFollowing';
 import SidebarFooter from './SidebarFooter';
 import { useNotifications } from '../../../hooks/useNotifications';
+import { useAuth } from '../../../hooks/useAuth';
 
 /* Collapsed (icon-only) sidebar */
 function CollapsedSidebar({ onNotifClick, notifActive }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { unreadCount } = useNotifications();
+  const { isAuthenticated } = useAuth();
 
   const NAV_ITEMS = [
     { path: ROUTES.HOME, Icon: HomeIcon },
     { path: ROUTES.EXPLORE, Icon: CompassIcon },
     { path: ROUTES.FOLLOWING, Icon: UsersIcon },
-    { path: ROUTES.UPLOAD, Icon: UploadIcon },
-    { path: ROUTES.PROFILE, Icon: UserIcon },
-    { path: ROUTES.MESSAGE, Icon: MessageIcon }
+    ...(isAuthenticated ? [
+      { path: ROUTES.UPLOAD, Icon: UploadIcon },
+      { path: ROUTES.PROFILE, Icon: UserIcon },
+      { path: ROUTES.MESSAGE, Icon: MessageIcon }
+    ] : [])
   ];
 
   return (
@@ -65,29 +69,33 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
         })}
 
         {/* Bell — chỉ mình nó highlight khi notifActive */}
-        <button
-          onClick={onNotifClick}
-          className={`relative flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
-            ${notifActive ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
-        >
-          <BellIcon active={notifActive} />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 bg-primary text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-[0_0_0_1.5px_#0a0a0f]">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
+        {isAuthenticated && (
+          <button
+            onClick={onNotifClick}
+            className={`relative flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
+              ${notifActive ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
+          >
+            <BellIcon active={notifActive} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 bg-primary text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-[0_0_0_1.5px_#0a0a0f]">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        )}
       </nav>
 
       {/* Upload shortcut */}
-      <div className="p-3 border-t border-border flex justify-center">
-        <button
-          onClick={() => navigate(ROUTES.UPLOAD)}
-          className="w-11 h-11 flex items-center justify-center bg-primary/10 border border-primary/30 rounded-lg text-primary cursor-pointer hover:bg-primary/20 transition-colors"
-        >
-          <PlusIcon size={14} />
-        </button>
-      </div>
+      {isAuthenticated && (
+        <div className="p-3 border-t border-border flex justify-center">
+          <button
+            onClick={() => navigate(ROUTES.UPLOAD)}
+            className="w-11 h-11 flex items-center justify-center bg-primary/10 border border-primary/30 rounded-lg text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+          >
+            <PlusIcon size={14} />
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
@@ -95,6 +103,7 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
 /* Full sidebar */
 export default function Sidebar({ className = '', collapsed = false, onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   if (collapsed) {
     return (
@@ -120,9 +129,24 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
       <SidebarSearch />
 
       {/* Nav + Following */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto flex flex-col">
         <SidebarNav onNotifClick={onNotifClick} notifActive={notifActive} />
-        <SidebarFollowing />
+        
+        {!isAuthenticated && (
+          <div className="px-5 py-4 border-t border-border mt-1">
+            <p className="text-[14px] text-text-secondary leading-relaxed mb-4 font-body">
+              Đăng nhập để follow các tác giả, thích video và xem bình luận.
+            </p>
+            <button
+              onClick={() => navigate(ROUTES.LOGIN)}
+              className="w-full h-12 bg-transparent border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors text-[15px]"
+            >
+              Đăng nhập
+            </button>
+          </div>
+        )}
+
+        {isAuthenticated && <SidebarFollowing />}
       </div>
 
       {/* Footer */}

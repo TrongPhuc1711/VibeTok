@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getNotifications, markAsRead, markAllAsRead, getMockNotifications } from '../services/notificationService';
-import { getStoredUser } from '../utils/helpers';
+import { getStoredUser, isLoggedIn } from '../utils/helpers';
 
 // ✅ FIX: Import socket singleton từ useMessages thay vì tạo instance mới
 // Tránh duplicate WebSocket connections
@@ -13,6 +13,10 @@ export function useNotifications() {
     const me = getStoredUser();
 
     const load = useCallback(async () => {
+        if (!isLoggedIn()) {
+            setLoading(false);
+            return;
+        }
         try {
             const res = await getNotifications();
             const list = res.data.notifications || [];

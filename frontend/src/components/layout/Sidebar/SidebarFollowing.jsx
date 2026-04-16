@@ -12,7 +12,7 @@ export default function SidebarFollowing() {
     useEffect(() => {
         if (!me?.username) { setLoading(false); return; }
 
-        // ✅ Lấy danh sách người mình đang follow từ API thật
+        //Lấy danh sách người mình đang follow từ API thật
         api.get(`/users/${me.username}/following`, { params: { limit: 10 } })
             .then(res => setUsers(res.data.users || []))
             .catch(() => setUsers([]))

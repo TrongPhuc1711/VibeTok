@@ -13,33 +13,33 @@ import VideoDetailOverlay from '../video/VideoDetailOverlay/VideoDetailOverlay';
 
 /* ── Tab & chip config ── */
 const TABS = [
-  { key: 'all',     label: 'Tất cả hoạt động' },
-  { key: 'like',    label: 'Thích'             },
-  { key: 'comment', label: 'Bình luận'          },
+  { key: 'all', label: 'Tất cả hoạt động' },
+  { key: 'like', label: 'Thích' },
+  { key: 'comment', label: 'Bình luận' },
 ];
 
 const FILTER_CHIPS = [
   { key: 'mention', label: 'Lượt nhắc đến và lượt gắn thẻ' },
-  { key: 'follow',  label: 'Follower'                        },
+  { key: 'follow', label: 'Follower' },
 ];
 
 const TYPE_CONFIG = {
-  like:    { BadgeIcon: LikeNotifIcon,    color: '#ff2d78', bg: '#ff2d7820', text: 'đã thích video của bạn'            },
-  follow:  { BadgeIcon: FollowNotifIcon,  color: '#3b82f6', bg: '#3b82f620', text: 'đã bắt đầu theo dõi bạn'           },
-  comment: { BadgeIcon: CommentNotifIcon, color: '#10b981', bg: '#10b98120', text: 'đã bình luận về video của bạn'      },
-  mention: { BadgeIcon: MentionNotifIcon, color: '#f59e0b', bg: '#f59e0b20', text: 'đã nhắc đến bạn trong bình luận'   },
-  duet:    { BadgeIcon: DuetNotifIcon,    color: '#7c3aed', bg: '#7c3aed20', text: 'đã tạo duet với video của bạn'      },
+  like: { BadgeIcon: LikeNotifIcon, color: '#ff2d78', bg: '#ff2d7820', text: 'đã thích video của bạn' },
+  follow: { BadgeIcon: FollowNotifIcon, color: '#3b82f6', bg: '#3b82f620', text: 'đã bắt đầu theo dõi bạn' },
+  comment: { BadgeIcon: CommentNotifIcon, color: '#10b981', bg: '#10b98120', text: 'đã bình luận về video của bạn' },
+  mention: { BadgeIcon: MentionNotifIcon, color: '#f59e0b', bg: '#f59e0b20', text: 'đã nhắc đến bạn trong bình luận' },
+  duet: { BadgeIcon: DuetNotifIcon, color: '#7c3aed', bg: '#7c3aed20', text: 'đã tạo duet với video của bạn' },
 };
 
 /* ── Group by time ── */
 function groupNotifications(list) {
-  const now  = Date.now();
-  const DAY  = 86_400_000;
+  const now = Date.now();
+  const DAY = 86_400_000;
   const WEEK = 7 * DAY;
   const groups = { new: [], week: [], older: [] };
   list.forEach(n => {
     const diff = now - new Date(n.createdAt).getTime();
-    if (diff < DAY)  groups.new.push(n);
+    if (diff < DAY) groups.new.push(n);
     else if (diff < WEEK) groups.week.push(n);
     else groups.older.push(n);
   });
@@ -49,18 +49,18 @@ function groupNotifications(list) {
 /* ── Main component ── */
 export default function NotificationPagePanel({ onClose }) {
   const { notifications, unreadCount, loading, markAllRead, markRead } = useNotifications();
-  const [activeTab,  setActiveTab]  = useState('all');
+  const [activeTab, setActiveTab] = useState('all');
   const [activeChip, setActiveChip] = useState(null);
 
   /* Video overlay state */
-  const [overlayVideoId,    setOverlayVideoId]    = useState(null);
-  const [overlayHighlight,  setOverlayHighlight]  = useState(false);
+  const [overlayVideoId, setOverlayVideoId] = useState(null);
+  const [overlayHighlight, setOverlayHighlight] = useState(false);
 
   const filtered = notifications.filter(n => {
-    if (activeTab === 'like'    && n.type !== 'like')    return false;
+    if (activeTab === 'like' && n.type !== 'like') return false;
     if (activeTab === 'comment' && n.type !== 'comment') return false;
     if (activeChip === 'mention' && n.type !== 'mention') return false;
-    if (activeChip === 'follow'  && n.type !== 'follow')  return false;
+    if (activeChip === 'follow' && n.type !== 'follow') return false;
     return true;
   });
 
@@ -100,7 +100,7 @@ export default function NotificationPagePanel({ onClose }) {
             >
               {tab.label}
               {activeTab === tab.key && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t"/>
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t" />
               )}
             </button>
           ))}
@@ -134,14 +134,14 @@ export default function NotificationPagePanel({ onClose }) {
         {/* List */}
         <div className="flex-1 overflow-auto">
           {loading ? (
-            <LoadingSkeleton/>
+            <LoadingSkeleton />
           ) : filtered.length === 0 ? (
-            <EmptyState/>
+            <EmptyState />
           ) : (
             <>
-              {groups.new.length   > 0 && <NotifGroup label="Mới"      items={groups.new}   onItemClick={handleItem}/>}
-              {groups.week.length  > 0 && <NotifGroup label="Tuần này" items={groups.week}  onItemClick={handleItem}/>}
-              {groups.older.length > 0 && <NotifGroup label="Trước đây" items={groups.older} onItemClick={handleItem}/>}
+              {groups.new.length > 0 && <NotifGroup label="Mới" items={groups.new} onItemClick={handleItem} />}
+              {groups.week.length > 0 && <NotifGroup label="Tuần này" items={groups.week} onItemClick={handleItem} />}
+              {groups.older.length > 0 && <NotifGroup label="Trước đây" items={groups.older} onItemClick={handleItem} />}
             </>
           )}
         </div>
@@ -167,7 +167,7 @@ function NotifGroup({ label, items, onItemClick }) {
       <p className="px-5 pt-4 pb-1.5 text-[13px] font-semibold font-body text-text-secondary">
         {label}
       </p>
-      {items.map(n => <NotifItem key={n.id} notif={n} onClick={onItemClick}/>)}
+      {items.map(n => <NotifItem key={n.id} notif={n} onClick={onItemClick} />)}
     </div>
   );
 }
@@ -193,14 +193,14 @@ function NotifItem({ notif, onClick }) {
           style={{ background: notif.actor?.color || 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
         >
           {notif.actor?.anh_dai_dien
-            ? <img src={notif.actor.anh_dai_dien} alt="" className="w-full h-full object-cover"/>
+            ? <img src={notif.actor.anh_dai_dien} alt="" className="w-full h-full object-cover" />
             : (notif.actor?.initials || 'U')}
         </div>
         <div
           className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-base"
           style={{ background: cfg.bg }}
         >
-          <BadgeIcon color={cfg.color}/>
+          <BadgeIcon color={cfg.color} />
         </div>
       </div>
 
@@ -222,28 +222,28 @@ function NotifItem({ notif, onClick }) {
 
       {/* Video thumb — hiển thị nút xem nếu có videoId */}
       {hasVideo ? (
-  <div className="relative w-10 h-14 rounded shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0a0a1a] border border-border2 group">
-    {notif.meta?.videoThumb ? (
-      <img
-        src={notif.meta.videoThumb}
-        alt=""
-        className="w-full h-full object-cover"
-        onError={(e) => { e.target.style.display = 'none'; }}
-      />
-    ) : (
-      <div className="w-full h-full flex items-center justify-center text-[13px]">🎬</div>
-    )}
-    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-        <path d="M5 3l14 9-14 9V3z"/>
-      </svg>
-    </div>
-  </div>
-) : null}
+        <div className="relative w-10 h-14 rounded shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0a0a1a] border border-border2 group">
+          {notif.meta?.videoThumb ? (
+            <img
+              src={notif.meta.videoThumb}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[13px]">🎬</div>
+          )}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+              <path d="M5 3l14 9-14 9V3z" />
+            </svg>
+          </div>
+        </div>
+      ) : null}
 
       {/* Unread dot */}
       {!notif.read && (
-        <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-start mt-2"/>
+        <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-start mt-2" />
       )}
     </div>
   );
@@ -253,12 +253,12 @@ function NotifItem({ notif, onClick }) {
 function LoadingSkeleton() {
   return (
     <div className="px-5 py-4 flex flex-col gap-4">
-      {[1,2,3,4].map(i => (
+      {[1, 2, 3, 4].map(i => (
         <div key={i} className="flex items-center gap-3 animate-pulse">
-          <div className="w-12 h-12 rounded-full bg-border2 shrink-0"/>
+          <div className="w-12 h-12 rounded-full bg-border2 shrink-0" />
           <div className="flex-1 flex flex-col gap-2">
-            <div className="h-3 rounded-full bg-border2 w-3/4"/>
-            <div className="h-2.5 rounded-full bg-border2/60 w-1/2"/>
+            <div className="h-3 rounded-full bg-border2 w-3/4" />
+            <div className="h-2.5 rounded-full bg-border2/60 w-1/2" />
           </div>
         </div>
       ))}

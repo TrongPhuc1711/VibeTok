@@ -66,13 +66,13 @@ export default function App() {
               } />
 
               {/* App */}
-              <Route path={ROUTES.HOME} element={<PrivateRoute><HomePage /></PrivateRoute>} />
-              <Route path={ROUTES.EXPLORE} element={<PrivateRoute><ExplorePage /></PrivateRoute>} />
+              <Route path={ROUTES.HOME} element={<HomePage />} />
+              <Route path={ROUTES.EXPLORE} element={<ExplorePage />} />
               <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
               <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-              <Route path="/profile/:username" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route path="/profile/:username" element={<ProfilePage />} />
               <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
-              <Route path="/video/:id" element={<PrivateRoute><VideoDetailPage /></PrivateRoute>} />
+              <Route path="/video/:id" element={<VideoDetailPage />} />
 
               {/* Messages */}
               <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />

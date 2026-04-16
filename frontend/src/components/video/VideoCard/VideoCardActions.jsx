@@ -90,6 +90,15 @@ export default function VideoCardActions({
     }
   };
 
+  const handleComment = () => {
+    if (!isLoggedIn()) {
+      showWarning('Cần đăng nhập', 'Đăng nhập để bình luận');
+      navigate('/login');
+      return;
+    }
+    onComment?.(video?.id);
+  };
+
   const handleBookmark = () => {
     if (!isLoggedIn()) {
       showWarning('Cần đăng nhập', 'Đăng nhập để lưu video');
@@ -192,7 +201,7 @@ export default function VideoCardActions({
       <ActionBtn
         icon={<CommentIcon />}
         count={formatCount(video?.comments)}
-        onClick={() => onComment?.(video?.id)}
+        onClick={handleComment}
         inline={inline}
       />
 

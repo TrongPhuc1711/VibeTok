@@ -13,7 +13,8 @@ import { useProfile }        from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
 import { deleteVideo }       from '../services/videoService';
 import { formatCount }       from '../utils/formatters';
-import { getStoredUser }     from '../utils/helpers';
+import { isLoggedIn, getStoredUser }     from '../utils/helpers';
+import { useToast } from '../components/ui/Toast';
 import { ShareSmIcon }       from '../icons/CommonIcons';
 
 import VideoThumb from '../components/profile/VideoThumb';
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const { username } = useParams();
   const navigate     = useNavigate();
   const me           = getStoredUser();
+  const { showWarning } = useToast();
 
   const target = username || me?.username || me?.ten_dang_nhap;
   const { profile, videos, loading, following, toggleFollow, setProfile } = useProfile(target || '');
@@ -161,7 +163,14 @@ export default function ProfilePage() {
           <div className="absolute flex gap-2 items-center" style={{ bottom: -38 + 4, right: 12 }}>
             {!isMyProfile && (
               <button
-                onClick={() => navigate(`/messages?u=${profile.username}`)}
+                onClick={() => {
+                  if (!isLoggedIn()) {
+                    showWarning('Cần đăng nhập', 'Đăng nhập để nhắn tin');
+                    navigate('/login');
+                    return;
+                  }
+                  navigate(`/messages?u=${profile.username}`);
+                }}
                 className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-white hover:border-white/30"
               >
                 Nhắn tin
@@ -178,7 +187,14 @@ export default function ProfilePage() {
               <Button
                 variant={following ? 'ghost' : 'primary'}
                 size="sm"
-                onClick={toggleFollow}
+                onClick={() => {
+                  if (!isLoggedIn()) {
+                    showWarning('Cần đăng nhập', 'Đăng nhập để theo dõi');
+                    navigate('/login');
+                    return;
+                  }
+                  toggleFollow();
+                }}
               >
                 {following ? 'Đang follow' : 'Follow'}
               </Button>

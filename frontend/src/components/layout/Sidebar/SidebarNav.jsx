@@ -3,23 +3,28 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 import { NotificationBadge } from '../../notification';
 import { useUnreadMessageCount } from '../../../hooks/useMessages';
+import { useAuth } from '../../../hooks/useAuth';
 import {
 HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon, MessageIcon
 } from '../../../icons/NavIcons';
-
-const NAV = [
-  { path: ROUTES.HOME, label: 'Đề xuất', Icon: HomeIcon },
-  { path: ROUTES.EXPLORE, label: 'Khám phá', Icon: CompassIcon },
-  { path: ROUTES.FOLLOWING, label: 'Đã follow', Icon: UsersIcon },
-  { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
-  { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
-  { path: ROUTES.MESSAGE, label: 'Tin nhắn', Icon: MessageIcon },
-];
 
 export default function SidebarNav({ onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { unreadCount } = useUnreadMessageCount();
+  const { isAuthenticated } = useAuth();
+
+  const NAV = [
+    { path: ROUTES.HOME, label: 'Đề xuất', Icon: HomeIcon },
+    { path: ROUTES.EXPLORE, label: 'Khám phá', Icon: CompassIcon },
+    { path: ROUTES.FOLLOWING, label: 'Đã follow', Icon: UsersIcon },
+    ...(isAuthenticated ? [
+      { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
+      { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
+      { path: ROUTES.MESSAGE, label: 'Tin nhắn', Icon: MessageIcon },
+    ] : []),
+  ];
+
   return (
     <nav className="py-1.5">
       {NAV.map(({ path, label, Icon }) => {
@@ -57,7 +62,9 @@ export default function SidebarNav({ onNotifClick, notifActive = false }) {
       })}
 
       {/* Notification item */}
-      <NotificationBadge onNotifClick={onNotifClick} notifActive={notifActive} />
+      {isAuthenticated && (
+        <NotificationBadge onNotifClick={onNotifClick} notifActive={notifActive} />
+      )}
     </nav>
   );
 }
