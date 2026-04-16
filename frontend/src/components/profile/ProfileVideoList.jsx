@@ -1,20 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../utils/formatters';
 import { likeVideo, unlikeVideo, getComments, postComment } from '../../services/videoService';
 import { isLoggedIn } from '../../utils/helpers';
-
-/* ── Like helpers (localStorage) ── */
-const LIKES_KEY = 'vibetok_liked_videos';
-const getLikedSet = () => {
-  try { return new Set(JSON.parse(localStorage.getItem(LIKES_KEY) || '[]')); }
-  catch { return new Set(); }
-};
-const toggleLikeLocal = (id) => {
-  const s = getLikedSet(); const sid = String(id);
-  if (s.has(sid)) s.delete(sid); else s.add(sid);
-  localStorage.setItem(LIKES_KEY, JSON.stringify([...s]));
-  return s.has(sid);
-};
 
 /* ── Comment Panel (inline) ── */
 function InlineCommentPanel({ videoId, onClose }) {
@@ -24,7 +11,7 @@ function InlineCommentPanel({ videoId, onClose }) {
   const [sending,  setSending]      = useState(false);
   const inputRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     getComments(videoId)
       .then(r => setComments(r.data.comments || []))
       .catch(() => setComments([]))
@@ -110,7 +97,7 @@ function InlineCommentPanel({ videoId, onClose }) {
 
 /* ── Single Video Row ── */
 function VideoRow({ video, isOwner, onDelete }) {
-  const [liked,        setLiked]        = useState(() => getLikedSet().has(String(video.id)));
+  const [liked,        setLiked]        = useState(Boolean(video.isLiked));
   const [likeCount,    setLikeCount]    = useState(video.likes ?? 0);
   const [likeLoading,  setLikeLoading]  = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -119,6 +106,12 @@ function VideoRow({ video, isOwner, onDelete }) {
   const [confirmDel,   setConfirmDel]   = useState(false);
   const videoRef = useRef(null);
 
+  // Đồng bộ state khi dữ liệu video từ props thay đổi
+  useEffect(() => {
+    setLiked(Boolean(video.isLiked));
+    setLikeCount(video.likes ?? 0);
+  }, [video.isLiked, video.likes]);
+
   const hashtags   = parseHashtags(video.caption ?? '');
   const captionTxt = stripHashtags(video.caption ?? '');
   const hue        = (parseInt(String(video.id).slice(-3), 16) || 0) % 360;
@@ -126,17 +119,22 @@ function VideoRow({ video, isOwner, onDelete }) {
   const handleLike = async () => {
     if (!isLoggedIn() || likeLoading) return;
     const was = liked;
-    const nowLiked = toggleLikeLocal(video.id);
-    setLiked(nowLiked);
+    
+    // Cập nhật giao diện ngay lập tức (Optimistic UI)
+    setLiked(!was);
     setLikeCount(n => was ? Math.max(0, n - 1) : n + 1);
     setLikeLoading(true);
+    
     try {
       if (was) await unlikeVideo(video.id);
       else     await likeVideo(video.id);
     } catch {
+      // Hoàn tác nếu gọi API thất bại
       setLiked(was);
       setLikeCount(n => was ? n + 1 : Math.max(0, n - 1));
-    } finally { setLikeLoading(false); }
+    } finally { 
+      setLikeLoading(false); 
+    }
   };
 
   const togglePlay = () => {
