@@ -8,7 +8,7 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
 
   return (
     <div className="flex h-screen overflow-hidden bg-base">
-      {/* ── Desktop sidebar ── */}
+      {/* Desktop sidebar */}
       <div className="hidden md:block md:shrink-0">
         <Sidebar
           collapsed={notifOpen}
@@ -17,7 +17,7 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
         />
       </div>
 
-      {/* ── Desktop notification panel ── */}
+      {/* Desktop notification panel  */}
       {notifOpen && (
         <div className="hidden md:flex">
           <NotificationPagePanel onClose={() => setNotifOpen(false)} />

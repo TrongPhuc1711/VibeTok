@@ -19,7 +19,7 @@ export const isVideoLiked = (videoId) => getLikedSet().has(String(videoId));
 
 export const toggleVideoLike = (videoId) => {
   const set = getLikedSet();
-  const id  = String(videoId);
+  const id = String(videoId);
   if (set.has(id)) set.delete(id); else set.add(id);
   saveLikedSet(set);
   return set.has(id);
@@ -34,13 +34,15 @@ export default function VideoCard({
   onBookmark,
   onRatio,
   hideActions = false,
-  hideTopBar  = false,
+  hideTopBar = false,
 }) {
-  const videoRef       = useRef(null);
+  const videoRef = useRef(null);
   const progressBarRef = useRef(null);
+  // Dùng ref để track trạng thái play dự định — tránh race condition
+  const intendedPlayRef = useRef(false);
 
-  const [playing,  setPlaying]  = useState(false);
-  const [progress, setProgress] = useState(0);       // 0–100
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [dragging, setDragging] = useState(false);
 
@@ -52,32 +54,50 @@ export default function VideoCard({
 
   const hue = (parseInt(video?.id?.slice(-3) ?? '0', 16) || 0) % 360;
 
-  /* ── sync volume / mute ── */
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.volume = volume;
-      videoRef.current.muted  = muted;
-    }
-  }, [volume, muted]);
-
-  /* ── auto play / pause based on isActive ── */
+  /* ── sync volume / mute (chỉ sync properties, KHÔNG trigger play) ── */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+    // Chỉ sync khi đang active để tránh ghi đè muted=true do cleanup
     if (isActive) {
-      v.play().then(() => setPlaying(true)).catch(() => {});
+      v.volume = volume;
+      v.muted = muted;
+    }
+  }, [volume, muted, isActive]);
+
+  /* ── auto play / pause dựa vào isActive ── */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    if (isActive) {
+      intendedPlayRef.current = true;
+      v.volume = volume;
+      v.muted = muted;
+      const p = v.play();
+      if (p !== undefined) {
+        p.then(() => { if (intendedPlayRef.current) setPlaying(true); })
+          .catch(() => setPlaying(false));
+      }
     } else {
+      intendedPlayRef.current = false;
+      // Mute TRƯỚC (cắt âm tức thì) rồi mới pause
+      v.muted = true;
       v.pause();
+      v.currentTime = 0;
       setPlaying(false);
     }
-  }, [isActive]);
+  }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── cleanup on unmount ── */
+  /* ── cleanup on unmount: mute → pause → xóa src ── */
   useEffect(() => {
     return () => {
+      intendedPlayRef.current = false;
       const v = videoRef.current;
       if (v) {
+        v.muted = true;       // cắt tiếng tức thì trước khi pause
         v.pause();
+        v.currentTime = 0;
         v.src = '';
         v.load();
       }
@@ -98,10 +118,10 @@ export default function VideoCard({
       setDuration(v.duration || 0);
     };
 
-    v.addEventListener('timeupdate',      onTimeUpdate);
-    v.addEventListener('loadedmetadata',  onLoadedMetadata);
+    v.addEventListener('timeupdate', onTimeUpdate);
+    v.addEventListener('loadedmetadata', onLoadedMetadata);
     return () => {
-      v.removeEventListener('timeupdate',     onTimeUpdate);
+      v.removeEventListener('timeupdate', onTimeUpdate);
       v.removeEventListener('loadedmetadata', onLoadedMetadata);
     };
   }, [dragging]);
@@ -115,12 +135,21 @@ export default function VideoCard({
     setDuration(v?.duration || 0);
   };
 
-  /* ── toggle play ── */
+  /* ── toggle play — mute ngay nếu pause ── */
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) { v.play().then(() => setPlaying(true)).catch(() => {}); }
-    else          { v.pause(); setPlaying(false); }
+    if (v.paused) {
+      intendedPlayRef.current = true;
+      v.muted = muted; // khôi phục muted state gốc trước khi play
+      v.volume = volume;
+      v.play().then(() => setPlaying(true)).catch(() => { });
+    } else {
+      intendedPlayRef.current = false;
+      v.muted = true; // cắt tiếng tức thì
+      v.pause();
+      setPlaying(false);
+    }
   };
 
   /* ── seek helpers ── */
@@ -150,13 +179,13 @@ export default function VideoCard({
     seekToRatio(getRatioFromEvent(e));
 
     const onMove = (ev) => seekToRatio(getRatioFromEvent(ev));
-    const onUp   = ()   => {
+    const onUp = () => {
       setDragging(false);
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup',   onUp);
+      window.removeEventListener('mouseup', onUp);
     };
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup',   onUp);
+    window.addEventListener('mouseup', onUp);
   };
 
   /* ── volume ── */
@@ -190,7 +219,7 @@ export default function VideoCard({
   return (
     <div
       className="relative w-full h-full overflow-hidden group"
-      style={{ background: `linear-gradient(135deg,hsl(${hue},25%,7%),hsl(${(hue+60)%360},18%,4%))` }}
+      style={{ background: `linear-gradient(135deg,hsl(${hue},25%,7%),hsl(${(hue + 60) % 360},18%,4%))` }}
     >
       {/* ── Video element ── */}
       {video?.videoUrl ? (
@@ -205,8 +234,8 @@ export default function VideoCard({
         />
       ) : (
         <>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 10%,rgba(255,107,53,.18),transparent 55%)' }}/>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 80% 85%,rgba(255,45,120,.14),transparent 55%)' }}/>
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 10%,rgba(255,107,53,.18),transparent 55%)' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 80% 85%,rgba(255,45,120,.14),transparent 55%)' }} />
         </>
       )}
 
@@ -301,7 +330,7 @@ export default function VideoCard({
             }}
           />
 
-          {/* Thumb — visible on hover / drag */}
+          {/* Thumb */}
           <div
             style={{
               position: 'absolute',

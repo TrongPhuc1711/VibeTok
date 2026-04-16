@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout/PageLayout';
 import { useInbox, useChat } from '../hooks/useMessages';
-import { formatTimeAgo, formatCount } from '../utils/formatters';
+import { formatTimeAgo } from '../utils/formatters';
 import { getStoredUser } from '../utils/helpers';
 import { SpinnerCenter } from '../components/ui/Spinner';
 
@@ -310,7 +310,7 @@ export default function MessagesPage() {
                             <SpinnerCenter size="sm" />
                         ) : filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 gap-2 text-[#333]">
-                                <span className="text-2xl">💬</span>
+                                
                                 <p className="text-[12px] font-body text-center px-4">
                                     {searchQuery ? `Không tìm thấy "${searchQuery}"` : 'Chưa có tin nhắn nào.\nNhắn tin cho ai đó từ trang hồ sơ của họ!'}
                                 </p>
@@ -364,14 +364,6 @@ function BackChevron() {
     return (
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M10 13L5 8L10 3" />
-        </svg>
-    );
-}
-function InfoIcon() {
-    return (
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
-            <circle cx="7.5" cy="7.5" r="6" />
-            <path d="M7.5 5v.5M7.5 7v4" />
         </svg>
     );
 }

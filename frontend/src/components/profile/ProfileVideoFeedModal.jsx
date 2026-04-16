@@ -691,7 +691,7 @@ function NavBtn({ direction, onClick, disabled }) {
                 background: 'rgba(255,255,255,0.1)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.12)',
-                color: 'white', display: 'flex', alignItemDs: 'center', justifyContent: 'center',
+                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.2 : 1,
                 transition: 'all 0.15s ease',

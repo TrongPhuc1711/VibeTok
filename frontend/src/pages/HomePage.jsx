@@ -1,10 +1,20 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import PageLayout    from '../components/layout/PageLayout';
-import VideoCard     from '../components/video/VideoCard/VideoCard';
+import PageLayout from '../components/layout/PageLayout';
+import VideoCard from '../components/video/VideoCard/VideoCard';
 import VideoCardActions from '../components/video/VideoCard/VideoCardActions';
-import CommentPanel  from '../components/video/CommentPannel/CommentPanel';
+import CommentPanel from '../components/video/CommentPannel/CommentPanel';
 import { BounceDots } from '../components/ui/Spinner';
 import { useVideoFeed } from '../hooks/useVideoFeed';
+
+/* ── Hàm helper: dừng TẤT CẢ video đang phát trên trang ── */
+const stopAllVideos = () => {
+    document.querySelectorAll('video').forEach((v) => {
+        if (!v.paused) {
+            v.muted = true;   // cắt âm tức thì
+            v.pause();
+        }
+    });
+};
 
 /* ── Nav arrow button (desktop only) ── */
 function NavArrow({ direction, onClick, disabled }) {
@@ -36,9 +46,9 @@ function useVideoContainerSize(aspectRatio, showComments) {
             const SIDEBAR_W = 240;
             const ACTIONS_W = 80;
             const COMMENT_W = showComments ? 420 : 0;
-            const NAV_W     = 60;
-            const PADDING   = 48;
-            const availW = window.innerWidth  - SIDEBAR_W - ACTIONS_W - COMMENT_W - NAV_W - PADDING;
+            const NAV_W = 60;
+            const PADDING = 48;
+            const availW = window.innerWidth - SIDEBAR_W - ACTIONS_W - COMMENT_W - NAV_W - PADDING;
             const availH = window.innerHeight * 0.88;
             let w = availH * aspectRatio;
             let h = availH;
@@ -60,17 +70,19 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
     const touchStartTime = useRef(0);
     const isAnimating = useRef(false);
 
-    // Reset về đầu khi videos bị reset (khi switch feedType)
     useEffect(() => {
         setCurrentIdx(0);
         setCommentVideoId(null);
-    }, [videos.length === 0 ? null : videos[0]?.id]);
+    }, [videos.length === 0 ? null : videos[0]?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const go = useCallback((dir) => {
         if (isAnimating.current) return;
         const next = currentIdx + dir;
         if (dir > 0 && next >= videos.length - 3 && hasMore) loadMore();
         if (next >= 0 && next < videos.length) {
+            // ── QUAN TRỌNG: dừng tất cả video TRƯỚC khi đổi index ──
+            stopAllVideos();
+
             isAnimating.current = true;
             setCurrentIdx(next);
             setCommentVideoId(null);
@@ -86,7 +98,6 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
     const handleTouchEnd = (e) => {
         const dy = touchStartY.current - e.changedTouches[0].clientY;
         const dt = Date.now() - touchStartTime.current;
-        // Swipe: at least 60px in under 400ms
         if (Math.abs(dy) > 60 && dt < 400) {
             go(dy > 0 ? 1 : -1);
         }
@@ -129,7 +140,7 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
                 />
             </div>
 
-            {/* Right-side actions - mobile style */}
+            {/* Right-side actions */}
             <div
                 className="absolute right-3 flex flex-col items-center gap-4 z-20"
                 style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))' }}
@@ -142,7 +153,6 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
                 />
             </div>
 
-            {/* Comment panel on mobile */}
             {commentVideoId && (
                 <CommentPanel
                     videoId={commentVideoId}
@@ -165,7 +175,7 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
                                 height: 5,
                                 borderRadius: 2.5,
                                 background: realIdx === currentIdx ? '#ff2d78' : 'rgba(255,255,255,0.3)',
-                                transition: 'all 0.2s ease',
+                                cursor: 'pointer', transition: 'all 0.2s ease',
                             }} />
                         );
                     })}
@@ -178,9 +188,9 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
 /* ── Main component ── */
 export default function HomePage({ feedType = 'forYou' }) {
     const { videos, loading, loadMore, hasMore } = useVideoFeed(feedType);
-    const [currentIdx,     setCurrentIdx]     = useState(0);
+    const [currentIdx, setCurrentIdx] = useState(0);
     const [commentVideoId, setCommentVideoId] = useState(null);
-    const [aspectRatio,    setAspectRatio]    = useState(9 / 16);
+    const [aspectRatio, setAspectRatio] = useState(9 / 16);
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
     useEffect(() => {
@@ -194,14 +204,17 @@ export default function HomePage({ feedType = 'forYou' }) {
         setCommentVideoId(null);
     }, [feedType]);
 
-    const current       = videos[currentIdx];
-    const showComments  = commentVideoId !== null;
+    const current = videos[currentIdx];
+    const showComments = commentVideoId !== null;
     const containerSize = useVideoContainerSize(aspectRatio, showComments);
 
     const go = useCallback((dir) => {
         const next = currentIdx + dir;
         if (dir > 0 && next >= videos.length - 3 && hasMore) loadMore();
         if (next >= 0 && next < videos.length) {
+            // ── QUAN TRỌNG: dừng tất cả video TRƯỚC khi đổi index ──
+            stopAllVideos();
+
             setCurrentIdx(next);
             setCommentVideoId(prev => prev !== null ? videos[next]?.id ?? null : null);
             setAspectRatio(9 / 16);
@@ -217,7 +230,7 @@ export default function HomePage({ feedType = 'forYou' }) {
         const tag = e.target?.tagName?.toLowerCase();
         if (tag === 'input' || tag === 'textarea') return;
         if (e.key === 'ArrowDown' || e.key === 'j') go(1);
-        if (e.key === 'ArrowUp'   || e.key === 'k') go(-1);
+        if (e.key === 'ArrowUp' || e.key === 'k') go(-1);
     }, [go]);
 
     const emptyMessage = feedType === 'following'
@@ -273,8 +286,8 @@ export default function HomePage({ feedType = 'forYou' }) {
                                 </div>
                             </div>
                             <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-[350]">
-                                <NavArrow direction="up"   onClick={() => go(-1)} disabled={currentIdx === 0} />
-                                <NavArrow direction="down" onClick={() => go(1)}  disabled={currentIdx === videos.length - 1} />
+                                <NavArrow direction="up" onClick={() => go(-1)} disabled={currentIdx === 0} />
+                                <NavArrow direction="down" onClick={() => go(1)} disabled={currentIdx === videos.length - 1} />
                             </div>
                         </div>
                         {showComments && (
@@ -292,7 +305,6 @@ export default function HomePage({ feedType = 'forYou' }) {
                     </>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center gap-3 font-body text-white/25">
-                        
                         <p style={{ fontSize: 14 }}>{emptyMessage}</p>
                     </div>
                 )}
