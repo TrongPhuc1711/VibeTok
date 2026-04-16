@@ -10,19 +10,26 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
 
 let _socket = null;
 
-// Gửi JWT token khi kết nối socket để server xác thực
-const getSocket = () => {
+const initSocket = () => {
     if (!_socket) {
         const token = getToken();
         _socket = io(SOCKET_URL, {
             transports: ['websocket', 'polling'],
             auth: token ? { token } : {},
         });
+        _socket.on('connect_error', (err) => {
+            console.warn('[Socket] Connection error:', err.message);
+        });
     }
     return _socket;
 };
 
-// Reset socket khi logout (gọi hàm này trong authService.logout)
+// THÊM: export getSharedSocket để useNotifications dùng chung
+export const getSharedSocket = initSocket;
+
+// Alias cũ vẫn hoạt động (backward compat)
+const getSocket = initSocket;
+
 export const resetSocket = () => {
     if (_socket) {
         _socket.disconnect();
@@ -33,7 +40,7 @@ export const resetSocket = () => {
 export function useInbox() {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const me    = getStoredUser();
+    const me = getStoredUser();
     const toast = useToast();
 
     const load = useCallback(async () => {
@@ -56,15 +63,15 @@ export function useInbox() {
             setConversations(prev => {
                 const idx = prev.findIndex(c => c.partnerId === msg.senderId);
                 const updated = {
-                    partnerId:       msg.senderId,
+                    partnerId: msg.senderId,
                     partnerUsername: msg.sender.username,
                     partnerFullname: msg.sender.fullName,
-                    partnerAvatar:   msg.sender.avatar,
+                    partnerAvatar: msg.sender.avatar,
                     partnerInitials: msg.sender.initials,
-                    lastContent:     msg.content,
-                    lastSenderId:    msg.senderId,
-                    lastTime:        msg.createdAt,
-                    unreadCount:     (idx >= 0 ? (prev[idx].unreadCount || 0) : 0) + 1,
+                    lastContent: msg.content,
+                    lastSenderId: msg.senderId,
+                    lastTime: msg.createdAt,
+                    unreadCount: (idx >= 0 ? (prev[idx].unreadCount || 0) : 0) + 1,
                 };
                 if (idx >= 0) {
                     const copy = [...prev];
@@ -81,10 +88,10 @@ export function useInbox() {
             if (!isInChat && toast?.showMessageToast) {
                 toast.showMessageToast({
                     senderName: msg.sender.fullName || msg.sender.username,
-                    content:    msg.content,
-                    avatar:     msg.sender.avatar || msg.sender.anh_dai_dien || null,
-                    initials:   msg.sender.initials || (msg.sender.fullName || 'U').charAt(0).toUpperCase(),
-                    username:   msg.sender.username,
+                    content: msg.content,
+                    avatar: msg.sender.avatar || msg.sender.anh_dai_dien || null,
+                    initials: msg.sender.initials || (msg.sender.fullName || 'U').charAt(0).toUpperCase(),
+                    username: msg.sender.username,
                 });
             }
         };
@@ -93,15 +100,15 @@ export function useInbox() {
             setConversations(prev => {
                 const idx = prev.findIndex(c => c.partnerId === msg.receiverId);
                 const updated = {
-                    partnerId:       msg.receiverId,
+                    partnerId: msg.receiverId,
                     partnerUsername: prev[idx]?.partnerUsername || '',
                     partnerFullname: prev[idx]?.partnerFullname || '',
-                    partnerAvatar:   prev[idx]?.partnerAvatar   || null,
+                    partnerAvatar: prev[idx]?.partnerAvatar || null,
                     partnerInitials: prev[idx]?.partnerInitials || 'U',
-                    lastContent:     msg.content,
-                    lastSenderId:    msg.senderId,
-                    lastTime:        msg.createdAt,
-                    unreadCount:     0,
+                    lastContent: msg.content,
+                    lastSenderId: msg.senderId,
+                    lastTime: msg.createdAt,
+                    unreadCount: 0,
                 };
                 if (idx >= 0) {
                     const copy = [...prev];
@@ -124,11 +131,11 @@ export function useInbox() {
 }
 
 export function useChat(partnerUsername) {
-    const [messages,  setMessages]  = useState([]);
-    const [loading,   setLoading]   = useState(true);
-    const [sending,   setSending]   = useState(false);
-    const [isTyping,  setIsTyping]  = useState(false);
-    const [error,     setError]     = useState('');
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const [error, setError] = useState('');
     const typingTimer = useRef(null);
     const me = getStoredUser();
 
@@ -136,10 +143,11 @@ export function useChat(partnerUsername) {
         if (!partnerUsername) return;
         setLoading(true);
         setMessages([]);
+        setError('');
         msgSvc.getConversation(partnerUsername)
             .then(res => {
                 setMessages(res.data.messages || []);
-                msgSvc.markRead(partnerUsername).catch(() => {});
+                msgSvc.markRead(partnerUsername).catch(() => { });
             })
             .catch(() => setMessages([]))
             .finally(() => setLoading(false));
@@ -153,43 +161,47 @@ export function useChat(partnerUsername) {
         const onReceive = (msg) => {
             if (msg.sender.username === partnerUsername) {
                 setMessages(prev => [...prev, msg]);
-                msgSvc.markRead(partnerUsername).catch(() => {});
+                msgSvc.markRead(partnerUsername).catch(() => { });
             }
         };
 
-        const onTyping      = ({ fromUserId }) => {
-            if (fromUserId !== me.id) {
+        const onTyping = ({ fromUserId }) => {
+            if (String(fromUserId) !== String(me.id)) {
                 setIsTyping(true);
                 clearTimeout(typingTimer.current);
                 typingTimer.current = setTimeout(() => setIsTyping(false), 3000);
             }
         };
-        const onStopTyping  = () => setIsTyping(false);
+        const onStopTyping = () => {
+            clearTimeout(typingTimer.current);
+            setIsTyping(false);
+        };
 
-        socket.on('receive_message',         onReceive);
-        socket.on('partner_typing',          onTyping);
-        socket.on('partner_stopped_typing',  onStopTyping);
+        socket.on('receive_message', onReceive);
+        socket.on('partner_typing', onTyping);
+        socket.on('partner_stopped_typing', onStopTyping);
 
         return () => {
-            socket.off('receive_message',        onReceive);
-            socket.off('partner_typing',         onTyping);
+            socket.off('receive_message', onReceive);
+            socket.off('partner_typing', onTyping);
             socket.off('partner_stopped_typing', onStopTyping);
+            clearTimeout(typingTimer.current);
         };
     }, [me?.id, partnerUsername]);
 
     const send = useCallback(async (content) => {
         if (!content.trim() || sending) return;
-        const tempId  = `temp_${Date.now()}`;
+        const tempId = `temp_${Date.now()}`;
         const tempMsg = {
-            id:         tempId,
-            senderId:   String(me?.id),
-            content:    content.trim(),
-            createdAt:  new Date().toISOString(),
-            pending:    true,
+            id: tempId,
+            senderId: String(me?.id),
+            content: content.trim(),
+            createdAt: new Date().toISOString(),
+            pending: true,
             sender: {
                 username: me?.username,
                 fullName: me?.fullName,
-                avatar:   me?.anh_dai_dien,
+                avatar: me?.anh_dai_dien,
                 initials: me?.initials || 'U',
             },
         };
@@ -210,7 +222,7 @@ export function useChat(partnerUsername) {
         }
     }, [partnerUsername, sending, me]);
 
-    const emitTyping     = useCallback((partnerId) => {
+    const emitTyping = useCallback((partnerId) => {
         getSocket().emit('typing_start', { toUserId: partnerId, fromUserId: me?.id });
     }, [me?.id]);
 
@@ -229,26 +241,26 @@ export function useUnreadMessageCount() {
         try {
             const count = await msgSvc.getUnreadCount();
             setUnreadCount(count || 0);
-        } catch {}
+        } catch { }
     }, []);
 
     useEffect(() => {
         if (!me?.id) return;
         loadCount();
 
-        const socket    = getSocket();
+        const socket = getSocket();
         const onReceive = (msg) => {
-            if (msg.senderId !== String(me.id)) {
+            if (String(msg.senderId) !== String(me.id)) {
                 setUnreadCount(prev => prev + 1);
             }
         };
-        const onRead    = () => loadCount();
+        const onRead = () => loadCount();
 
         socket.on('receive_message', onReceive);
-        socket.on('messages_read',   onRead);
+        socket.on('messages_read', onRead);
         return () => {
             socket.off('receive_message', onReceive);
-            socket.off('messages_read',   onRead);
+            socket.off('messages_read', onRead);
         };
     }, [me?.id, loadCount]);
 

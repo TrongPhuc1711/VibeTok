@@ -5,19 +5,8 @@ import { HashtagModel } from '../models/contentModel.js';
 import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
 
-// Helper: Build sender object with all needed fields from JWT user
-const buildSender = async (reqUser) => {
-    const dbUser = await UserModel.findById(reqUser.id);
-    if (!dbUser) return { id: reqUser.id, username: reqUser.ten_dang_nhap };
-    const normalized = normalizeUser(dbUser);
-    return {
-        id: normalized.id,
-        username: normalized.username,
-        fullName: normalized.fullName,
-        anh_dai_dien: normalized.anh_dai_dien,
-        initials: normalized.initials,
-    };
-};// GET /api/videos/feed
+
+// GET /api/videos/feed
 export const getFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -55,7 +44,6 @@ export const getVideoById = async (req, res) => {
 };
 
 // GET /api/videos/user/:userId
-// ✅ FIX: Truyền currentUserId để DB tính is_liked, is_following đúng cho từng user
 export const getVideosByUser = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -131,8 +119,10 @@ export const postComment = async (req, res) => {
         await VideoModel.updateCommentCount(req.params.id, 1);
 
         const video = await VideoModel.findById(req.params.id);
-        if (video && video.userId !== String(req.user.id)) {
-            await triggerNotification(video.userId, req.user, 'comment', video.id, comment.id);
+        if (video && String(video.userId) !== String(req.user.id)) {
+            const senderDb = await UserModel.findById(req.user.id);
+            const sender   = senderDb ? normalizeUser(senderDb) : req.user;
+            await triggerNotification(video.userId, sender, 'comment', video.id, comment.id);
         }
 
         res.status(201).json({ message: 'Bình luận thành công!', comment });
@@ -147,8 +137,10 @@ export const likeVideo = async (req, res) => {
         const liked = await LikeModel.like(req.user.id, req.params.id);
         if (liked) {
             const video = await VideoModel.findById(req.params.id);
-            if (video && video.userId !== String(req.user.id)) {
-                await triggerNotification(video.userId, req.user, 'like', video.id);
+            if (video && String(video.userId) !== String(req.user.id)) {
+                const senderDb = await UserModel.findById(req.user.id);
+                const sender   = senderDb ? normalizeUser(senderDb) : req.user;
+                await triggerNotification(video.userId, sender, 'like', video.id);
             }
         }
         res.json({ message: liked ? 'Đã thích' : 'Đã thích rồi', liked: true });

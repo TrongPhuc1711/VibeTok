@@ -9,11 +9,11 @@ import { ArrowDownIcon, ArrowUpIcon } from '../../icons/NavIcons';
 // ── Comment Section ──
 function CommentSection({ videoId, totalComments }) {
     const me = getStoredUser();
-    const [comments, setComments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [input, setInput] = useState('');
+    const [comments,   setComments]   = useState([]);
+    const [loading,    setLoading]    = useState(true);
+    const [input,      setInput]      = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const listRef = useRef(null);
+    const listRef  = useRef(null);
     const inputRef = useRef(null);
 
     useEffect(() => {
@@ -33,7 +33,7 @@ function CommentSection({ videoId, totalComments }) {
             setComments(p => [r.data.comment, ...p]);
             setInput('');
             listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch { /* ignore */ }
+        } catch (e) { console.error(e); }
         finally { setSubmitting(false); }
     };
 
@@ -121,7 +121,7 @@ function CommentRow({ comment }) {
                 style={{
                     background: comment.anh_dai_dien
                         ? undefined
-                        : `hsl(${(comment.username?.charCodeAt(0) || 0) * 37 % 360},55%,38%)`,
+                        : `hsl(${(comment.username?.charCodeAt(0) || 0) * 37 % 360},60%,40%)`,
                 }}
             >
                 {comment.anh_dai_dien
@@ -138,9 +138,6 @@ function CommentRow({ comment }) {
                     <button className="bg-transparent border-none text-white/30 text-[11px] font-body cursor-pointer hover:text-white/60 p-0 transition-colors">
                         Trả lời
                     </button>
-                    {comment.replies > 0 && (
-                        <span className="text-white/25 text-[11px] font-body">— {comment.replies} trả lời</span>
-                    )}
                 </div>
             </div>
             <button
@@ -201,7 +198,6 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                     </p>
                     <p className="text-white/40 text-[12px] font-body m-0">@{user.username}</p>
                 </div>
-                {/* ✅ Chỉ hiển thị nút Follow/Đang Follow nếu không phải video của chính mình */}
                 {!isOwnVideo && me && (
                     <button
                         onClick={onFollowToggle}
@@ -317,29 +313,28 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     const videoRef = useRef(null);
 
     const [currentIdx, setCurrentIdx] = useState(initialIndex);
-    const [visible, setVisible] = useState(false);
-    const [playing, setPlaying] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [dragging, setDragging] = useState(false);
-    const [muted, setMuted] = useState(false);
-    const [volume, setVolume] = useState(0.7);
+    const [visible,    setVisible]    = useState(false);
+    const [playing,    setPlaying]    = useState(false);
+    const [progress,   setProgress]   = useState(0);
+    const [duration,   setDuration]   = useState(0);
+    const [dragging,   setDragging]   = useState(false);
+    const [muted,      setMuted]      = useState(false);
+    const [volume,     setVolume]     = useState(0.7);
     const progressBarRef = useRef(null);
 
     const current = videos[currentIdx];
     const [aspectRatio, setAspectRatio] = useState(9 / 16);
 
-    //Lấy isLiked từ server (video.isLiked), KHÔNG dùng localStorage
-    const [liked, setLiked] = useState(() => Boolean(current?.isLiked));
+    // ✅ FIX: liked lấy từ DB (video.isLiked), không localStorage
+    const [liked,     setLiked]     = useState(() => Boolean(current?.isLiked));
     const [likeCount, setLikeCount] = useState(current?.likes ?? 0);
     const [likeLoading, setLikeLoading] = useState(false);
 
-    // Lấy isFollowing từ server (video.user.isFollowing), KHÔNG dùng localStorage
-    const [followMap, setFollowMap] = useState(() => {
+    // ✅ FIX: followMap lấy từ DB (video.user.isFollowing)
+    const [followMap,      setFollowMap]      = useState(() => {
         const map = {};
         videos.forEach(v => {
             if (v.user?.username) {
-                // Ưu tiên isFollowing từ server (DB)
                 map[v.user.username] = Boolean(v.user?.isFollowing);
             }
         });
@@ -349,10 +344,9 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
 
     const following = followMap[current?.user?.username] ?? false;
 
-    // Khi chuyển video, lấy trạng thái trực tiếp từ video object (đã có từ DB)
+    // ✅ FIX: Khi chuyển video, lấy trạng thái từ video object (DB), không localStorage
     useEffect(() => {
         if (!current) return;
-        // Dùng giá trị từ server, không đọc localStorage
         setLiked(Boolean(current.isLiked));
         setLikeCount(current.likes ?? 0);
         setProgress(0);
@@ -443,16 +437,14 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         window.addEventListener('mouseup', onUp);
     };
 
-    // handleLike chỉ cập nhật state UI + gọi API, không đụng localStorage
+    // ✅ FIX: handleLike - optimistic UI, không localStorage
     const handleLike = async () => {
         if (!isLoggedIn() || likeLoading) return;
         const was = liked;
-
-        // Optimistic UI
         setLiked(!was);
         setLikeCount(n => was ? Math.max(0, n - 1) : n + 1);
 
-        // Đồng bộ lại video object để khi chuyển video vẫn đúng
+        // Sync lại video object để khi chuyển video vẫn đúng
         if (current) {
             current.isLiked = !was;
             current.likes = was ? Math.max(0, (current.likes || 0) - 1) : (current.likes || 0) + 1;
@@ -461,9 +453,8 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         setLikeLoading(true);
         try {
             if (was) await unlikeVideo(current.id);
-            else await likeVideo(current.id);
+            else     await likeVideo(current.id);
         } catch {
-            // Rollback nếu lỗi
             setLiked(was);
             setLikeCount(n => was ? n + 1 : Math.max(0, n - 1));
             if (current) {
@@ -475,15 +466,12 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         }
     };
 
-    //handleFollowToggle cập nhật followMap + video object, không đụng localStorage
+    // ✅ FIX: handleFollowToggle - không localStorage
     const handleFollowToggle = async () => {
         if (!current?.user?.username || followLoading) return;
         const username = current.user.username;
         const was = followMap[username] ?? false;
-
-        // Optimistic UI
         setFollowMap(prev => ({ ...prev, [username]: !was }));
-        // Đồng bộ lại tất cả video cùng username
         videos.forEach(v => {
             if (v.user?.username === username) {
                 if (!v.user) v.user = {};
@@ -494,9 +482,8 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         setFollowLoading(true);
         try {
             if (was) await unfollowUser(username);
-            else await followUser(username);
+            else     await followUser(username);
         } catch {
-            // Rollback
             setFollowMap(prev => ({ ...prev, [username]: was }));
             videos.forEach(v => {
                 if (v.user?.username === username) v.user.isFollowing = was;
@@ -704,17 +691,13 @@ function NavBtn({ direction, onClick, disabled }) {
                 background: 'rgba(255,255,255,0.1)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.12)',
-                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', display: 'flex', alignItemDs: 'center', justifyContent: 'center',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.2 : 1,
                 transition: 'all 0.15s ease',
             }}
         >
-            {direction === 'up' ? (
-                <ArrowUpIcon />
-            ) : (
-                <ArrowDownIcon/>
-            )}
+            {direction === 'up' ? <ArrowUpIcon /> : <ArrowDownIcon />}
         </button>
     );
 }

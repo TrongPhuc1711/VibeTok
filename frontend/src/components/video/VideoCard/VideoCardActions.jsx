@@ -10,36 +10,20 @@ import {
 import { PlusIcon } from '../../../icons/NavIcons';
 import { useToast } from '../../ui/Toast';
 
-/* localStorage helpers */
-const LIKES_KEY     = 'vibetok_liked_videos';
+/* Bookmark vẫn dùng localStorage vì chưa có API */
 const BOOKMARKS_KEY = 'vibetok_bookmarked_videos';
-
-const getStorageSet = (key) => {
-  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); }
+const getBookmarkSet = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]')); }
   catch { return new Set(); }
 };
-const toggleStorageItem = (key, id) => {
-  const set = getStorageSet(key);
+const toggleBookmarkLocal = (id) => {
+  const set = getBookmarkSet();
   const sid = String(id);
   if (set.has(sid)) set.delete(sid); else set.add(sid);
-  localStorage.setItem(key, JSON.stringify([...set]));
+  localStorage.setItem(BOOKMARKS_KEY, JSON.stringify([...set]));
   return set.has(sid);
 };
-const isInStorage = (key, id) => getStorageSet(key).has(String(id));
-
-// ✅ FIX: Sync localStorage — chỉ thêm nếu isLiked=true, không xóa nếu đã có trong localStorage
-// Điều này tránh ghi đè tương tác của user bởi giá trị server cũ
-const syncLikeStorageSafe = (videoId, serverIsLiked) => {
-  const set = getStorageSet(LIKES_KEY);
-  const sid = String(videoId);
-  // Chỉ ghi đè nếu server nói đã liked (thêm vào set)
-  // Không xóa khỏi set nếu server nói chưa liked (vì user có thể đã like sau khi server trả về)
-  if (serverIsLiked) {
-    set.add(sid);
-    localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
-  }
-  // Nếu server nói chưa liked, không làm gì — giữ nguyên localStorage
-};
+const isBookmarked = (id) => getBookmarkSet().has(String(id));
 
 export default function VideoCardActions({
   video,
@@ -59,42 +43,21 @@ export default function VideoCardActions({
       me.username === video?.user?.username ||
       me.ten_dang_nhap === video?.user?.username);
 
-  // ✅ FIX: Ưu tiên localStorage (tương tác mới nhất của user)
-  // Chỉ fallback sang server value nếu localStorage không có gì
-  const getInitialLiked = () => {
-    // localStorage là nguồn tin cậy nhất (cập nhật ngay khi user tương tác)
-    if (isInStorage(LIKES_KEY, videoId)) return true;
-    // Nếu localStorage không có, dùng giá trị server
-    return video?.isLiked ?? false;
-  };
+  // ✅ FIX: Lấy isLiked trực tiếp từ DB (video.isLiked), không dùng localStorage
+  const [liked, setLiked] = useState(Boolean(video?.isLiked));
+  const [bookmarked, setBookmarked] = useState(() => isBookmarked(videoId));
+  const [following, setFollowing] = useState(Boolean(video?.user?.isFollowing));
+  const [localLikes, setLocalLikes] = useState(video?.likes ?? 0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
-  const [liked,         setLiked]         = useState(getInitialLiked);
-  const [bookmarked,    setBookmarked]     = useState(() => isInStorage(BOOKMARKS_KEY, videoId));
-  const [following,     setFollowing]      = useState(video?.user?.isFollowing ?? false);
-  const [localLikes,    setLocalLikes]     = useState(video?.likes ?? 0);
-  const [likeLoading,   setLikeLoading]    = useState(false);
-  const [followLoading, setFollowLoading]  = useState(false);
-
-  // ✅ FIX: Khi chuyển sang video mới, sync đúng — không ghi đè localStorage bằng server value cũ
+  // ✅ FIX: Khi chuyển video mới, sync từ DB không qua localStorage
   useEffect(() => {
-    // Kiểm tra localStorage trước
-    const localLiked = isInStorage(LIKES_KEY, videoId);
-    if (localLiked) {
-      // User đã like (localStorage có) → tin tưởng localStorage
-      setLiked(true);
-    } else if (video?.isLiked) {
-      // Server nói liked → đồng bộ vào localStorage rồi set state
-      syncLikeStorageSafe(videoId, true);
-      setLiked(true);
-    } else {
-      // Cả 2 đều chưa liked
-      setLiked(false);
-    }
-
-    setBookmarked(isInStorage(BOOKMARKS_KEY, videoId));
+    setLiked(Boolean(video?.isLiked));
     setLocalLikes(video?.likes ?? 0);
-    setFollowing(video?.user?.isFollowing ?? false);
-  }, [videoId]); // ✅ Chỉ phụ thuộc videoId, không phụ thuộc video?.isLiked
+    setFollowing(Boolean(video?.user?.isFollowing));
+    setBookmarked(isBookmarked(videoId));
+  }, [videoId, video?.isLiked, video?.user?.isFollowing]);
 
   const handleLike = async () => {
     if (!isLoggedIn()) {
@@ -105,20 +68,9 @@ export default function VideoCardActions({
     if (likeLoading) return;
 
     const was = liked;
-    // Optimistic update
+    // Optimistic update UI ngay
     setLiked(!was);
     setLocalLikes(n => was ? Math.max(0, n - 1) : n + 1);
-
-    // Cập nhật localStorage ngay lập tức
-    if (was) {
-      const set = getStorageSet(LIKES_KEY);
-      set.delete(String(videoId));
-      localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
-    } else {
-      const set = getStorageSet(LIKES_KEY);
-      set.add(String(videoId));
-      localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
-    }
 
     setLikeLoading(true);
     try {
@@ -129,18 +81,9 @@ export default function VideoCardActions({
         showSuccess('Đã thích video ❤️', `Video của @${video?.user?.username}`);
       }
     } catch {
-      // Rollback nếu lỗi
+      // Rollback nếu API lỗi
       setLiked(was);
       setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
-      if (was) {
-        const set = getStorageSet(LIKES_KEY);
-        set.add(String(videoId));
-        localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
-      } else {
-        const set = getStorageSet(LIKES_KEY);
-        set.delete(String(videoId));
-        localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
-      }
       showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
     } finally {
       setLikeLoading(false);
@@ -153,7 +96,7 @@ export default function VideoCardActions({
       navigate('/login');
       return;
     }
-    const now = toggleStorageItem(BOOKMARKS_KEY, videoId);
+    const now = toggleBookmarkLocal(videoId);
     setBookmarked(now);
     onBookmark?.(videoId, now);
     if (now) {

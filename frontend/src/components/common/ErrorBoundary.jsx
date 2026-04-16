@@ -37,7 +37,7 @@ export default class ErrorBoundary extends React.Component {
           </button>
 
           {/*Nút hiện chi tiết lỗi */}
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
              <details className="mt-8 text-left bg-surface border border-border2 p-4 rounded-lg w-full max-w-2xl overflow-auto text-xs text-red-400">
                <summary className="cursor-pointer mb-2 font-semibold">Xem chi tiết lỗi (Chỉ hiển thị ở chế độ Dev)</summary>
                <pre>{this.state.error?.toString()}</pre>

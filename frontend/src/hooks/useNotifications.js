@@ -1,23 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { io } from 'socket.io-client';
+import { useState, useEffect, useCallback } from 'react';
 import { getNotifications, markAsRead, markAllAsRead, getMockNotifications } from '../services/notificationService';
 import { getStoredUser } from '../utils/helpers';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-// Singleton socket (dùng chung với useMessages)
-let _socket = null;
-const getSocket = () => {
-    if (!_socket) {
-        _socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
-    }
-    return _socket;
-};
+// ✅ FIX: Import socket singleton từ useMessages thay vì tạo instance mới
+// Tránh duplicate WebSocket connections
+import { getSharedSocket } from './useMessages';
 
 export function useNotifications() {
     const [notifications, setNotifications] = useState([]);
-    const [unreadCount,   setUnreadCount]   = useState(0);
-    const [loading,       setLoading]       = useState(true);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [loading, setLoading] = useState(true);
     const me = getStoredUser();
 
     const load = useCallback(async () => {
@@ -27,7 +19,6 @@ export function useNotifications() {
             setNotifications(list);
             setUnreadCount(list.filter(n => !n.read).length);
         } catch {
-            // Fallback mock khi API lỗi hoặc chưa đăng nhập
             const mock = getMockNotifications();
             setNotifications(mock);
             setUnreadCount(mock.filter(n => !n.read).length);
@@ -36,21 +27,18 @@ export function useNotifications() {
         }
     }, []);
 
-    // Fetch lần đầu
     useEffect(() => {
         load();
     }, [load]);
 
-    // Kết nối Socket.io để nhận thông báo real-time
     useEffect(() => {
         if (!me?.id) return;
 
-        const socket = getSocket();
+        const socket = getSharedSocket();
         socket.emit('join_user_room', me.id);
 
         const onNewNotification = (notif) => {
             setNotifications(prev => {
-                // Tránh trùng lặp
                 if (prev.some(n => n.id === notif.id)) return prev;
                 return [notif, ...prev];
             });

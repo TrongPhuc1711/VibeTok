@@ -13,13 +13,13 @@ export const getNotifications = async ({ page = 1, limit = 20 } = {}) => {
 export const markAsRead = async (notificationId) => {
   try {
     await api.patch(`/notifications/${notificationId}/read`);
-  } catch {}
+  } catch (e) { console.error(e); }
 };
 
 export const markAllAsRead = async () => {
   try {
     await api.patch('/notifications/read-all');
-  } catch {}
+  } catch (e) { console.error(e); }
 };
 
 export const getMessages = async () => {
