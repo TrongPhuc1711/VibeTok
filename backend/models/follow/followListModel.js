@@ -3,15 +3,17 @@ import pool from "../../config/db.js";
 export const FollowListModel = {
 
     // Lấy danh sách người follow user này
-    async getFollowers(userId, { page = 1, limit = 20 } = {}) {
+    // hideAdmins: true nếu người xem không phải admin
+    async getFollowers(userId, { page = 1, limit = 20 } = {}, hideAdmins = true) {
         const offset = (page - 1) * limit;
+        const adminFilter = hideAdmins ? "AND u.vai_tro != 'admin'" : '';
 
         const [rows] = await pool.query(
             `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
                     u.so_nguoi_theo_doi, u.vai_tro
              FROM follows f
              JOIN users u ON f.ma_nguoi_theo_doi = u.id
-             WHERE f.ma_nguoi_duoc_theo_doi = ? AND u.hoat_dong = 1
+             WHERE f.ma_nguoi_duoc_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}
              ORDER BY f.ngay_tao DESC
              LIMIT ? OFFSET ?`,
             [userId, limit, offset]
@@ -21,7 +23,7 @@ export const FollowListModel = {
             `SELECT COUNT(*) AS total
              FROM follows f
              JOIN users u ON f.ma_nguoi_theo_doi = u.id
-             WHERE f.ma_nguoi_duoc_theo_doi = ? AND u.hoat_dong = 1`,
+             WHERE f.ma_nguoi_duoc_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}`,
             [userId]
         );
 
@@ -29,15 +31,16 @@ export const FollowListModel = {
     },
 
     // Lấy danh sách user này đang follow
-    async getFollowing(userId, { page = 1, limit = 20 } = {}) {
+    async getFollowing(userId, { page = 1, limit = 20 } = {}, hideAdmins = true) {
         const offset = (page - 1) * limit;
+        const adminFilter = hideAdmins ? "AND u.vai_tro != 'admin'" : '';
 
         const [rows] = await pool.query(
             `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
                     u.so_nguoi_theo_doi, u.vai_tro
              FROM follows f
              JOIN users u ON f.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1
+             WHERE f.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}
              ORDER BY f.ngay_tao DESC
              LIMIT ? OFFSET ?`,
             [userId, limit, offset]
@@ -47,7 +50,7 @@ export const FollowListModel = {
             `SELECT COUNT(*) AS total
              FROM follows f
              JOIN users u ON f.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1`,
+             WHERE f.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}`,
             [userId]
         );
 

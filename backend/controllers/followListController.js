@@ -10,7 +10,8 @@ export const getFollowers = async (req, res) => {
         const result = await FollowListService.getFollowers(username, {
             page,
             limit,
-            currentUserId: req.user?.id ?? null,
+            currentUserId:   req.user?.id       ?? null,
+            currentUserRole: req.user?.vai_tro   ?? null,
         });
 
         if (!result) {
@@ -34,7 +35,8 @@ export const getFollowing = async (req, res) => {
         const result = await FollowListService.getFollowing(username, {
             page,
             limit,
-            currentUserId: req.user?.id ?? null,
+            currentUserId:   req.user?.id       ?? null,
+            currentUserRole: req.user?.vai_tro   ?? null,
         });
 
         if (!result) {

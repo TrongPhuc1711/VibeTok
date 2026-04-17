@@ -43,15 +43,29 @@ export const UserModel = {
         return rows[0] || null;
     },
 
-    // Gợi ý người dùng (loại trừ chính mình)
-    async getSuggestions(currentUserId, limit = 5) {
-        const [rows] = await pool.query(
-            `SELECT * FROM users 
-             WHERE hoat_dong = 1 AND id != ?
-             ORDER BY so_nguoi_theo_doi DESC
-             LIMIT ?`,
-            [currentUserId || 0, limit]
-        );
+    // Gợi ý người dùng (loại trừ chính mình và loại trừ admin đối với user thường)
+    // currentUserRole: vai trò của người đang đăng nhập ('admin', 'creator', 'user', null)
+    async getSuggestions(currentUserId, limit = 5, currentUserRole = null) {
+        // Admin có thể thấy tất cả user
+        // User thường và chưa đăng nhập không thấy admin
+        const hideAdmins = currentUserRole !== 'admin';
+
+        let query, params;
+        if (hideAdmins) {
+            query = `SELECT * FROM users 
+                     WHERE hoat_dong = 1 AND id != ? AND vai_tro != 'admin'
+                     ORDER BY so_nguoi_theo_doi DESC
+                     LIMIT ?`;
+            params = [currentUserId || 0, limit];
+        } else {
+            query = `SELECT * FROM users 
+                     WHERE hoat_dong = 1 AND id != ?
+                     ORDER BY so_nguoi_theo_doi DESC
+                     LIMIT ?`;
+            params = [currentUserId || 0, limit];
+        }
+
+        const [rows] = await pool.query(query, params);
         return rows;
     },
 

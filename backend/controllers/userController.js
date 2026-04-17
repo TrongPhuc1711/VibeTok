@@ -7,6 +7,12 @@ export const getUserProfile = async (req, res) => {
         const user = await UserModel.findByUsername(req.params.username);
         if (!user) return res.status(404).json({ message: 'Người dùng không tồn tại' });
 
+        // Ẩn profile admin khỏi user thường và khách chưa đăng nhập
+        const currentUserRole = req.user?.vai_tro || null;
+        if (user.vai_tro === 'admin' && currentUserRole !== 'admin') {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
         let isFollowing = false;
         if (req.user) {
             isFollowing = await FollowModel.isFollowing(req.user.id, user.id);
@@ -23,7 +29,10 @@ export const getSuggestions = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 5;
         const currentId = req.user?.id || 0;
-        const users = await UserModel.getSuggestions(currentId, limit);
+        const currentUserRole = req.user?.vai_tro || null;
+
+        // Truyền role để lọc admin nếu cần
+        const users = await UserModel.getSuggestions(currentId, limit, currentUserRole);
 
         // Lấy danh sách id mà currentUser đang follow (nếu đã đăng nhập)
         let followingSet = new Set();
@@ -49,6 +58,11 @@ export const followUser = async (req, res) => {
         const target = await UserModel.findByUsername(req.params.username);
         if (!target) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         if (target.id === req.user.id) return res.status(400).json({ message: 'Không thể follow chính mình' });
+
+        // Không cho phép follow admin (nếu người dùng hiện tại không phải admin)
+        if (target.vai_tro === 'admin' && req.user.vai_tro !== 'admin') {
+            return res.status(403).json({ message: 'Không thể follow người dùng này' });
+        }
 
         await FollowModel.follow(req.user.id, target.id);
         const updated = await UserModel.findById(target.id);

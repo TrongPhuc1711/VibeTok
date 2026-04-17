@@ -31,7 +31,9 @@ function PrivateRoute({ children }) {
   return isLoggedIn() ? children : <Navigate to={ROUTES.LOGIN} replace />;
 }
 
-function PublicRoute({ children }) {
+// PublicRoute chỉ dùng cho trang auth (login/register)
+// Nếu đã đăng nhập thì redirect về home
+function AuthRoute({ children }) {
   return isLoggedIn() ? <Navigate to={ROUTES.HOME} replace /> : children;
 }
 
@@ -49,17 +51,17 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
-      {/* ✅ FIX: AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
+      {/* AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
       <AuthProvider>
         <BrowserRouter>
           <ToastProvider>
             <ErrorBoundary>
               <Routes>
-                {/* Auth */}
-                <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
-                <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
+                {/* Auth — chỉ hiện khi chưa đăng nhập */}
+                <Route path={ROUTES.LOGIN} element={<AuthRoute><LoginPage /></AuthRoute>} />
+                <Route path={ROUTES.REGISTER} element={<AuthRoute><RegisterPage /></AuthRoute>} />
                 <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
-                <Route path='/forgot-password' element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+                <Route path='/forgot-password' element={<ForgotPasswordPage />} />
 
                 {/* Admin */}
                 <Route path="/admin/*" element={
@@ -68,10 +70,11 @@ export default function App() {
                   </AdminRoute>
                 } />
 
-                {/* App */}
+                {/* App — công khai, không cần đăng nhập để xem */}
                 <Route path={ROUTES.HOME} element={<HomePage />} />
                 <Route path={ROUTES.EXPLORE} element={<ExplorePage />} />
                 <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
+                {/* Profile: đăng nhập mới xem profile của chính mình, còn xem người khác thì public */}
                 <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />

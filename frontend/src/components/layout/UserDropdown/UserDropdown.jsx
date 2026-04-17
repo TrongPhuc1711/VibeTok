@@ -38,11 +38,11 @@ export default function UserDropdown({ placement = 'topbar' }) {
 
   const handleLogout = async () => {
     setOpen(false);
-    showInfo('Đang đăng xuất...', 'Hẹn gặp lại bạn sớm!');
+    showInfo('Đã đăng xuất tài khoản');
     await logout();
     // ✅ FIX: Cập nhật AuthContext để sidebar re-render về trạng thái chưa login
     contextLogout();
-    setTimeout(() => navigate(ROUTES.LOGIN), 600);
+    setTimeout(() => navigate(ROUTES.HOME), 600);
   };
 
   const handleNavigate = (path) => {

@@ -19,12 +19,15 @@ const normalizeUser = (u, followingSet) => ({
 
 export const FollowListService = {
 
-    async getFollowers(username, { page, limit, currentUserId }) {
+    async getFollowers(username, { page, limit, currentUserId, currentUserRole }) {
         const userId = await FollowListModel.findUserIdByUsername(username);
         if (!userId) return null; // caller xử lý 404
 
+        // Ẩn admin khỏi danh sách nếu người xem không phải admin
+        const hideAdmins = currentUserRole !== 'admin';
+
         const [{ rows, total }, followingSet] = await Promise.all([
-            FollowListModel.getFollowers(userId, { page, limit }),
+            FollowListModel.getFollowers(userId, { page, limit }, hideAdmins),
             FollowListModel.getMyFollowingSet(currentUserId),
         ]);
 
@@ -35,12 +38,15 @@ export const FollowListService = {
         };
     },
 
-    async getFollowing(username, { page, limit, currentUserId }) {
+    async getFollowing(username, { page, limit, currentUserId, currentUserRole }) {
         const userId = await FollowListModel.findUserIdByUsername(username);
         if (!userId) return null;
 
+        // Ẩn admin khỏi danh sách nếu người xem không phải admin
+        const hideAdmins = currentUserRole !== 'admin';
+
         const [{ rows, total }, followingSet] = await Promise.all([
-            FollowListModel.getFollowing(userId, { page, limit }),
+            FollowListModel.getFollowing(userId, { page, limit }, hideAdmins),
             FollowListModel.getMyFollowingSet(currentUserId),
         ]);
 
