@@ -239,7 +239,7 @@ export default function HomePage({ feedType = 'forYou' }) {
 
     return (
         <PageLayout noPadding>
-            {/* ── MOBILE layout ── */}
+            {/*  MOBILE layout */}
             {isMobile && (
                 <div className="md:hidden flex-1 flex flex-col overflow-hidden h-full">
                     <MobileFeed
@@ -251,7 +251,7 @@ export default function HomePage({ feedType = 'forYou' }) {
                 </div>
             )}
 
-            {/* ── DESKTOP layout ── */}
+            {/*  DESKTOP layout */}
             {!isMobile && (
                 <div
                     className="hidden md:flex relative w-full h-full flex-row outline-none select-none overflow-hidden bg-base"

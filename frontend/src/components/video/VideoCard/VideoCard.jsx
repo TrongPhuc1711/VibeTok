@@ -4,27 +4,12 @@ import VideoCardInfo from './VideoCardInfo';
 import VideoCardActions from './VideoCardActions';
 import { VideoPlaySmIcon } from '../../../icons/CommonIcons';
 
-const LIKES_KEY = 'vibetok_liked_videos';
-
-export const getLikedSet = () => {
-  try { return new Set(JSON.parse(localStorage.getItem(LIKES_KEY) || '[]')); }
+const BOOKMARKS_KEY = 'vibetok_bookmarked_videos';
+export const getBookmarkSet = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]')); }
   catch { return new Set(); }
 };
-
-export const saveLikedSet = (set) => {
-  localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
-};
-
-export const isVideoLiked = (videoId) => getLikedSet().has(String(videoId));
-
-export const toggleVideoLike = (videoId) => {
-  const set = getLikedSet();
-  const id = String(videoId);
-  if (set.has(id)) set.delete(id); else set.add(id);
-  saveLikedSet(set);
-  return set.has(id);
-};
-
+export const isVideoBookmarked = (videoId) => getBookmarkSet().has(String(videoId));
 export default function VideoCard({
   video,
   isActive,
@@ -161,31 +146,38 @@ export default function VideoCard({
     setProgress(clamped * 100);
   }, []);
 
-  const getRatioFromEvent = (e) => {
+  const getRatioFromClientX = (clientX) => {
     const bar = progressBarRef.current;
     if (!bar) return 0;
     const rect = bar.getBoundingClientRect();
-    return (e.clientX - rect.left) / rect.width;
+    return (clientX - rect.left) / rect.width;
   };
 
-  const handleProgressClick = (e) => {
-    e.stopPropagation();
-    seekToRatio(getRatioFromEvent(e));
-  };
-
-  const handleProgressMouseDown = (e) => {
+  const handleProgressStart = (e) => {
     e.stopPropagation();
     setDragging(true);
-    seekToRatio(getRatioFromEvent(e));
+    // Lấy tọa độ X tùy theo loại thiết bị
+    const getClientX = (ev) => ev.touches && ev.touches.length > 0 ? ev.touches[0].clientX : ev.clientX;
+    
+    // Cập nhật ngay vị trí khi vừa chạm/click
+    seekToRatio(getRatioFromClientX(getClientX(e)));
 
-    const onMove = (ev) => seekToRatio(getRatioFromEvent(ev));
-    const onUp = () => {
+    const onMove = (ev) => {
+      seekToRatio(getRatioFromClientX(getClientX(ev)));
+    };
+
+    const onEnd = () => {
       setDragging(false);
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
     };
+
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
   };
 
   /* ── volume ── */
@@ -300,8 +292,8 @@ export default function VideoCard({
       <div
         className="absolute bottom-0 left-0 right-0 z-20 group/bar"
         style={{ height: 20, cursor: 'pointer' }}
-        onClick={handleProgressClick}
-        onMouseDown={handleProgressMouseDown}
+        onMouseDown={handleProgressStart}
+        onTouchStart={handleProgressStart}
       >
         {/* Time tooltip on hover */}
         <div

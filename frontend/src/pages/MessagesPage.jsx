@@ -6,7 +6,7 @@ import { formatTimeAgo } from '../utils/formatters';
 import { getStoredUser } from '../utils/helpers';
 import { SpinnerCenter } from '../components/ui/Spinner';
 
-/* ── Avatar helper ── */
+/* Avatar helper */
 function MsgAvatar({ user = {}, size = 'md', online = false }) {
     const sz = size === 'sm' ? 'w-8 h-8 text-[10px]' : size === 'lg' ? 'w-12 h-12 text-sm' : 'w-10 h-10 text-[11px]';
     const initials = user.initials || user.partnerInitials || (user.partnerFullname || user.fullName || 'U').charAt(0).toUpperCase();

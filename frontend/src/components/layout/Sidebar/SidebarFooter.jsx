@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 import UserDropdown from '../UserDropdown/UserDropdown';
 import { PlusIcon } from '../../../icons/NavIcons';
-
+import { useAuth } from '../../../hooks/useAuth';
 export default function SidebarFooter() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();

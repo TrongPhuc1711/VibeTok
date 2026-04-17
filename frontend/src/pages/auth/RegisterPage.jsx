@@ -31,8 +31,8 @@ export default function RegisterPage() {
     showInfo('Đang xử lý...', 'Đang tạo tài khoản của bạn');
     try {
       await register(form);
-      showSuccess('Đăng ký thành công!', `Chào mừng ${form.fullName} đến với VibeTok!`);
-      setTimeout(() => navigate(ROUTES.HOME), 800);
+      showSuccess('Đăng ký thành công!', `Chào mừng ${form.fullName} đến với VibeTok! Hãy đăng nhập để tiếp tục.`);
+      setTimeout(() => navigate(ROUTES.LOGIN), 800);
     } catch (e) {
       const msg = e.message || 'Đăng ký thất bại';
       setApiError(msg);
