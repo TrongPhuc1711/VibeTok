@@ -28,18 +28,27 @@ api.interceptors.request.use(
 );
 api.interceptors.response.use(
   (response) => {
-      // Nếu API trả về thành công, cứ trả về data bình thường
       return response;
   },
   (error) => {
-      // Nếu API trả về lỗi 401 (Unauthorized) hoặc 403 (Forbidden)
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-          // Xóa token cũ đi
+      if (error.response && error.response.status === 401) {
+          // Token hết hạn hoặc không hợp lệ → chỉ xóa token cũ
+          // KHÔNG redirect tự động — để component/route guard xử lý
+          // Tránh phá vỡ luồng public pages (feed, explore, profile)
+          const hadToken = !!localStorage.getItem(TOKEN_KEY);
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem(USER_KEY);
           
-          // Đá người dùng về trang đăng nhập
-          window.location.href = '/login';
+          // Chỉ redirect nếu user ĐANG đăng nhập (có token) và đang ở trang protected
+          if (hadToken) {
+              const publicPaths = ['/', '/explore', '/login', '/register', '/forgot-password'];
+              const isPublicPage = publicPaths.some(p => window.location.pathname === p)
+                  || window.location.pathname.startsWith('/profile/')
+                  || window.location.pathname.startsWith('/video/');
+              if (!isPublicPage) {
+                  window.location.href = '/login';
+              }
+          }
       }
       return Promise.reject(error);
   }

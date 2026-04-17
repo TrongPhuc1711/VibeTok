@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getNotifications, markAsRead, markAllAsRead, getMockNotifications } from '../services/notificationService';
 import { getStoredUser, isLoggedIn } from '../utils/helpers';
 
-// ✅ FIX: Import socket singleton từ useMessages thay vì tạo instance mới
+// Import socket singleton từ useMessages thay vì tạo instance mới
 // Tránh duplicate WebSocket connections
 import { getSharedSocket } from './useMessages';
 
@@ -38,8 +38,9 @@ export function useNotifications() {
     useEffect(() => {
         if (!me?.id) return;
 
+        // getSharedSocket đã join room qua useMessages/useInbox
+        // Không cần gọi join_user_room lại ở đây
         const socket = getSharedSocket();
-        socket.emit('join_user_room', me.id);
 
         const onNewNotification = (notif) => {
             setNotifications(prev => {

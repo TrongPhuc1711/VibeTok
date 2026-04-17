@@ -70,11 +70,11 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
     const touchStartTime = useRef(0);
     const isAnimating = useRef(false);
 
+    const firstVideoId = videos[0]?.id ?? null;
     useEffect(() => {
         setCurrentIdx(0);
         setCommentVideoId(null);
-    }, [videos.length === 0 ? null : videos[0]?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
+    }, [firstVideoId]);
     const go = useCallback((dir) => {
         if (isAnimating.current) return;
         const next = currentIdx + dir;
@@ -192,6 +192,7 @@ export default function HomePage({ feedType = 'forYou' }) {
     const [commentVideoId, setCommentVideoId] = useState(null);
     const [aspectRatio, setAspectRatio] = useState(9 / 16);
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+    const desktopRef = useRef(null);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -212,7 +213,7 @@ export default function HomePage({ feedType = 'forYou' }) {
         const next = currentIdx + dir;
         if (dir > 0 && next >= videos.length - 3 && hasMore) loadMore();
         if (next >= 0 && next < videos.length) {
-            // ── QUAN TRỌNG: dừng tất cả video TRƯỚC khi đổi index ──
+            // dừng tất cả video TRƯỚC khi đổi index ─
             stopAllVideos();
 
             setCurrentIdx(next);
@@ -221,9 +222,16 @@ export default function HomePage({ feedType = 'forYou' }) {
         }
     }, [currentIdx, videos, hasMore, loadMore]);
 
-    const handleWheel = useCallback((e) => {
-        e.preventDefault();
-        go(e.deltaY > 0 ? 1 : -1);
+
+    useEffect(() => {
+        const el = desktopRef.current;
+        if (!el) return;
+        const handler = (e) => {
+            e.preventDefault();
+            go(e.deltaY > 0 ? 1 : -1);
+        };
+        el.addEventListener('wheel', handler, { passive: false });
+        return () => el.removeEventListener('wheel', handler);
     }, [go]);
 
     const handleKeyDown = useCallback((e) => {
@@ -254,64 +262,64 @@ export default function HomePage({ feedType = 'forYou' }) {
             {/*  DESKTOP layout */}
             {!isMobile && (
                 <div
+                    ref={desktopRef}
                     className="hidden md:flex relative w-full h-full flex-row outline-none select-none overflow-hidden bg-base"
                     tabIndex={0}
-                    onWheel={handleWheel}
                     onKeyDown={handleKeyDown}
                 >
-                {loading ? (
-                    <div className="flex-1 flex items-center justify-center"><BounceDots /></div>
-                ) : current ? (
-                    <>
-                        <div className="flex-1 relative flex items-center justify-center" onWheel={handleWheel}>
-                            <div className="flex items-end relative" style={{ gap: 16 }}>
+                    {loading ? (
+                        <div className="flex-1 flex items-center justify-center"><BounceDots /></div>
+                    ) : current ? (
+                        <>
+                            <div className="flex-1 relative flex items-center justify-center">
+                                <div className="flex items-end relative" style={{ gap: 16 }}>
+                                    <div
+                                        className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-2xl"
+                                        style={{ width: containerSize.width, height: containerSize.height, background: '#000' }}
+                                    >
+                                        <VideoCard
+                                            key={current.id}
+                                            video={current}
+                                            isActive
+                                            hideActions
+                                            hideTopBar
+                                            onRatio={(r) => setAspectRatio(r)}
+                                            onComment={() => setCommentVideoId(current.id)}
+                                        />
+                                    </div>
+                                    <div className="flex-shrink-0 flex flex-col items-center pb-3">
+                                        <VideoCardActions
+                                            key={current.id + '-actions'}
+                                            video={current}
+                                            inline
+                                            onComment={() => setCommentVideoId(current.id)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-[350]">
+                                    <NavArrow direction="up" onClick={() => go(-1)} disabled={currentIdx === 0} />
+                                    <NavArrow direction="down" onClick={() => go(1)} disabled={currentIdx === videos.length - 1} />
+                                </div>
+                            </div>
+                            {showComments && (
                                 <div
-                                    className="relative flex-shrink-0 rounded-xl overflow-hidden shadow-2xl"
-                                    style={{ width: containerSize.width, height: containerSize.height, background: '#000' }}
+                                    className="w-[420px] h-full bg-[#121212] border-l border-white/10 shrink-0 shadow-2xl z-40"
+                                    onWheel={(e) => e.stopPropagation()}
                                 >
-                                    <VideoCard
-                                        key={current.id}
-                                        video={current}
-                                        isActive
-                                        hideActions
-                                        hideTopBar
-                                        onRatio={(r) => setAspectRatio(r)}
-                                        onComment={() => setCommentVideoId(current.id)}
+                                    <CommentPanel
+                                        videoId={commentVideoId}
+                                        totalComments={current.comments}
+                                        onClose={() => setCommentVideoId(null)}
                                     />
                                 </div>
-                                <div className="flex-shrink-0 flex flex-col items-center pb-3">
-                                    <VideoCardActions
-                                        key={current.id + '-actions'}
-                                        video={current}
-                                        inline
-                                        onComment={() => setCommentVideoId(current.id)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-[350]">
-                                <NavArrow direction="up" onClick={() => go(-1)} disabled={currentIdx === 0} />
-                                <NavArrow direction="down" onClick={() => go(1)} disabled={currentIdx === videos.length - 1} />
-                            </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 font-body text-white/25">
+                            <p style={{ fontSize: 14 }}>{emptyMessage}</p>
                         </div>
-                        {showComments && (
-                            <div
-                                className="w-[420px] h-full bg-[#121212] border-l border-white/10 shrink-0 shadow-2xl z-40"
-                                onWheel={(e) => e.stopPropagation()}
-                            >
-                                <CommentPanel
-                                    videoId={commentVideoId}
-                                    totalComments={current.comments}
-                                    onClose={() => setCommentVideoId(null)}
-                                />
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3 font-body text-white/25">
-                        <p style={{ fontSize: 14 }}>{emptyMessage}</p>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
             )}
         </PageLayout>
     );

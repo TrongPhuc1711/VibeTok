@@ -9,7 +9,7 @@ import { ROUTES } from '../../utils/constants';
 import { useToast } from '../../components/ui/Toast';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthContext } from '../../contexts/AuthContext';
-
+import { FacebookIcon ,GoogleIcon } from '../../icons/CommonIcons';
 export default function LoginPage() {
     const navigate = useNavigate();
     const { showSuccess, showError } = useToast();
@@ -18,7 +18,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [apiError, setApiError] = useState('');
     const { isDark, toggleTheme } = useTheme();
-    // ✅ FIX: Dùng AuthContext để update state reactive - sidebar tự reload
+    // Dùng AuthContext để update state reactive - sidebar tự reload
     const { login: contextLogin } = useAuthContext();
 
     const set = (field) => (value) => {
@@ -32,7 +32,7 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const { user } = await login(form);
-            // ✅ Cập nhật AuthContext ngay - sidebar sẽ re-render với nav items đầy đủ
+            //Cập nhật AuthContext ngay - sidebar sẽ re-render với nav items đầy đủ
             contextLogin(user);
             showSuccess('Đăng nhập thành công!', `Chào mừng trở lại, ${user.fullName || user.username} 👋`);
             setTimeout(() => {
@@ -153,7 +153,7 @@ export default function LoginPage() {
                                     ? 'bg-elevated border-border2 text-text-secondary hover:border-primary/40'
                                     : 'bg-[#f5f5fa] border-[#d0d0e0] text-[#555] hover:border-primary/40'
                                 }`}>
-                            {p === 'Facebook' ? '𝕗' : 'G'} {p}
+                            {p === 'Facebook' ? <FacebookIcon /> : <GoogleIcon />} {p}
                         </button>
                     ))}
                 </div>

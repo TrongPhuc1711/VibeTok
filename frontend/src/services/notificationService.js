@@ -5,8 +5,8 @@ export const getNotifications = async ({ page = 1, limit = 20 } = {}) => {
     const res = await api.get('/notifications', { params: { page, limit } });
     return { data: res.data };
   } catch {
-    // Fallback mock data khi chưa có API
-    return { data: { notifications: getMockNotifications(), total: 10, unread: 5 } };
+    // Trả về empty thay vì mock data — tránh hiển thị dữ liệu giả cho user
+    return { data: { notifications: [], total: 0, unread: 0 } };
   }
 };
 
@@ -22,34 +22,33 @@ export const markAllAsRead = async () => {
   } catch (e) { console.error(e); }
 };
 
-export const getMessages = async () => {
-  try {
-    const res = await api.get('/messages/conversations');
-    return { data: res.data };
-  } catch {
-    return { data: { conversations: getMockConversations() } };
-  }
-};
+// export const getMessages = async () => {
+//   try {
+//     const res = await api.get('/messages/conversations');
+//     return { data: res.data };
+//   } catch {
+//     return { data: { conversations: getMockConversations() } };
+//   }
+// };
 
-export const getConversation = async (userId) => {
-  try {
-    const res = await api.get(`/messages/conversations/${userId}`);
-    return { data: res.data };
-  } catch {
-    return { data: { messages: [] } };
-  }
-};
+// export const getConversation = async (userId) => {
+//   try {
+//     const res = await api.get(`/messages/conversations/${userId}`);
+//     return { data: res.data };
+//   } catch {
+//     return { data: { messages: [] } };
+//   }
+// };
 
-export const sendMessage = async (toUserId, content) => {
-  try {
-    const res = await api.post('/messages', { toUserId, content });
-    return { data: res.data };
-  } catch (e) {
-    throw new Error(e.response?.data?.message || 'Gửi tin nhắn thất bại');
-  }
-};
+// export const sendMessage = async (toUserId, content) => {
+//   try {
+//     const res = await api.post('/messages', { toUserId, content });
+//     return { data: res.data };
+//   } catch (e) {
+//     throw new Error(e.response?.data?.message || 'Gửi tin nhắn thất bại');
+//   }
+// };
 
-// ── Mock data (dùng khi chưa có API thật) ──
 export const getMockNotifications = () => [
   {
     id: 'n1', type: 'like', read: false, createdAt: new Date(Date.now() - 2 * 60000).toISOString(),

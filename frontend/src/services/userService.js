@@ -1,5 +1,5 @@
 import api from '../api/api';
-import { addFollowing, removeFollowing, seedFollowingCache } from '../utils/following';
+import {seedFollowingCache } from '../utils/following';
 
 // GET /api/users/:username
 export const getUserProfile = async (username) => {

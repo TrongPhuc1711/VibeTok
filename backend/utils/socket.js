@@ -4,8 +4,16 @@ import jwt from 'jsonwebtoken';
 let io;
 
 export const initSocket = (server) => {
+    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+        .split(',')
+        .map(s => s.trim());
+
     io = new Server(server, {
-        cors: { origin: '*', methods: ['GET', 'POST'] },
+        cors: {
+            origin: allowedOrigins,
+            methods: ['GET', 'POST'],
+            credentials: true,
+        },
     });
 
     // Xác thực JWT khi kết nối Socket.io

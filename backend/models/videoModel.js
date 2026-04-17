@@ -129,6 +129,15 @@ export const VideoModel = {
         return normalizeVideo(rows[0]) || null;
     },
 
+    // Truyền currentUserId để is_liked, is_following chính xác từ DB
+    async findByIdWithAuth(id, currentUserId = null) {
+        const [rows] = await pool.query(
+            `${buildVideoQuery(currentUserId)} WHERE v.id = ? AND v.hoat_dong = 1`,
+            [id]
+        );
+        return normalizeVideo(rows[0]) || null;
+    },
+
     async search({ q = '', page = 1, limit = 10 } = {}) {
         const offset = (page - 1) * limit;
         const like   = `%${q}%`;

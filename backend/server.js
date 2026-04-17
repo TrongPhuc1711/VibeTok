@@ -1,4 +1,5 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -12,12 +13,25 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import { initSocket } from './utils/socket.js';
 import messageRoutes from './routes/messageRoutes.js';
 
-dotenv.config();
-
 const app = express();
 const server = createServer(app);
 
-app.use(cors());
+//  CORS: chỉ cho phép frontend origin, không mở toàn bộ
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+    .split(',')
+    .map(s => s.trim());
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Cho phép request không có origin (Postman, curl, server-to-server)
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
 app.use(express.json());
 
 initSocket(server);

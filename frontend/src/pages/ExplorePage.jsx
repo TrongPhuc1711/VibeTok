@@ -154,7 +154,7 @@ export default function ExplorePage() {
   const fetchAllVideos = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/videos/feed', { params: { type: 'forYou', page: 1, limit: 100 } });
+      const res = await api.get('/videos/feed', { params: { type: 'forYou', page: 1, limit: 50 } });
       const videos = res.data.videos || [];
       setAllVideos(videos);
       const counts = { all: videos.length };

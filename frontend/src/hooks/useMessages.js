@@ -9,13 +9,25 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
     || 'http://localhost:5000';
 
 let _socket = null;
+let _socketToken = null; // Track token dùng để tạo socket
 
 const initSocket = () => {
+    const token = getToken();
+    
+    // ✅ FIX A8: Nếu token thay đổi (login bằng tài khoản khác) → reconnect
+    if (_socket && _socketToken !== token) {
+        _socket.disconnect();
+        _socket = null;
+        _socketToken = null;
+    }
+    
     if (!_socket) {
-        const token = getToken();
+        _socketToken = token;
         _socket = io(SOCKET_URL, {
             transports: ['websocket', 'polling'],
             auth: token ? { token } : {},
+            reconnectionAttempts: 5,
+            reconnectionDelay: 2000,
         });
         _socket.on('connect_error', (err) => {
             console.warn('[Socket] Connection error:', err.message);
@@ -24,7 +36,7 @@ const initSocket = () => {
     return _socket;
 };
 
-// THÊM: export getSharedSocket để useNotifications dùng chung
+// Export getSharedSocket để useNotifications dùng chung
 export const getSharedSocket = initSocket;
 
 // Alias cũ vẫn hoạt động (backward compat)
@@ -32,8 +44,10 @@ const getSocket = initSocket;
 
 export const resetSocket = () => {
     if (_socket) {
+        _socket.removeAllListeners();
         _socket.disconnect();
         _socket = null;
+        _socketToken = null;
     }
 };
 

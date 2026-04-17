@@ -10,7 +10,7 @@ import { triggerNotification } from './notificationController.js';
 export const getFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 100;
+        const limit = parseInt(req.query.limit) || 10;
         const currentUserId = req.user?.id ?? null;
         const type = req.query.type || 'forYou';
         const data = await VideoModel.getFeed({ page, limit, currentUserId, type });
@@ -34,7 +34,8 @@ export const searchVideos = async (req, res) => {
 // GET /api/videos/:id
 export const getVideoById = async (req, res) => {
     try {
-        const video = await VideoModel.findById(req.params.id);
+        const currentUserId = req.user?.id ?? null;
+        const video = await VideoModel.findByIdWithAuth(req.params.id, currentUserId);
         if (!video) return res.status(404).json({ message: 'Video không tồn tại' });
         VideoModel.incrementViews(req.params.id).catch(() => { });
         res.json({ video });

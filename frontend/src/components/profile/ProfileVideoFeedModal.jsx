@@ -437,18 +437,12 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         window.addEventListener('mouseup', onUp);
     };
 
-    // ✅ FIX: handleLike - optimistic UI, không localStorage
+    // handleLike — immutable update, không mutate video object gốc
     const handleLike = async () => {
         if (!isLoggedIn() || likeLoading) return;
         const was = liked;
         setLiked(!was);
         setLikeCount(n => was ? Math.max(0, n - 1) : n + 1);
-
-        // Sync lại video object để khi chuyển video vẫn đúng
-        if (current) {
-            current.isLiked = !was;
-            current.likes = was ? Math.max(0, (current.likes || 0) - 1) : (current.likes || 0) + 1;
-        }
 
         setLikeLoading(true);
         try {
@@ -457,27 +451,17 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         } catch {
             setLiked(was);
             setLikeCount(n => was ? n + 1 : Math.max(0, n - 1));
-            if (current) {
-                current.isLiked = was;
-                current.likes = was ? (current.likes || 0) + 1 : Math.max(0, (current.likes || 0) - 1);
-            }
         } finally {
             setLikeLoading(false);
         }
     };
 
-    // ✅ FIX: handleFollowToggle - không localStorage
+    // handleFollowToggle — immutable, không mutate video.user trực tiếp
     const handleFollowToggle = async () => {
         if (!current?.user?.username || followLoading) return;
         const username = current.user.username;
         const was = followMap[username] ?? false;
         setFollowMap(prev => ({ ...prev, [username]: !was }));
-        videos.forEach(v => {
-            if (v.user?.username === username) {
-                if (!v.user) v.user = {};
-                v.user.isFollowing = !was;
-            }
-        });
 
         setFollowLoading(true);
         try {
@@ -485,9 +469,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
             else     await followUser(username);
         } catch {
             setFollowMap(prev => ({ ...prev, [username]: was }));
-            videos.forEach(v => {
-                if (v.user?.username === username) v.user.isFollowing = was;
-            });
         } finally {
             setFollowLoading(false);
         }

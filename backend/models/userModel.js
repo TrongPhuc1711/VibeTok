@@ -69,12 +69,31 @@ export const UserModel = {
         return rows;
     },
 
-    // Cập nhật profile
-    async updateProfile(userId, { ten_hien_thi, tieu_su, vi_tri }) {
-        await pool.query(
-            'UPDATE users SET ten_hien_thi = ?, tieu_su = ?, vi_tri = ? WHERE id = ?',
-            [ten_hien_thi, tieu_su, vi_tri, userId]
-        );
+    // Cập nhật profile — chỉ update các field được truyền vào (dynamic SET)
+    async updateProfile(userId, updates = {}) {
+        const fields = [];
+        const values = [];
+
+        if (updates.ten_hien_thi !== undefined) {
+            fields.push('ten_hien_thi = ?');
+            values.push(updates.ten_hien_thi);
+        }
+        if (updates.tieu_su !== undefined) {
+            fields.push('tieu_su = ?');
+            values.push(updates.tieu_su);
+        }
+        if (updates.vi_tri !== undefined) {
+            fields.push('vi_tri = ?');
+            values.push(updates.vi_tri);
+        }
+
+        if (fields.length > 0) {
+            values.push(userId);
+            await pool.query(
+                `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+                values
+            );
+        }
         return this.findById(userId);
     },
 
