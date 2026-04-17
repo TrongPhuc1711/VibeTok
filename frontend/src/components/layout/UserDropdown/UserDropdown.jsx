@@ -42,6 +42,7 @@ export default function UserDropdown({ placement = 'topbar' }) {
     await logout();
     // ✅ FIX: Cập nhật AuthContext để sidebar re-render về trạng thái chưa login
     contextLogout();
+    window.location.href = '/';
     setTimeout(() => navigate(ROUTES.HOME), 600);
   };
 
