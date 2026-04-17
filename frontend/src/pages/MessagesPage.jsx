@@ -174,7 +174,6 @@ function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
             <div className="flex-1 overflow-auto px-5 py-4" style={{ scrollBehavior: 'smooth' }}>
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full gap-3 text-[#444]">
-                        <div className="w-14 h-14 rounded-full bg-[#1a1a2e] flex items-center justify-center text-2xl">💬</div>
                         <p className="text-[13px] font-body text-center">
                             Bắt đầu cuộc trò chuyện với <span className="text-white">@{partnerUsername}</span>
                         </p>

@@ -9,6 +9,7 @@ import {
 } from '../../../icons/ActionIcons';
 import { PlusIcon } from '../../../icons/NavIcons';
 import { useToast } from '../../ui/Toast';
+import LoginPromptModal from '../../ui/LoginPromptModal';
 
 /* Bookmark vẫn dùng localStorage vì chưa có API */
 const BOOKMARKS_KEY = 'vibetok_bookmarked_videos';
@@ -34,8 +35,11 @@ export default function VideoCardActions({
 }) {
   const navigate = useNavigate();
   const me = getStoredUser();
-  const { showSuccess, showInfo, showWarning, showError } = useToast();
+  const { showSuccess, showInfo, showError } = useToast();
   const videoId = video?.id;
+
+  // State cho LoginPromptModal
+  const [loginPrompt, setLoginPrompt] = useState({ open: false, action: 'like' });
 
   const isOwnVideo =
     me &&
@@ -59,16 +63,17 @@ export default function VideoCardActions({
     setBookmarked(isBookmarked(videoId));
   }, [videoId, video?.isLiked, video?.user?.isFollowing]);
 
+  /* Helper: mở login prompt với action tương ứng */
+  const promptLogin = (action) => setLoginPrompt({ open: true, action });
+
   const handleLike = async () => {
     if (!isLoggedIn()) {
-      showWarning('Cần đăng nhập', 'Đăng nhập để thích video này');
-      navigate('/login');
+      promptLogin('like');
       return;
     }
     if (likeLoading) return;
 
     const was = liked;
-    // Optimistic update UI ngay
     setLiked(!was);
     setLocalLikes(n => was ? Math.max(0, n - 1) : n + 1);
 
@@ -81,7 +86,6 @@ export default function VideoCardActions({
         showSuccess('Đã thích video ❤️', `Video của @${video?.user?.username}`);
       }
     } catch {
-      // Rollback nếu API lỗi
       setLiked(was);
       setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
       showError('Thao tác thất bại', 'Không thể thực hiện, thử lại sau');
@@ -92,8 +96,7 @@ export default function VideoCardActions({
 
   const handleComment = () => {
     if (!isLoggedIn()) {
-      showWarning('Cần đăng nhập', 'Đăng nhập để bình luận');
-      navigate('/login');
+      promptLogin('comment');
       return;
     }
     onComment?.(video?.id);
@@ -101,8 +104,7 @@ export default function VideoCardActions({
 
   const handleBookmark = () => {
     if (!isLoggedIn()) {
-      showWarning('Cần đăng nhập', 'Đăng nhập để lưu video');
-      navigate('/login');
+      promptLogin('bookmark');
       return;
     }
     const now = toggleBookmarkLocal(videoId);
@@ -130,8 +132,7 @@ export default function VideoCardActions({
   const handleFollow = async (e) => {
     e.stopPropagation();
     if (!isLoggedIn()) {
-      showWarning('Cần đăng nhập', 'Đăng nhập để theo dõi creator này');
-      navigate('/login');
+      promptLogin('follow');
       return;
     }
     if (followLoading) return;
@@ -161,70 +162,78 @@ export default function VideoCardActions({
     : 'absolute right-3 bottom-20 flex flex-col gap-4 items-center z-10';
 
   return (
-    <div className={wrapperCls}>
+    <>
+      <div className={wrapperCls}>
+        {/* Avatar + Follow button */}
+        <div className="relative mb-1">
+          <div
+            onClick={() => user.username && navigate(`/profile/${user.username}`)}
+            className="w-[50px] h-[50px] rounded-full border-2 border-white/60 bg-brand-gradient flex items-center justify-center text-[14px] font-bold text-white cursor-pointer overflow-hidden"
+          >
+            {user.anh_dai_dien
+              ? <img src={user.anh_dai_dien} alt={user.username} className="w-full h-full object-cover" />
+              : (user.initials ?? 'U')
+            }
+          </div>
 
-      {/* Avatar + Follow button */}
-      <div className="relative mb-1">
-        <div
-          onClick={() => user.username && navigate(`/profile/${user.username}`)}
-          className="w-[50px] h-[50px] rounded-full border-2 border-white/60 bg-brand-gradient flex items-center justify-center text-[14px] font-bold text-white cursor-pointer overflow-hidden"
-        >
-          {user.anh_dai_dien
-            ? <img src={user.anh_dai_dien} alt={user.username} className="w-full h-full object-cover" />
-            : (user.initials ?? 'U')
-          }
+          {!isOwnVideo && !following && (
+            <button
+              onClick={handleFollow}
+              disabled={followLoading}
+              className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary border-2 border-base flex items-center justify-center cursor-pointer disabled:opacity-60 hover:scale-110 transition-transform"
+            >
+              <PlusIcon size={9} />
+            </button>
+          )}
         </div>
 
-        {!isOwnVideo && !following && (
-          <button
-            onClick={handleFollow}
-            disabled={followLoading}
-            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary border-2 border-base flex items-center justify-center cursor-pointer disabled:opacity-60 hover:scale-110 transition-transform"
-          >
-            <PlusIcon size={9} />
-          </button>
-        )}
+        {/* Like */}
+        <ActionBtn
+          icon={<HeartIcon filled={liked} />}
+          count={formatCount(localLikes)}
+          active={liked}
+          onClick={handleLike}
+          loading={likeLoading}
+          inline={inline}
+          animateOnClick
+        />
+
+        {/* Comment */}
+        <ActionBtn
+          icon={<CommentIcon />}
+          count={formatCount(video?.comments)}
+          onClick={handleComment}
+          inline={inline}
+        />
+
+        {/* Share — không cần đăng nhập */}
+        <ActionBtn
+          icon={<ShareIcon />}
+          count={formatCount(video?.shares)}
+          onClick={handleShare}
+          inline={inline}
+        />
+
+        {/* Bookmark */}
+        <ActionBtn
+          icon={<BookmarkIcon filled={bookmarked} />}
+          count={formatCount(video?.bookmarks)}
+          active={bookmarked}
+          onClick={handleBookmark}
+          inline={inline}
+        />
+
+        {/* Music disc */}
+        <MusicDisc track={video?.music} />
       </div>
 
-      {/* Like */}
-      <ActionBtn
-        icon={<HeartIcon filled={liked} />}
-        count={formatCount(localLikes)}
-        active={liked}
-        onClick={handleLike}
-        loading={likeLoading}
-        inline={inline}
-        animateOnClick
+      {/* Login Prompt Modal */}
+      <LoginPromptModal
+        open={loginPrompt.open}
+        onClose={() => setLoginPrompt({ open: false, action: 'like' })}
+        action={loginPrompt.action}
       />
-
-      {/* Comment */}
-      <ActionBtn
-        icon={<CommentIcon />}
-        count={formatCount(video?.comments)}
-        onClick={handleComment}
-        inline={inline}
-      />
-
-      {/* Share */}
-      <ActionBtn
-        icon={<ShareIcon />}
-        count={formatCount(video?.shares)}
-        onClick={handleShare}
-        inline={inline}
-      />
-
-      {/* Bookmark */}
-      <ActionBtn
-        icon={<BookmarkIcon filled={bookmarked} />}
-        count={formatCount(video?.bookmarks)}
-        active={bookmarked}
-        onClick={handleBookmark}
-        inline={inline}
-      />
-
-      {/* Music disc */}
-      <MusicDisc track={video?.music} />
-    </div>
+    </>
   );
 }
 

@@ -5,25 +5,23 @@ import { NotificationBadge } from '../../notification';
 import { useUnreadMessageCount } from '../../../hooks/useMessages';
 import { useAuth } from '../../../hooks/useAuth';
 import {
-HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon, MessageIcon
+  HomeIcon, CompassIcon, UsersIcon, UploadIcon, UserIcon, MessageIcon
 } from '../../../icons/NavIcons';
 
 export default function SidebarNav({ onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { unreadCount } = useUnreadMessageCount();
-  // ✅ FIX: useAuth dùng AuthContext -> reactive khi login/logout
   const { isAuthenticated } = useAuth();
 
   const NAV = [
     { path: ROUTES.HOME, label: 'Đề xuất', Icon: HomeIcon },
     { path: ROUTES.EXPLORE, label: 'Khám phá', Icon: CompassIcon },
     { path: ROUTES.FOLLOWING, label: 'Đã follow', Icon: UsersIcon },
-    ...(isAuthenticated ? [
-      { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
-      { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
-      { path: ROUTES.MESSAGE, label: 'Tin nhắn', Icon: MessageIcon },
-    ] : []),
+    { path: ROUTES.UPLOAD, label: 'Tải lên', Icon: UploadIcon },
+    { path: ROUTES.PROFILE, label: 'Hồ sơ', Icon: UserIcon },
+    { path: ROUTES.MESSAGE, label: 'Tin nhắn', Icon: MessageIcon },
+
   ];
 
   return (

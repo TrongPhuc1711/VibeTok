@@ -6,7 +6,36 @@ import { PlusIcon } from '../../../icons/NavIcons';
 
 export default function SidebarFooter() {
   const navigate = useNavigate();
-
+  const { isAuthenticated } = useAuth();
+ 
+  if (!isAuthenticated) {
+    return (
+      <div className="p-4 border-t border-border">
+        <p className="text-text-faint text-[13px] font-body leading-relaxed mb-4 text-center">
+          Đăng nhập để theo dõi creator, thích video và xem bình luận.
+        </p>
+ 
+        {/*đăng nhập*/}
+        <button
+          onClick={() => navigate(ROUTES.LOGIN)}
+          className="w-full py-2.5 rounded-lg border-2 border-primary text-primary font-bold text-[15px] font-body bg-transparent cursor-pointer hover:bg-primary/8 transition-colors"
+        >
+          Đăng nhập
+        </button>
+ 
+        {/* Đăng ký */}
+        <p className="text-center text-[12px] font-body mt-3 text-text-faint">
+          Chưa có tài khoản?{' '}
+          <button
+            onClick={() => navigate(ROUTES.REGISTER)}
+            className="bg-transparent border-none text-primary cursor-pointer font-semibold hover:underline"
+          >
+            Đăng ký
+          </button>
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="p-3 border-t border-border">
       <button

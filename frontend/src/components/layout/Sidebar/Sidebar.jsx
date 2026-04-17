@@ -16,25 +16,24 @@ import SidebarNav from './SidebarNav';
 import SidebarFollowing from './SidebarFollowing';
 import SidebarFooter from './SidebarFooter';
 import { useNotifications } from '../../../hooks/useNotifications';
-// ✅ FIX: useAuth -> AuthContext -> reactive
+// useAuth -> AuthContext -> reactive
 import { useAuth } from '../../../hooks/useAuth';
 
 /* Collapsed (icon-only) sidebar */
 function CollapsedSidebar({ onNotifClick, notifActive }) {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
-  // ✅ Reactive auth state
+  // Reactive auth state
   const { isAuthenticated } = useAuth();
 
   const NAV_ITEMS = [
     { path: ROUTES.HOME, Icon: HomeIcon },
     { path: ROUTES.EXPLORE, Icon: CompassIcon },
     { path: ROUTES.FOLLOWING, Icon: UsersIcon },
-    ...(isAuthenticated ? [
-      { path: ROUTES.UPLOAD, Icon: UploadIcon },
-      { path: ROUTES.PROFILE, Icon: UserIcon },
-      { path: ROUTES.MESSAGE, Icon: MessageIcon }
-    ] : [])
+    { path: ROUTES.UPLOAD, Icon: UploadIcon },
+    { path: ROUTES.PROFILE, Icon: UserIcon },
+    { path: ROUTES.MESSAGE, Icon: MessageIcon }
+
   ];
 
   return (
