@@ -12,6 +12,7 @@ export default function SidebarNav({ onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { unreadCount } = useUnreadMessageCount();
+  // ✅ FIX: useAuth dùng AuthContext -> reactive khi login/logout
   const { isAuthenticated } = useAuth();
 
   const NAV = [
@@ -29,7 +30,6 @@ export default function SidebarNav({ onNotifClick, notifActive = false }) {
     <nav className="py-1.5">
       {NAV.map(({ path, label, Icon }) => {
         const active = pathname === path;
-        // Kiểm tra xem item hiện tại có phải là mục Tin nhắn không
         const isMessageItem = path === ROUTES.MESSAGE;
         return (
           <button
@@ -61,7 +61,7 @@ export default function SidebarNav({ onNotifClick, notifActive = false }) {
         );
       })}
 
-      {/* Notification item */}
+      {/* Notification item - chỉ hiện khi đã đăng nhập */}
       {isAuthenticated && (
         <NotificationBadge onNotifClick={onNotifClick} notifActive={notifActive} />
       )}

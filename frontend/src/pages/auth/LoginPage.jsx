@@ -8,6 +8,7 @@ import { loginSchema } from '../../utils/validators';
 import { ROUTES } from '../../utils/constants';
 import { useToast } from '../../components/ui/Toast';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -17,6 +18,8 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [apiError, setApiError] = useState('');
     const { isDark, toggleTheme } = useTheme();
+    // ✅ FIX: Dùng AuthContext để update state reactive - sidebar tự reload
+    const { login: contextLogin } = useAuthContext();
 
     const set = (field) => (value) => {
         setForm(p => ({ ...p, [field]: value }));
@@ -29,6 +32,8 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const { user } = await login(form);
+            // ✅ Cập nhật AuthContext ngay - sidebar sẽ re-render với nav items đầy đủ
+            contextLogin(user);
             showSuccess('Đăng nhập thành công!', `Chào mừng trở lại, ${user.fullName || user.username} 👋`);
             setTimeout(() => {
                 if (user?.vai_tro === 'admin') {
@@ -50,7 +55,7 @@ export default function LoginPage() {
         <div className={`min-h-screen flex font-body transition-colors duration-300
             ${isDark ? 'bg-base' : 'bg-[#f0f0f5]'}`}>
 
-            {/* ── Theme toggle — góc trên bên trái ── */}
+            {/* ── Theme toggle ── */}
             <button
                 onClick={toggleTheme}
                 title={isDark ? 'Chuyển sang Light Mode' : 'Chuyển sang Dark Mode'}
@@ -70,7 +75,6 @@ export default function LoginPage() {
 
             {/* ── Left branding ── */}
             <div className="flex-1 flex items-center justify-center relative overflow-hidden">
-                {/* Decorative rings */}
                 {[960, 700, 500, 340, 200].map((s, i) => (
                     <div key={s} className="absolute rounded-full border border-primary/[0.1] pointer-events-none"
                         style={{ width: s, height: s, opacity: 1 - i * 0.12 }} />

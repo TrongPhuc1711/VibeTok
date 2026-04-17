@@ -4,6 +4,7 @@ import { isLoggedIn, getStoredUser } from './utils/helpers';
 import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Auth
 import LoginPage from './pages/auth/LoginPage';
@@ -48,42 +49,45 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <ToastProvider>
-          <ErrorBoundary>
-            <Routes>
-              {/* Auth */}
-              <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
-              <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
-              <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
-              <Route path='/forgot-password' element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+      {/* ✅ FIX: AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
+      <AuthProvider>
+        <BrowserRouter>
+          <ToastProvider>
+            <ErrorBoundary>
+              <Routes>
+                {/* Auth */}
+                <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
+                <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
+                <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+                <Route path='/forgot-password' element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
-              {/* Admin */}
-              <Route path="/admin/*" element={
-                <AdminRoute>
-                  <AdminRoutes />
-                </AdminRoute>
-              } />
+                {/* Admin */}
+                <Route path="/admin/*" element={
+                  <AdminRoute>
+                    <AdminRoutes />
+                  </AdminRoute>
+                } />
 
-              {/* App */}
-              <Route path={ROUTES.HOME} element={<HomePage />} />
-              <Route path={ROUTES.EXPLORE} element={<ExplorePage />} />
-              <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
-              <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-              <Route path="/profile/:username" element={<ProfilePage />} />
-              <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
-              <Route path="/video/:id" element={<VideoDetailPage />} />
+                {/* App */}
+                <Route path={ROUTES.HOME} element={<HomePage />} />
+                <Route path={ROUTES.EXPLORE} element={<ExplorePage />} />
+                <Route path={ROUTES.UPLOAD} element={<PrivateRoute><UploadPage /></PrivateRoute>} />
+                <Route path={ROUTES.PROFILE} element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+                <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
+                <Route path="/video/:id" element={<VideoDetailPage />} />
 
-              {/* Messages */}
-              <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
-              <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+                {/* Messages */}
+                <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+                <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
 
-              {/* Fallback */}
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </ErrorBoundary>
-        </ToastProvider>
-      </BrowserRouter>
+                {/* Fallback */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </ErrorBoundary>
+          </ToastProvider>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

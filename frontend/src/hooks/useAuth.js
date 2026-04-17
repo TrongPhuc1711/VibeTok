@@ -1,29 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getMe, logout as logoutApi } from '../services/authService';
-import { isLoggedIn, clearAuth, getStoredUser } from '../utils/helpers';
+// hooks/useAuth.js
+// Dùng AuthContext để có reactive state - sidebar tự update khi login/logout
+import { useAuthContext } from '../contexts/AuthContext';
 
 export function useAuth() {
-    const [user, setUser] = useState(getStoredUser);
-    const [loading, setLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(isLoggedIn);
-
-    useEffect(() => {
-        if (!isLoggedIn()) { setLoading(false); return; }
-        getMe()
-            .then(res => { setUser(res.data.user); setIsAuthenticated(true); })
-            .catch(() => { clearAuth(); setUser(null); setIsAuthenticated(false); })
-            .finally(() => setLoading(false));
-    }, []);
-
-    const logout = useCallback(async () => {
-        await logoutApi();
-        setUser(null);
-        setIsAuthenticated(false);
-    }, []);
-
-    const updateUser = useCallback((updates) => {
-        setUser(prev => ({ ...prev, ...updates }));
-    }, []);
-
-    return { user, loading, isAuthenticated, logout, setUser, updateUser };
+    const ctx = useAuthContext();
+    return {
+        user: ctx.user,
+        loading: ctx.loading,
+        isAuthenticated: ctx.isAuthenticated,
+        login: ctx.login,
+        logout: ctx.logout,
+        updateUser: ctx.updateUser,
+        // Alias để tương thích code cũ
+        setUser: ctx.updateUser,
+    };
 }

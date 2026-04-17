@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../../services/authService';
-import { getStoredUser } from '../../../utils/helpers';
 import { ROUTES } from '../../../utils/constants';
 import MenuItem from './MenuItem';
 import {
@@ -12,14 +11,16 @@ import {
 import { ChevronIcon } from '../../../icons/NavIcons';
 import { useToast } from '../../ui/Toast';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 export default function UserDropdown({ placement = 'topbar' }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const user = getStoredUser();
   const { showInfo } = useToast();
   const { isDark, toggleTheme } = useTheme();
+  // ✅ FIX: Lấy user từ AuthContext thay vì getStoredUser() tĩnh
+  const { user, logout: contextLogout } = useAuthContext();
 
   useEffect(() => {
     const handler = (e) => {
@@ -39,6 +40,8 @@ export default function UserDropdown({ placement = 'topbar' }) {
     setOpen(false);
     showInfo('Đang đăng xuất...', 'Hẹn gặp lại bạn sớm!');
     await logout();
+    // ✅ FIX: Cập nhật AuthContext để sidebar re-render về trạng thái chưa login
+    contextLogout();
     setTimeout(() => navigate(ROUTES.LOGIN), 600);
   };
 
@@ -81,7 +84,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
     );
   };
 
-  /* ── Theme toggle item ── */
   const ThemeItem = () => (
     <button
       onClick={() => { toggleTheme(); }}
@@ -100,7 +102,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
       <span className="text-[13px] font-body font-medium">
         {isDark ? 'Light Mode' : 'Dark Mode'}
       </span>
-      {/* Toggle pill */}
       <div className="ml-auto">
         <div
           className={`
@@ -158,7 +159,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
 
       <div className={`h-px ${isDark ? 'bg-border' : 'bg-[#e2e2ee]'}`} />
 
-      {/* Theme toggle */}
       <div className="py-1">
         <ThemeItem />
       </div>

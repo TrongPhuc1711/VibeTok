@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 import {
   HomeIcon,
@@ -16,13 +16,14 @@ import SidebarNav from './SidebarNav';
 import SidebarFollowing from './SidebarFollowing';
 import SidebarFooter from './SidebarFooter';
 import { useNotifications } from '../../../hooks/useNotifications';
+// ✅ FIX: useAuth -> AuthContext -> reactive
 import { useAuth } from '../../../hooks/useAuth';
 
 /* Collapsed (icon-only) sidebar */
 function CollapsedSidebar({ onNotifClick, notifActive }) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const { unreadCount } = useNotifications();
+  // ✅ Reactive auth state
   const { isAuthenticated } = useAuth();
 
   const NAV_ITEMS = [
@@ -41,7 +42,6 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
       className="flex flex-col h-screen bg-base border-r border-border sticky top-0 shrink-0 transition-all duration-300"
       style={{ width: 72 }}
     >
-      {/* Logo */}
       <div
         className="flex items-center justify-center py-[18px] border-b border-border cursor-pointer"
         onClick={() => navigate(ROUTES.HOME)}
@@ -49,17 +49,13 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
         <span className="font-display font-extrabold text-[22px] text-primary leading-none">V</span>
       </div>
 
-      {/* Icon nav — chỉ highlight icon nào đang active, tắt tất cả khi notif mở */}
       <nav className="flex-1 py-2 flex flex-col items-center">
         {NAV_ITEMS.map(({ path, Icon }) => {
-          /* Khi panel thông báo mở, không highlight item nào trong nav thường */
-          const active = !notifActive && pathname === path;
+          const active = !notifActive && window.location.pathname === path;
           return (
             <button
               key={path}
-              onClick={() => {
-                navigate(path);
-              }}
+              onClick={() => navigate(path)}
               className={`flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
                 ${active ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
             >
@@ -68,7 +64,6 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
           );
         })}
 
-        {/* Bell — chỉ mình nó highlight khi notifActive */}
         {isAuthenticated && (
           <button
             onClick={onNotifClick}
@@ -85,7 +80,6 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
         )}
       </nav>
 
-      {/* Upload shortcut */}
       {isAuthenticated && (
         <div className="p-3 border-t border-border flex justify-center">
           <button
@@ -103,6 +97,7 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
 /* Full sidebar */
 export default function Sidebar({ className = '', collapsed = false, onNotifClick, notifActive = false }) {
   const navigate = useNavigate();
+  // ✅ Reactive auth state từ AuthContext
   const { isAuthenticated } = useAuth();
 
   if (collapsed) {
@@ -115,7 +110,6 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
     <aside
       className={`flex flex-col h-screen w-60 min-w-60 bg-base border-r border-border sticky top-0 shrink-0 transition-all duration-300 ${className}`}
     >
-      {/* Logo */}
       <div
         className="px-5 py-[18px] border-b border-border cursor-pointer"
         onClick={() => navigate(ROUTES.HOME)}
@@ -125,13 +119,12 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
         </span>
       </div>
 
-      {/* Search */}
       <SidebarSearch />
 
-      {/* Nav + Following */}
       <div className="flex-1 overflow-auto flex flex-col">
         <SidebarNav onNotifClick={onNotifClick} notifActive={notifActive} />
-        
+
+        {/* Hiển thị nút login khi chưa đăng nhập */}
         {!isAuthenticated && (
           <div className="px-5 py-4 border-t border-border mt-1">
             <p className="text-[14px] text-text-secondary leading-relaxed mb-4 font-body">
@@ -146,11 +139,12 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
           </div>
         )}
 
+        {/* Hiển thị following list khi đã đăng nhập */}
         {isAuthenticated && <SidebarFollowing />}
       </div>
 
-      {/* Footer */}
-      <SidebarFooter />
+      {/* Footer chỉ hiện khi đã đăng nhập */}
+      {isAuthenticated && <SidebarFooter />}
     </aside>
   );
 }
