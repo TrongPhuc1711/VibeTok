@@ -21,16 +21,31 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173')
     .split(',')
     .map(s => s.trim());
 
+console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS);
+
+// Xử lý preflight OPTIONS trước — đảm bảo luôn trả header đúng
+// Express 5 dùng {*path} thay vì * cho catch-all
+app.options('{*path}', cors({
+    origin: ALLOWED_ORIGINS,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(cors({
     origin: (origin, callback) => {
         // Cho phép request không có origin (Postman, curl, server-to-server)
         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            console.warn('[CORS] Blocked origin:', origin);
+            // Trả false thay vì throw Error — Express 5 xử lý Error khác
+            callback(null, false);
         }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 
