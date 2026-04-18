@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 let io;
 
 export const initSocket = (server) => {
-    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,https://vibe-tok.vercel.app')
         .split(',')
         .map(s => s.trim());
 

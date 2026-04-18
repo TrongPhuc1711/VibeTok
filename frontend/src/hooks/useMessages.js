@@ -14,7 +14,7 @@ let _socketToken = null; // Track token dùng để tạo socket
 const initSocket = () => {
     const token = getToken();
     
-    // ✅ FIX A8: Nếu token thay đổi (login bằng tài khoản khác) → reconnect
+    // Nếu token thay đổi (login bằng tài khoản khác) → reconnect
     if (_socket && _socketToken !== token) {
         _socket.disconnect();
         _socket = null;

@@ -17,7 +17,7 @@ const app = express();
 const server = createServer(app);
 
 //  CORS: chỉ cho phép frontend origin, không mở toàn bộ
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,https://vibe-tok.vercel.app')
     .split(',')
     .map(s => s.trim());
 
