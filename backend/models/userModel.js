@@ -43,7 +43,6 @@ export const UserModel = {
         return rows[0] || null;
     },
 
-    // Gợi ý người dùng (loại trừ chính mình và loại trừ admin đối với user thường)
     // currentUserRole: vai trò của người đang đăng nhập ('admin', 'creator', 'user', null)
     async getSuggestions(currentUserId, limit = 5, currentUserRole = null) {
         // Admin có thể thấy tất cả user
@@ -70,12 +69,17 @@ export const UserModel = {
     },
 
     // Tìm kiếm user theo tên hoặc username
-    async search(q, limit = 10) {
+    async search(q, limit = 10, currentUserRole = null) {
+        const hideAdmins = currentUserRole !== 'admin';
         const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+    
+        const adminFilter = hideAdmins ? "AND vai_tro != 'admin'" : '';
+    
         const [rows] = await pool.query(
             `SELECT * FROM users 
              WHERE hoat_dong = 1 
                AND (ten_dang_nhap LIKE ? OR ten_hien_thi LIKE ?)
+               ${adminFilter}
              ORDER BY so_nguoi_theo_doi DESC
              LIMIT ?`,
             [like, like, limit]

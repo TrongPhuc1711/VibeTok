@@ -73,9 +73,10 @@ export const HashtagModel = {
 
     // Tìm kiếm hashtag
     async search(q, limit = 5) {
+        const clean = q.replace(/^#/, '').toLowerCase().trim();
         const [rows] = await pool.query(
             'SELECT * FROM hashtags WHERE ten_hashtag LIKE ? ORDER BY tong_so_video DESC LIMIT ?',
-            [`%${q}%`, limit]
+            [`%${clean}%`, limit]
         );
         return rows.map(h => ({
             id:     String(h.id),

@@ -58,7 +58,12 @@ export const searchUsers = async (req, res) => {
         const { q = '', limit = 10 } = req.query;
         if (!q.trim()) return res.json({ users: [] });
 
-        const rows = await UserModel.search(q.trim(), Math.min(50, parseInt(limit) || 10));
+        const currentUserRole = req.user?.vai_tro ?? null;
+        const rows = await UserModel.search(
+            q.trim(),
+            Math.min(50, parseInt(limit) || 10),
+            currentUserRole
+        );
         const users = rows.map(u => normalizeUser(u));
         res.json({ users });
     } catch (e) {

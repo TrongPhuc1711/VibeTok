@@ -12,7 +12,7 @@ const router = express.Router();
 
 // Public (nhưng dùng optionalAuth để biết user hiện tại → check isFollowing đúng)
 router.get('/suggestions', optionalAuth, getSuggestions);
-router.get('/search', searchUsers);
+router.get('/search',optionalAuth, searchUsers);
 router.get('/:username/followers', optionalAuth, getFollowers);
 router.get('/:username/following', optionalAuth, getFollowing);
 router.get('/:username', optionalAuth, getUserProfile);
