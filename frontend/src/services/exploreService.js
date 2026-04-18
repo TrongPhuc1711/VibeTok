@@ -42,22 +42,13 @@ export const globalSearch = async ({ q = '', limit = 20 } = {}) => {
     try {
         const [videosRes, usersRes, hashtagsRes] = await Promise.allSettled([
             api.get('/videos/search', { params: { q, limit } }),
-            api.get('/users/suggestions', { params: { limit: 20 } }),
-            api.get('/hashtags/search', { params: { q, limit: 5 } }),
+            api.get('/users/search', { params: { q, limit: 10 } }),
+            api.get('/hashtags/search', { params: { q, limit: 10 } }),
         ]);
 
         const videos = videosRes.status === 'fulfilled' ? (videosRes.value.data.videos || []) : [];
-        const allUsers = usersRes.status === 'fulfilled' ? (usersRes.value.data.users || []) : [];
+        const users = usersRes.status === 'fulfilled' ? (usersRes.value.data.users || []) : [];
         const hashtags = hashtagsRes.status === 'fulfilled' ? (hashtagsRes.value.data.hashtags || []) : [];
-
-        // Lọc users theo query (bao gồm cả user thường)
-        const lq = q.toLowerCase();
-        const users = q.trim()
-            ? allUsers.filter(u =>
-                u.username?.toLowerCase().includes(lq) ||
-                u.fullName?.toLowerCase().includes(lq)
-            )
-            : allUsers;
 
         return { data: { videos, users, hashtags, query: q } };
     } catch {

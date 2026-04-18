@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getNotifications, markAsRead, markAllAsRead, getMockNotifications } from '../services/notificationService';
+import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import { getStoredUser, isLoggedIn } from '../utils/helpers';
 
 // Import socket singleton từ useMessages thay vì tạo instance mới
@@ -23,9 +23,8 @@ export function useNotifications() {
             setNotifications(list);
             setUnreadCount(list.filter(n => !n.read).length);
         } catch {
-            const mock = getMockNotifications();
-            setNotifications(mock);
-            setUnreadCount(mock.filter(n => !n.read).length);
+            setNotifications([]);
+            setUnreadCount(0);
         } finally {
             setLoading(false);
         }

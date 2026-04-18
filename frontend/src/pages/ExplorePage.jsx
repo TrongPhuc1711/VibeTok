@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout/PageLayout';
 import UserDropdown from '../components/layout/UserDropdown';
 import { formatCount } from '../utils/formatters';
 import api from '../api/api';
+import { globalSearch } from '../services/exploreService';
 import { ArrowLeftIcon, ArrowRightIcon } from '../icons/CommonIcons';
 
 const CATEGORY_TABS = [
@@ -141,6 +142,142 @@ function VideoGrid({ videos, loading }) {
   );
 }
 
+/* ── Search Result Components ── */
+
+function UserResultCard({ user }) {
+  const navigate = useNavigate();
+  const initials = user.initials || (user.fullName || user.username || 'U').charAt(0).toUpperCase();
+
+  return (
+    <button
+      onClick={() => navigate(`/profile/${user.username}`)}
+      className="flex items-center gap-3 px-4 py-3 bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl hover:border-[#ff2d78]/30 transition-all cursor-pointer w-full text-left group"
+    >
+      <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden"
+        style={{ background: user.anh_dai_dien ? 'transparent' : `hsl(${(user.username?.charCodeAt(0) || 0) * 47 % 360}, 55%, 45%)` }}>
+        {user.anh_dai_dien
+          ? <img src={user.anh_dai_dien} alt="" className="w-full h-full object-cover" />
+          : initials}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-[13px] font-semibold font-body leading-tight m-0 truncate group-hover:text-[#ff2d78] transition-colors">
+          {user.fullName || user.username}
+        </p>
+        <p className="text-[#555] text-[11px] font-body m-0">@{user.username}</p>
+      </div>
+      <div className="flex items-center gap-3 text-[10px] font-body text-[#555] shrink-0">
+        <span>{formatCount(user.followers ?? 0)} followers</span>
+        {user.isCreator && (
+          <span className="px-1.5 py-0.5 rounded bg-[#ff2d78]/15 text-[#ff2d78] text-[9px] font-semibold">Creator</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function HashtagResultCard({ hashtag }) {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => navigate(`/explore?q=${encodeURIComponent(hashtag.tag)}`)}
+      className="flex items-center gap-3 px-4 py-3 bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl hover:border-[#7c3aed]/30 transition-all cursor-pointer group"
+    >
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed]/20 to-[#06b6d4]/20 flex items-center justify-center shrink-0">
+        <span className="text-lg">#</span>
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-white text-[13px] font-semibold font-body m-0 group-hover:text-[#7c3aed] transition-colors">
+          {hashtag.tag}
+        </p>
+        <p className="text-[#555] text-[11px] font-body m-0">{formatCount(hashtag.videos ?? 0)} video</p>
+      </div>
+    </button>
+  );
+}
+
+function SearchResults({ results, loading, query }) {
+  const { videos = [], users = [], hashtags = [] } = results;
+  const hasResults = videos.length > 0 || users.length > 0 || hashtags.length > 0;
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {/* Users skeleton */}
+        <div>
+          <div className="h-3 w-28 rounded bg-[#1a1a26] animate-pulse mb-3" />
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 rounded-xl bg-[#1a1a26] animate-pulse" />
+            ))}
+          </div>
+        </div>
+        {/* Videos skeleton */}
+        <div>
+          <div className="h-3 w-20 rounded bg-[#1a1a26] animate-pulse mb-3" />
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-sm md:rounded-lg animate-pulse bg-[#1a1a26]" style={{ aspectRatio: '9/16' }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasResults) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3 text-[#444]">
+        <span className="text-4xl">🔍</span>
+        <p className="text-sm font-body text-center px-4">
+          Không tìm thấy kết quả cho "<span className="text-white">{query}</span>"
+        </p>
+        <p className="text-[12px] font-body text-[#333]">Hãy thử tìm kiếm với từ khóa khác</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Users */}
+      {users.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-white text-[13px] font-semibold font-body">Tài khoản</span>
+            <span className="text-[#555] text-[11px] font-body">{users.length}</span>
+          </div>
+          <div className="space-y-2">
+            {users.map(u => <UserResultCard key={u.id} user={u} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Hashtags */}
+      {hashtags.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-white text-[13px] font-semibold font-body">Hashtag</span>
+            <span className="text-[#555] text-[11px] font-body">{hashtags.length}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            {hashtags.map(h => <HashtagResultCard key={h.id} hashtag={h} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Videos */}
+      {videos.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-white text-[13px] font-semibold font-body">Video</span>
+            <span className="text-[#555] text-[11px] font-body">{videos.length}</span>
+          </div>
+          <VideoGrid videos={videos} loading={false} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,7 +286,11 @@ export default function ExplorePage() {
   const [displayVideos, setDisplayVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryCount, setCategoryCount] = useState({});
+  const [searchResults, setSearchResults] = useState({ videos: [], users: [], hashtags: [] });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const tabsRef = useRef(null);
+  const searchTimerRef = useRef(null);
 
   const fetchAllVideos = async () => {
     setLoading(true);
@@ -173,20 +314,50 @@ export default function ExplorePage() {
 
   useEffect(() => { fetchAllVideos(); }, []);
 
+  // Category filtering (khi không tìm kiếm)
   useEffect(() => {
+    if (isSearchMode) return;
     const category = CATEGORY_TABS.find(t => t.id === activeTab) || CATEGORY_TABS[0];
-    let filtered = filterVideosByCategory(allVideos, category);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(v =>
-        (v.caption || '').toLowerCase().includes(q) ||
-        (v.user?.username || '').toLowerCase().includes(q)
-      );
+    setDisplayVideos(filterVideosByCategory(allVideos, category));
+  }, [activeTab, allVideos, isSearchMode]);
+
+  // Debounced search
+  const doSearch = useCallback(async (q) => {
+    if (!q.trim()) {
+      setIsSearchMode(false);
+      setSearchResults({ videos: [], users: [], hashtags: [] });
+      return;
     }
-    setDisplayVideos(filtered);
-  }, [activeTab, searchQuery, allVideos]);
+    setIsSearchMode(true);
+    setSearchLoading(true);
+    try {
+      const res = await globalSearch({ q: q.trim(), limit: 20 });
+      setSearchResults(res.data);
+    } catch {
+      setSearchResults({ videos: [], users: [], hashtags: [] });
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    clearTimeout(searchTimerRef.current);
+    if (!searchQuery.trim()) {
+      setIsSearchMode(false);
+      setSearchResults({ videos: [], users: [], hashtags: [] });
+      return;
+    }
+    searchTimerRef.current = setTimeout(() => doSearch(searchQuery), 350);
+    return () => clearTimeout(searchTimerRef.current);
+  }, [searchQuery, doSearch]);
 
   const scrollTabs = dir => tabsRef.current?.scrollBy({ left: dir * 200, behavior: 'smooth' });
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setIsSearchMode(false);
+    setSearchResults({ videos: [], users: [], hashtags: [] });
+  };
 
   return (
     <PageLayout>
@@ -205,25 +376,25 @@ export default function ExplorePage() {
             const count = categoryCount[tab.id];
             return (
               <button key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
+                onClick={() => { setActiveTab(tab.id); handleClearSearch(); }}
                 className="shrink-0 px-3 md:px-4 h-full flex items-center gap-1 border-none bg-transparent cursor-pointer transition-all whitespace-nowrap relative font-body"
                 style={{
                   fontSize: 12,
-                  color: activeTab === tab.id ? '#fff' : '#777',
-                  fontWeight: activeTab === tab.id ? 600 : 400,
+                  color: !isSearchMode && activeTab === tab.id ? '#fff' : '#777',
+                  fontWeight: !isSearchMode && activeTab === tab.id ? 600 : 400,
                 }}
               >
                 {tab.label}
                 {count !== undefined && count > 0 && (
                   <span className="text-[8px] px-1 py-px rounded-full font-bold hidden md:inline"
                     style={{
-                      background: activeTab === tab.id ? 'rgba(255,45,120,0.2)' : 'rgba(255,255,255,0.08)',
-                      color: activeTab === tab.id ? '#ff2d78' : '#555',
+                      background: !isSearchMode && activeTab === tab.id ? 'rgba(255,45,120,0.2)' : 'rgba(255,255,255,0.08)',
+                      color: !isSearchMode && activeTab === tab.id ? '#ff2d78' : '#555',
                     }}>
                     {count > 99 ? '99+' : count}
                   </span>
                 )}
-                {activeTab === tab.id && (
+                {!isSearchMode && activeTab === tab.id && (
                   <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-white rounded-t" />
                 )}
               </button>
@@ -252,12 +423,19 @@ export default function ExplorePage() {
           </button>
 
           {/* Desktop search */}
-          <div className="hidden md:flex items-center gap-2 bg-[#1a1a26] border border-[#2a2a3e] rounded-lg px-3 py-1.5 w-[200px]">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#555" strokeWidth="1.2" strokeLinecap="round">
+          <div className={`hidden md:flex items-center gap-2 border rounded-lg px-3 py-1.5 w-[220px] transition-colors ${
+            isSearchMode ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-[#1a1a26] border-[#2a2a3e]'
+          }`}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={isSearchMode ? '#ff2d78' : '#555'} strokeWidth="1.2" strokeLinecap="round">
               <circle cx="5" cy="5" r="4" /><path d="M8.5 8.5l2.5 2.5" />
             </svg>
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm..." className="bg-transparent border-none outline-none text-white text-[11px] font-body w-full placeholder:text-[#444]" />
+              placeholder="Tìm người dùng, hashtag, video..."
+              className="bg-transparent border-none outline-none text-white text-[11px] font-body w-full placeholder:text-[#444]" />
+            {searchQuery && (
+              <button onClick={handleClearSearch}
+                className="bg-transparent border-none text-[#555] hover:text-white cursor-pointer text-sm transition-colors">×</button>
+            )}
           </div>
 
           {/* Desktop user dropdown */}
@@ -270,15 +448,17 @@ export default function ExplorePage() {
       {/* Mobile search bar (expandable) */}
       {showSearch && (
         <div className="md:hidden px-3 py-2 border-b border-[#1a1a26] bg-base shrink-0">
-          <div className="flex items-center gap-2 bg-[#1a1a26] border border-[#2a2a3e] rounded-xl px-3 py-2">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#555" strokeWidth="1.2" strokeLinecap="round">
+          <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 transition-colors ${
+            isSearchMode ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-[#1a1a26] border-[#2a2a3e]'
+          }`}>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke={isSearchMode ? '#ff2d78' : '#555'} strokeWidth="1.2" strokeLinecap="round">
               <circle cx="5.5" cy="5.5" r="4.5" /><path d="M9 9l3 3" />
             </svg>
             <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm video..."
+              placeholder="Tìm người dùng, hashtag, video..."
               className="flex-1 bg-transparent border-none outline-none text-white text-[13px] font-body placeholder:text-[#444]" />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="bg-transparent border-none text-[#555] cursor-pointer text-lg">×</button>
+              <button onClick={handleClearSearch} className="bg-transparent border-none text-[#555] cursor-pointer text-lg">×</button>
             )}
           </div>
         </div>
@@ -287,13 +467,17 @@ export default function ExplorePage() {
       {/* ── Content ── */}
       <div className="flex-1 overflow-auto bg-base">
         <div className="p-1 md:p-3">
-          {searchQuery && (
-            <div className="mb-2 px-1 flex items-center gap-2">
-              <span className="text-[#888] text-[12px] font-body">"{searchQuery}":</span>
-              <span className="text-white text-[12px] font-semibold font-body">{displayVideos.length} video</span>
-            </div>
+          {isSearchMode ? (
+            <>
+              <div className="mb-3 px-1 flex items-center gap-2">
+                <span className="text-[#888] text-[12px] font-body">Kết quả cho</span>
+                <span className="text-white text-[12px] font-semibold font-body">"{searchQuery}"</span>
+              </div>
+              <SearchResults results={searchResults} loading={searchLoading} query={searchQuery} />
+            </>
+          ) : (
+            <VideoGrid videos={displayVideos} loading={loading} />
           )}
-          <VideoGrid videos={displayVideos} loading={loading} />
         </div>
       </div>
     </PageLayout>

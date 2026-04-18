@@ -69,7 +69,21 @@ export const UserModel = {
         return rows;
     },
 
-    // Cập nhật profile — chỉ update các field được truyền vào (dynamic SET)
+    // Tìm kiếm user theo tên hoặc username
+    async search(q, limit = 10) {
+        const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+        const [rows] = await pool.query(
+            `SELECT * FROM users 
+             WHERE hoat_dong = 1 
+               AND (ten_dang_nhap LIKE ? OR ten_hien_thi LIKE ?)
+             ORDER BY so_nguoi_theo_doi DESC
+             LIMIT ?`,
+            [like, like, limit]
+        );
+        return rows;
+    },
+
+    // Cập nhật profile
     async updateProfile(userId, updates = {}) {
         const fields = [];
         const values = [];

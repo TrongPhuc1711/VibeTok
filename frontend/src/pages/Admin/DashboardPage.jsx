@@ -126,7 +126,11 @@ export default function DashboardPage() {
                                     <td className="px-4 py-3 text-[#555] text-[11px] font-body">{c.rank}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: c.color }}>{c.initials}</div>
+                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 overflow-hidden" style={{ background: c.avatar ? 'transparent' : c.color }}>
+                                                {c.avatar
+                                                    ? <img src={c.avatar} alt="" className="w-full h-full object-cover" />
+                                                    : c.initials}
+                                            </div>
                                             <div>
                                                 <p className="text-white text-[12px] font-semibold font-body leading-tight m-0">{c.name}</p>
                                                 <p className="text-[#555] text-[10px] font-body m-0">{c.username}</p>

@@ -137,7 +137,11 @@ export default function UserManagerPage() {
                                 <tr key={u.id} className={`border-b border-[#1a1a2a]/40 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: u.color }}>{u.initials}</div>
+                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 overflow-hidden" style={{ background: u.avatar ? 'transparent' : u.color }}>
+                                                {u.avatar
+                                                    ? <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                                                    : u.initials}
+                                            </div>
                                             <div>
                                                 <p className="text-white text-[12px] font-semibold font-body leading-tight m-0">{u.name}</p>
                                                 <p className="text-[#555] text-[10px] font-body m-0">{u.username}</p>

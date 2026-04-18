@@ -52,6 +52,20 @@ export const getSuggestions = async (req, res) => {
     }
 };
 
+// GET /api/users/search?q=&limit=10
+export const searchUsers = async (req, res) => {
+    try {
+        const { q = '', limit = 10 } = req.query;
+        if (!q.trim()) return res.json({ users: [] });
+
+        const rows = await UserModel.search(q.trim(), Math.min(50, parseInt(limit) || 10));
+        const users = rows.map(u => normalizeUser(u));
+        res.json({ users });
+    } catch (e) {
+        res.status(500).json({ message: 'Lỗi tìm kiếm người dùng', error: e.message });
+    }
+};
+
 // POST /api/users/:username/follow
 export const followUser = async (req, res) => {
     try {
