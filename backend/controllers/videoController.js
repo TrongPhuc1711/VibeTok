@@ -5,17 +5,23 @@ import { HashtagModel } from '../models/contentModel.js';
 import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
 
-
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
         const currentUserId = req.user?.id ?? null;
-        const type = req.query.type || 'forYou';
+        const type = ['forYou', 'following'].includes(req.query.type) ? req.query.type : 'forYou';
+
+        // "following" feed requires auth
+        if (type === 'following' && !currentUserId) {
+            return res.json({ videos: [], hasMore: false, total: 0 });
+        }
+
         const data = await VideoModel.getFeed({ page, limit, currentUserId, type });
         res.json(data);
     } catch (e) {
+        console.error('getFeed error:', e);
         res.status(500).json({ message: 'Lỗi tải feed', error: e.message });
     }
 };
@@ -23,10 +29,13 @@ export const getFeed = async (req, res) => {
 // GET /api/videos/search
 export const searchVideos = async (req, res) => {
     try {
-        const { q = '', page = 1, limit = 10 } = req.query;
-        const videos = await VideoModel.search({ q, page: Number(page), limit: Number(limit) });
+        const q = (req.query.q || '').trim().slice(0, 100);
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+        const videos = await VideoModel.search({ q, page, limit });
         res.json({ videos });
     } catch (e) {
+        console.error('searchVideos error:', e);
         res.status(500).json({ message: 'Lỗi tìm kiếm', error: e.message });
     }
 };
@@ -37,9 +46,12 @@ export const getVideoById = async (req, res) => {
         const currentUserId = req.user?.id ?? null;
         const video = await VideoModel.findByIdWithAuth(req.params.id, currentUserId);
         if (!video) return res.status(404).json({ message: 'Video không tồn tại' });
-        VideoModel.incrementViews(req.params.id).catch(() => { });
+
+        // Increment views fire-and-forget
+        VideoModel.incrementViews(req.params.id).catch(() => {});
         res.json({ video });
     } catch (e) {
+        console.error('getVideoById error:', e);
         res.status(500).json({ message: 'Lỗi lấy video', error: e.message });
     }
 };
@@ -47,12 +59,13 @@ export const getVideoById = async (req, res) => {
 // GET /api/videos/user/:userId
 export const getVideosByUser = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 12;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 12));
         const currentUserId = req.user?.id ?? null;
         const videos = await VideoModel.getByUserId(req.params.userId, { page, limit, currentUserId });
         res.json({ videos });
     } catch (e) {
+        console.error('getVideosByUser error:', e);
         res.status(500).json({ message: 'Lỗi lấy video user', error: e.message });
     }
 };
@@ -62,33 +75,48 @@ export const uploadVideo = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Vui lòng chọn file video' });
 
-        const { caption = '', privacy = 'public', allowDuet, allowStitch, location = '', musicId, isDraft } = req.body;
+        const {
+            caption = '',
+            privacy = 'public',
+            allowDuet,
+            allowStitch,
+            location = '',
+            musicId,
+            isDraft,
+        } = req.body;
+
+        // Validate privacy
+        const validPrivacy = ['public', 'friends', 'private'];
+        const safePrivacy = validPrivacy.includes(privacy) ? privacy : 'public';
 
         const videoId = await VideoModel.create({
             userId: req.user.id,
             musicId: musicId || null,
-            caption,
+            caption: caption.slice(0, 500),
             videoUrl: req.file.path,
             thumbnail: req.file.path
                 .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
                 .replace(/\.[^.]+$/, '.jpg'),
             duration: req.file.duration || 0,
-            privacy,
+            privacy: safePrivacy,
             allowDuet: allowDuet !== 'false',
             allowStitch: allowStitch !== 'false',
-            location,
+            location: location.slice(0, 100),
             isDraft: isDraft === 'true',
         });
 
+        // Attach hashtags
         const tags = (caption.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) || []);
-        if (tags.length) await HashtagModel.attachToVideo(videoId, tags);
+        if (tags.length) {
+            await HashtagModel.attachToVideo(videoId, tags).catch(() => {});
+        }
 
         await UserModel.incrementVideoCount(req.user.id);
 
         const video = await VideoModel.findById(videoId);
         res.status(201).json({ message: 'Đăng video thành công!', video });
     } catch (e) {
-        console.error('Lỗi upload video:', e);
+        console.error('uploadVideo error:', e);
         res.status(500).json({ message: 'Lỗi đăng video', error: e.message });
     }
 };
@@ -96,11 +124,12 @@ export const uploadVideo = async (req, res) => {
 // GET /api/videos/:id/comments
 export const getComments = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
         const comments = await CommentModel.getByVideoId(req.params.id, { page, limit });
         res.json({ comments });
     } catch (e) {
+        console.error('getComments error:', e);
         res.status(500).json({ message: 'Lỗi lấy bình luận', error: e.message });
     }
 };
@@ -108,26 +137,32 @@ export const getComments = async (req, res) => {
 // POST /api/videos/:id/comments
 export const postComment = async (req, res) => {
     try {
-        const { content, parentId } = req.body;
-        if (!content?.trim()) return res.status(400).json({ message: 'Nội dung không được trống' });
+        const content = (req.body.content || '').trim();
+        if (!content) return res.status(400).json({ message: 'Nội dung không được trống' });
+        if (content.length > 300) return res.status(400).json({ message: 'Bình luận tối đa 300 ký tự' });
+
+        const { parentId } = req.body;
 
         const comment = await CommentModel.create({
             videoId: req.params.id,
             userId: req.user.id,
-            content: content.trim(),
+            content,
             parentId: parentId || null,
         });
         await VideoModel.updateCommentCount(req.params.id, 1);
 
-        const video = await VideoModel.findById(req.params.id);
-        if (video && String(video.userId) !== String(req.user.id)) {
-            const senderDb = await UserModel.findById(req.user.id);
-            const sender   = senderDb ? normalizeUser(senderDb) : req.user;
-            await triggerNotification(video.userId, sender, 'comment', video.id, comment.id);
-        }
+        // Trigger notification (fire-and-forget)
+        VideoModel.findById(req.params.id).then(async (video) => {
+            if (video && String(video.userId) !== String(req.user.id)) {
+                const senderDb = await UserModel.findById(req.user.id);
+                const sender = senderDb ? normalizeUser(senderDb) : req.user;
+                await triggerNotification(video.userId, sender, 'comment', video.id, comment.id);
+            }
+        }).catch(() => {});
 
         res.status(201).json({ message: 'Bình luận thành công!', comment });
     } catch (e) {
+        console.error('postComment error:', e);
         res.status(500).json({ message: 'Lỗi đăng bình luận', error: e.message });
     }
 };
@@ -137,15 +172,17 @@ export const likeVideo = async (req, res) => {
     try {
         const liked = await LikeModel.like(req.user.id, req.params.id);
         if (liked) {
-            const video = await VideoModel.findById(req.params.id);
-            if (video && String(video.userId) !== String(req.user.id)) {
-                const senderDb = await UserModel.findById(req.user.id);
-                const sender   = senderDb ? normalizeUser(senderDb) : req.user;
-                await triggerNotification(video.userId, sender, 'like', video.id);
-            }
+            VideoModel.findById(req.params.id).then(async (video) => {
+                if (video && String(video.userId) !== String(req.user.id)) {
+                    const senderDb = await UserModel.findById(req.user.id);
+                    const sender = senderDb ? normalizeUser(senderDb) : req.user;
+                    await triggerNotification(video.userId, sender, 'like', video.id);
+                }
+            }).catch(() => {});
         }
         res.json({ message: liked ? 'Đã thích' : 'Đã thích rồi', liked: true });
     } catch (e) {
+        console.error('likeVideo error:', e);
         res.status(500).json({ message: 'Lỗi like video', error: e.message });
     }
 };
@@ -156,18 +193,37 @@ export const unlikeVideo = async (req, res) => {
         await LikeModel.unlike(req.user.id, req.params.id);
         res.json({ message: 'Đã bỏ thích', liked: false });
     } catch (e) {
+        console.error('unlikeVideo error:', e);
         res.status(500).json({ message: 'Lỗi unlike video', error: e.message });
     }
 };
 
-// DELETE /api/videos/:id
+// DELETE /api/videos/:id  — owner OR admin can delete
 export const deleteVideo = async (req, res) => {
     try {
-        const ok = await VideoModel.softDelete(req.params.id, req.user.id);
+        const isAdmin = req.user.vai_tro === 'admin';
+
+        let ok;
+        if (isAdmin) {
+            // Admin can soft-delete any video
+            ok = await VideoModel.softDeleteByAdmin(req.params.id);
+        } else {
+            ok = await VideoModel.softDelete(req.params.id, req.user.id);
+        }
+
         if (!ok) return res.status(403).json({ message: 'Không thể xóa video này' });
-        await UserModel.incrementVideoCount(req.user.id, -1);
+
+        // Update video count for the video owner
+        const video = await VideoModel.findDeletedById(req.params.id);
+        if (video?.userId) {
+            await UserModel.incrementVideoCount(video.userId, -1);
+        } else if (!isAdmin) {
+            await UserModel.incrementVideoCount(req.user.id, -1);
+        }
+
         res.json({ message: 'Đã xóa video' });
     } catch (e) {
+        console.error('deleteVideo error:', e);
         res.status(500).json({ message: 'Lỗi xóa video', error: e.message });
     }
 };
