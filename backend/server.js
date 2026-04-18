@@ -12,11 +12,12 @@ import contentRoutes from './routes/contentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import { initSocket } from './utils/socket.js';
 import messageRoutes from './routes/messageRoutes.js';
+import adminRoutes   from './routes/adminRoutes.js';
 
 const app = express();
 const server = createServer(app);
 
-//  CORS: chỉ cho phép frontend origin, không mở toàn bộ
+//  CORS:chỉ cho phép frontend origin, không mở toàn bộ
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,https://vibe-tok.vercel.app')
     .split(',')
     .map(s => s.trim());
@@ -69,6 +70,7 @@ app.use('/api/users',   userRoutes);
 app.use('/api', contentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/admin',    adminRoutes);
 
 
 const PORT = process.env.PORT || 5000;

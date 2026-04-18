@@ -1,0 +1,176 @@
+import { AdminModel } from '../models/adminModel.js';
+
+// GET /api/admin/stats
+export const getStats = async (req, res) => {
+    try {
+        const stats = await AdminModel.getOverviewStats();
+        res.json({ stats });
+    } catch (e) {
+        console.error('Admin getStats error:', e);
+        res.status(500).json({ message: 'Lỗi lấy thống kê', error: e.message });
+    }
+};
+
+// GET /api/admin/user-growth?days=12
+export const getUserGrowth = async (req, res) => {
+    try {
+        const days = Math.min(90, Math.max(7, parseInt(req.query.days) || 12));
+        const data = await AdminModel.getUserGrowth(days);
+        res.json({ data });
+    } catch (e) {
+        console.error('Admin getUserGrowth error:', e);
+        res.status(500).json({ message: 'Lỗi lấy user growth', error: e.message });
+    }
+};
+
+// GET /api/admin/content-distribution
+export const getContentDistribution = async (req, res) => {
+    try {
+        const data = await AdminModel.getContentDistribution();
+        res.json({ data });
+    } catch (e) {
+        console.error('Admin getContentDistribution error:', e);
+        res.status(500).json({ message: 'Lỗi lấy phân loại nội dung', error: e.message });
+    }
+};
+
+// GET /api/admin/top-creators?limit=5
+export const getTopCreators = async (req, res) => {
+    try {
+        const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
+        const data = await AdminModel.getTopCreators(limit);
+        res.json({ data });
+    } catch (e) {
+        console.error('Admin getTopCreators error:', e);
+        res.status(500).json({ message: 'Lỗi lấy top creators', error: e.message });
+    }
+};
+
+// GET /api/admin/users?filter=all&search=&page=1&limit=10
+export const getUsers = async (req, res) => {
+    try {
+        const { filter = 'all', search = '', page = 1, limit = 10 } = req.query;
+        const result = await AdminModel.getUsers({
+            filter, search,
+            page: Math.max(1, parseInt(page)),
+            limit: Math.min(50, Math.max(1, parseInt(limit))),
+        });
+        res.json(result);
+    } catch (e) {
+        console.error('Admin getUsers error:', e);
+        res.status(500).json({ message: 'Lỗi lấy danh sách users', error: e.message });
+    }
+};
+
+// GET /api/admin/user-counts
+export const getUserCounts = async (req, res) => {
+    try {
+        const counts = await AdminModel.getUserCounts();
+        res.json({ counts });
+    } catch (e) {
+        console.error('Admin getUserCounts error:', e);
+        res.status(500).json({ message: 'Lỗi lấy user counts', error: e.message });
+    }
+};
+
+// PATCH /api/admin/users/:id/ban
+export const banUser = async (req, res) => {
+    try {
+        // Không cho ban chính mình
+        if (String(req.params.id) === String(req.user.id)) {
+            return res.status(400).json({ message: 'Không thể ban chính mình!' });
+        }
+        const ok = await AdminModel.banUser(req.params.id);
+        if (!ok) return res.status(404).json({ message: 'Người dùng không tồn tại hoặc là admin' });
+        res.json({ message: 'Đã ban người dùng' });
+    } catch (e) {
+        console.error('Admin banUser error:', e);
+        res.status(500).json({ message: 'Lỗi ban user', error: e.message });
+    }
+};
+
+// PATCH /api/admin/users/:id/unban
+export const unbanUser = async (req, res) => {
+    try {
+        const ok = await AdminModel.unbanUser(req.params.id);
+        if (!ok) return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        res.json({ message: 'Đã unban người dùng' });
+    } catch (e) {
+        console.error('Admin unbanUser error:', e);
+        res.status(500).json({ message: 'Lỗi unban user', error: e.message });
+    }
+};
+
+// GET /api/admin/videos?status=all&search=&page=1&limit=12
+export const getVideos = async (req, res) => {
+    try {
+        const { status = 'all', search = '', page = 1, limit = 12 } = req.query;
+        const result = await AdminModel.getVideos({
+            status, search,
+            page: Math.max(1, parseInt(page)),
+            limit: Math.min(50, Math.max(1, parseInt(limit))),
+        });
+        res.json(result);
+    } catch (e) {
+        console.error('Admin getVideos error:', e);
+        res.status(500).json({ message: 'Lỗi lấy danh sách videos', error: e.message });
+    }
+};
+
+// GET /api/admin/video-counts
+export const getVideoCounts = async (req, res) => {
+    try {
+        const counts = await AdminModel.getVideoCounts();
+        res.json({ counts });
+    } catch (e) {
+        console.error('Admin getVideoCounts error:', e);
+        res.status(500).json({ message: 'Lỗi lấy video counts', error: e.message });
+    }
+};
+
+// PATCH /api/admin/videos/:id/hide
+export const hideVideo = async (req, res) => {
+    try {
+        const ok = await AdminModel.hideVideo(req.params.id);
+        if (!ok) return res.status(404).json({ message: 'Video không tồn tại' });
+        res.json({ message: 'Đã ẩn video' });
+    } catch (e) {
+        console.error('Admin hideVideo error:', e);
+        res.status(500).json({ message: 'Lỗi ẩn video', error: e.message });
+    }
+};
+
+// PATCH /api/admin/videos/:id/restore
+export const restoreVideo = async (req, res) => {
+    try {
+        const ok = await AdminModel.restoreVideo(req.params.id);
+        if (!ok) return res.status(404).json({ message: 'Video không tồn tại' });
+        res.json({ message: 'Đã khôi phục video' });
+    } catch (e) {
+        console.error('Admin restoreVideo error:', e);
+        res.status(500).json({ message: 'Lỗi khôi phục video', error: e.message });
+    }
+};
+
+// GET /api/admin/views-per-day?days=7
+export const getViewsPerDay = async (req, res) => {
+    try {
+        const days = Math.min(90, Math.max(7, parseInt(req.query.days) || 7));
+        const data = await AdminModel.getViewsPerDay(days);
+        res.json({ data });
+    } catch (e) {
+        console.error('Admin getViewsPerDay error:', e);
+        res.status(500).json({ message: 'Lỗi lấy views per day', error: e.message });
+    }
+};
+
+// GET /api/admin/sidebar-counts
+export const getSidebarCounts = async (req, res) => {
+    try {
+        const counts = await AdminModel.getSidebarCounts();
+        res.json({ counts });
+    } catch (e) {
+        console.error('Admin getSidebarCounts error:', e);
+        res.status(500).json({ message: 'Lỗi lấy sidebar counts', error: e.message });
+    }
+};

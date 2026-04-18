@@ -138,7 +138,7 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
     try {
         const [users] = await pool.query(
-            'SELECT id, ten_dang_nhap, ten_hien_thi, email, anh_dai_dien, vai_tro, created_at FROM users WHERE id = ? AND hoat_dong = 1',
+            'SELECT id, ten_dang_nhap, ten_hien_thi, email, anh_dai_dien, vai_tro, ngay_tao FROM users WHERE id = ? AND hoat_dong = 1',
             [req.user.id]
         );
 
@@ -161,7 +161,7 @@ export const getMe = async (req, res) => {
                 anh_dai_dien:  u.anh_dai_dien,
                 vai_tro:       u.vai_tro,
                 initials:      buildInitials(fullName),
-                createdAt:     u.created_at,
+                createdAt:     u.ngay_tao,
             }
         });
 

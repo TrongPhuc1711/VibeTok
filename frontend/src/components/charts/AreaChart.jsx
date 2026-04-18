@@ -1,15 +1,22 @@
 export default function AreaChart({ data = [], keys = [], height = 130 }) {
     if (!data.length || !keys.length) return null;
-  
+
     const W = 600, H = height;
-    const padL = 8, padR = 8, padT = 8, padB = 24;
+    const padL = 8, padR = 8, padT = 8, padB = 38; // more padding for value labels
     const chartW = W - padL - padR;
     const chartH = H - padT - padB;
     const maxVal = Math.max(...data.flatMap(d => keys.map(k => d[k.key] ?? 0)));
-  
+
     const gx = (i) => padL + (i / (data.length - 1)) * chartW;
     const gy = (v) => padT + chartH - (maxVal > 0 ? (v / maxVal) * chartH : 0);
-  
+
+    const fmtVal = (n) => {
+        n = Number(n) || 0;
+        if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+        if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+        return String(n);
+    };
+
     return (
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height }}>
         <defs>
@@ -36,13 +43,27 @@ export default function AreaChart({ data = [], keys = [], height = 130 }) {
             </g>
           );
         })}
-        {/* X labels */}
-        {data.map((d,i) => i % Math.ceil(data.length/6) === 0 && (
-          <text key={i} x={gx(i)} y={H-6} textAnchor="middle"
-            fill="#555" fontSize="9" fontFamily="DM Sans, sans-serif">
-            {d.date ?? d.time ?? i}
-          </text>
-        ))}
+        {/* X labels: date + value */}
+        {data.map((d, i) => {
+          const step = Math.ceil(data.length / 7);
+          if (i % step !== 0 && i !== data.length - 1) return null;
+          const x = gx(i);
+          // Show primary key value (first key)
+          const primaryVal = d[keys[0]?.key] ?? 0;
+          return (
+            <g key={i}>
+              <text x={x} y={padT + chartH + 14} textAnchor="middle"
+                fill="#555" fontSize="9" fontFamily="DM Sans, sans-serif">
+                {d.date ?? d.time ?? i}
+              </text>
+              <text x={x} y={padT + chartH + 27} textAnchor="middle"
+                fill={keys[0]?.color ?? '#ff2d78'} fontSize="8" fontWeight="600"
+                fontFamily="DM Sans, sans-serif" opacity="0.8">
+                {fmtVal(primaryVal)}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     );
-  }
+}
