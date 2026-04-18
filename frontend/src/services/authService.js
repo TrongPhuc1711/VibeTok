@@ -75,8 +75,13 @@ export const getMe = async () => {
 
         return { user: normalizedUser };
     } catch (error) {
-        clearAuth();
-        throw new Error('Chưa đăng nhập hoặc phiên đăng nhập hết hạn');
+        // Chỉ xóa auth khi server xác nhận token không hợp lệ (401/403)
+        // Lỗi network/abort/timeout → giữ nguyên session, không xóa token
+        const status = error.response?.status;
+        if (status === 401 || status === 403) {
+            clearAuth();
+        }
+        throw error;
     }
 };
 

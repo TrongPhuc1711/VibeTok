@@ -14,17 +14,31 @@ export function AuthProvider({ children }) {
             setLoading(false);
             return;
         }
+        // AbortController: cancel request khi unmount (F5 spam)
+        const controller = new AbortController();
         getMe()
             .then(res => {
+                if (controller.signal.aborted) return;
                 setUser(res.user);
                 setIsAuthenticated(true);
             })
             .catch(() => {
-                clearAuth();
-                setUser(null);
-                setIsAuthenticated(false);
+                if (controller.signal.aborted) return;
+                const storedUser = getStoredUser();
+                // Nếu vẫn còn token + user trong localStorage → giữ session
+                if (isLoggedIn() && storedUser) {
+                    setUser(storedUser);
+                    setIsAuthenticated(true);
+                } else {
+                    clearAuth();
+                    setUser(null);
+                    setIsAuthenticated(false);
+                }
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
     }, []);
 
     const login = useCallback((userData) => {

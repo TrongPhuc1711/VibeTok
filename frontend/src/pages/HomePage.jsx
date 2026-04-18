@@ -6,7 +6,6 @@ import CommentPanel from '../components/video/CommentPannel/CommentPanel';
 import { BounceDots } from '../components/ui/Spinner';
 import { useVideoFeed } from '../hooks/useVideoFeed';
 
-// Stop all ACTIVE videos (only pause, don't mute global state)
 const stopAllVideos = () => {
     document.querySelectorAll('video').forEach((v) => {
         if (!v.paused) {
@@ -16,7 +15,6 @@ const stopAllVideos = () => {
     });
 };
 
-// Nav arrow button (desktop)
 function NavArrow({ direction, onClick, disabled }) {
     return (
         <button
@@ -39,7 +37,6 @@ function NavArrow({ direction, onClick, disabled }) {
     );
 }
 
-// Desktop: calculate video container size
 function useVideoContainerSize(aspectRatio, showComments) {
     const [size, setSize] = useState({ width: 360, height: 640 });
 
@@ -69,7 +66,7 @@ function useVideoContainerSize(aspectRatio, showComments) {
     return size;
 }
 
-// Mobile: full-screen TikTok-style feed
+// Mobile: full-screen 
 function MobileFeed({ videos, loading, hasMore, loadMore }) {
     const [currentIdx, setCurrentIdx] = useState(0);
     const [commentVideoId, setCommentVideoId] = useState(null);
@@ -133,7 +130,6 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
     if (!current) {
         return (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-white/30 font-body px-6 text-center">
-                <span className="text-5xl">🎬</span>
                 <p className="text-sm">Không có video nào</p>
             </div>
         );
@@ -260,24 +256,28 @@ export default function HomePage({ feedType = 'forYou' }) {
         }
     }, [currentIdx, videos, hasMore, loadMore, commentVideoId]);
 
+    const scrollLockRef = useRef(false);
+
     // Desktop: wheel navigation
     useEffect(() => {
         const el = desktopRef.current;
         if (!el || isMobile) return;
 
-        let wheelTimeout;
         const handler = (e) => {
             e.preventDefault();
-            clearTimeout(wheelTimeout);
-            wheelTimeout = setTimeout(() => {
-                go(e.deltaY > 0 ? 1 : -1);
-            }, 50);
+            if (scrollLockRef.current) return;
+
+            scrollLockRef.current = true;
+            go(e.deltaY > 0 ? 1 : -1);
+
+            setTimeout(() => {
+                scrollLockRef.current = false;
+            }, 700);
         };
 
         el.addEventListener('wheel', handler, { passive: false });
         return () => {
             el.removeEventListener('wheel', handler);
-            clearTimeout(wheelTimeout);
         };
     }, [go, isMobile]);
 

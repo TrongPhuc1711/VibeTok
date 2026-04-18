@@ -28,6 +28,11 @@ let isRedirecting = false; // prevent redirect loop
 api.interceptors.response.use(
     (response) => response,
     (error) => {
+        // Request bị abort (F5, navigate away) → không xóa auth, pass through
+        if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+            return Promise.reject(error);
+        }
+
         // Network error (no response)
         if (!error.response) {
             if (error.code === 'ECONNABORTED') {
