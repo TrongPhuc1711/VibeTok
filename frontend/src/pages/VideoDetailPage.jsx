@@ -11,11 +11,21 @@ export default function VideoDetailPage() {
     const { id }   = useParams();
     const navigate = useNavigate();
 
+    const handleClose = () => {
+        // Nếu có lịch sử trình duyệt (user đến từ trang nội bộ), quay lại
+        // Nếu mở link trực tiếp (tab mới), không có history → về trang chủ
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/', { replace: true });
+        }
+    };
+
     return (
         <PageLayout noPadding>
             <VideoDetailOverlay
                 videoId={id}
-                onClose={() => navigate(-1)}
+                onClose={handleClose}
             />
         </PageLayout>
     );
