@@ -87,8 +87,9 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ email và mật khẩu!' });
         }
 
+        // Tìm user không cần check hoat_dong để phân biệt banned vs sai thông tin
         const [users] = await pool.query(
-            'SELECT * FROM users WHERE email = ? AND hoat_dong = 1',
+            'SELECT * FROM users WHERE email = ?',
             [email.toLowerCase()]
         );
 
@@ -101,6 +102,14 @@ export const login = async (req, res) => {
         const isMatch = await bcrypt.compare(mat_khau, user.mat_khau);
         if (!isMatch) {
             return res.status(400).json({ message: 'Email hoặc mật khẩu không chính xác!' });
+        }
+
+        // Kiểm tra tài khoản bị ban SAU KHI xác thực mật khẩu đúng
+        if (!user.hoat_dong) {
+            return res.status(403).json({
+                message: 'Tài khoản của bạn đã bị ban. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
+                banned: true
+            });
         }
 
         const token = jwt.sign(

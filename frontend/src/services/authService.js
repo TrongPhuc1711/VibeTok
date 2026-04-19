@@ -24,7 +24,10 @@ export const login = async ({ email, password }) => {
 
         return { user: normalizedUser, token };
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại!');
+        // Giữ nguyên response data để LoginPage detect banned
+        const err = new Error(error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại!');
+        err.response = error.response;
+        throw err;
     }
 };
 

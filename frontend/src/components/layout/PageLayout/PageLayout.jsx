@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import SearchPanel from '../Sidebar/SearchPanel';
 import NotificationPagePanel from '../../notification/NotificationPagePanel';
 import BottomNav from '../BottomNav/BottomNav';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 export default function PageLayout({ children, rightPanel, noPadding = false }) {
+  const { user, isAuthenticated } = useAuthContext();
+  const navigate = useNavigate();
+  const isAdmin = isAuthenticated && user?.vai_tro === 'admin';
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -100,6 +105,46 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
         onSearchClick={handleSearchClick}
         searchActive={searchOpen}
       />
+
+      {/* ── Admin Dashboard Button (only for admin) ── */}
+      {isAdmin && (
+        <button
+          id="admin-dashboard-btn"
+          onClick={() => navigate('/admin')}
+          title="Trang quản trị"
+          style={{
+            position: 'fixed',
+            top: 16,
+            right: 16,
+            zIndex: 9999,
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            border: '1px solid rgba(255, 45, 120, 0.4)',
+            background: 'linear-gradient(135deg, #ff2d78, #7c3aed)',
+            color: '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 20px rgba(255, 45, 120, 0.35)',
+            transition: 'all 0.25s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 6px 28px rgba(255, 45, 120, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 45, 120, 0.35)';
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import express from 'express';
 import { verifyToken, requireAdmin } from '../middlewares/authMiddleware.js';
 import {
     getStats, getUserGrowth, getContentDistribution, getTopCreators,
-    getUsers, getUserCounts, banUser, unbanUser,
+    getUsers, getUserCounts, banUser, unbanUser, resetUserPassword,
     getVideos, getVideoCounts, hideVideo, restoreVideo,
     getViewsPerDay, getSidebarCounts,
 } from '../controllers/adminController.js';
@@ -24,6 +24,7 @@ router.get('/users', getUsers);
 router.get('/user-counts', getUserCounts);
 router.patch('/users/:id/ban', banUser);
 router.patch('/users/:id/unban', unbanUser);
+router.patch('/users/:id/reset-password', resetUserPassword);
 
 // Videos
 router.get('/videos', getVideos);

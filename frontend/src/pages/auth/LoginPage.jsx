@@ -43,9 +43,17 @@ export default function LoginPage() {
                 }
             }, 600);
         } catch (e) {
-            const msg = e.message || 'Đăng nhập thất bại';
+            const response = e.response || e;
+            const isBanned = response?.data?.banned || e.message?.includes('bị ban');
+            const msg = isBanned
+                ? 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.'
+                : (e.message || 'Đăng nhập thất bại');
             setApiError(msg);
-            showError('Đăng nhập thất bại', msg);
+            if (isBanned) {
+                showError('Tài khoản bị vô hiệu hóa ', msg);
+            } else {
+                showError('Đăng nhập thất bại', msg);
+            }
         } finally {
             setLoading(false);
         }

@@ -216,6 +216,26 @@ export const AdminModel = {
         return result.affectedRows > 0;
     },
 
+    // Admin reset user password
+    async resetUserPassword(userId, newPassword) {
+        // Kiểm tra user tồn tại và không phải admin
+        const [users] = await pool.query(
+            'SELECT id, vai_tro FROM users WHERE id = ?',
+            [userId]
+        );
+        if (users.length === 0 || users[0].vai_tro === 'admin') return false;
+
+        const bcrypt = (await import('bcryptjs')).default;
+        const salt = await bcrypt.genSalt(12);
+        const hashed = await bcrypt.hash(newPassword, salt);
+
+        const [result] = await pool.query(
+            'UPDATE users SET mat_khau = ? WHERE id = ? AND vai_tro != ?',
+            [hashed, userId, 'admin']
+        );
+        return result.affectedRows > 0;
+    },
+
     //  All Videos (filter/pagination) 
     async getVideos({ status = 'all', search = '', page = 1, limit = 12 } = {}) {
         const offset = (page - 1) * limit;

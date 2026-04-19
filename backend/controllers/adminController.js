@@ -1,4 +1,5 @@
 import { AdminModel } from '../models/adminModel.js';
+import bcrypt from 'bcryptjs';
 
 // GET /api/admin/stats
 export const getStats = async (req, res) => {
@@ -172,5 +173,32 @@ export const getSidebarCounts = async (req, res) => {
     } catch (e) {
         console.error('Admin getSidebarCounts error:', e);
         res.status(500).json({ message: 'Lỗi lấy sidebar counts', error: e.message });
+    }
+};
+
+// PATCH /api/admin/users/:id/reset-password
+export const resetUserPassword = async (req, res) => {
+    try {
+        const { mat_khau_moi } = req.body;
+        const userId = req.params.id;
+
+        if (!mat_khau_moi) {
+            return res.status(400).json({ message: 'Vui lòng nhập mật khẩu mới!' });
+        }
+
+        if (mat_khau_moi.length < 8) {
+            return res.status(400).json({ message: 'Mật khẩu mới tối thiểu 8 ký tự!' });
+        }
+
+        // Không cho đổi mật khẩu của admin khác
+        const ok = await AdminModel.resetUserPassword(userId, mat_khau_moi);
+        if (!ok) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại hoặc là admin' });
+        }
+
+        res.json({ message: 'Đã đổi mật khẩu thành công!' });
+    } catch (e) {
+        console.error('Admin resetUserPassword error:', e);
+        res.status(500).json({ message: 'Lỗi đổi mật khẩu', error: e.message });
     }
 };

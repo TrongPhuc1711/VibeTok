@@ -14,6 +14,7 @@ export const getUsers = (params) => api.get(`${BASE}/users`, { params }).then(r 
 export const getUserCounts = () => api.get(`${BASE}/user-counts`).then(r => r.data.counts);
 export const banUser = (id) => api.patch(`${BASE}/users/${id}/ban`);
 export const unbanUser = (id) => api.patch(`${BASE}/users/${id}/unban`);
+export const resetUserPassword = (id, mat_khau_moi) => api.patch(`${BASE}/users/${id}/reset-password`, { mat_khau_moi });
 
 // Videos 
 export const getAdminVideos = (params) => api.get(`${BASE}/videos`, { params }).then(r => r.data);

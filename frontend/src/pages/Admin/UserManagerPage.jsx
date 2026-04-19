@@ -7,7 +7,7 @@ import AdminFilters   from './components/AdminFilters';
 import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
 import { useToast }   from '../../components/ui/Toast';
-import { getUsers, getUserCounts, banUser, unbanUser } from '../../services/adminService';
+import { getUsers, getUserCounts, banUser, unbanUser, resetUserPassword } from '../../services/adminService';
 
 const fmt = (n) => {
     n = Number(n) || 0;
@@ -25,6 +25,124 @@ const FILTERS = [
     { label: 'Banned',    value: 'banned'  },
 ];
 
+// Password Reset Modal
+function PasswordResetModal({ user, onClose, onSuccess }) {
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const { showSuccess, showError } = useToast();
+
+    const handleSubmit = async () => {
+        setError('');
+        if (!password || password.length < 8) {
+            setError('Mật khẩu tối thiểu 8 ký tự!');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Mật khẩu xác nhận không khớp!');
+            return;
+        }
+        setLoading(true);
+        try {
+            await resetUserPassword(user.id, password);
+            showSuccess('Thành công', `Đã đổi mật khẩu cho ${user.name}`);
+            onSuccess();
+            onClose();
+        } catch (e) {
+            const msg = e.response?.data?.message || 'Không thể đổi mật khẩu';
+            setError(msg);
+            showError('Lỗi', msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div
+                className="w-[420px] rounded-2xl border overflow-hidden"
+                style={{
+                    background: '#0f0f1a',
+                    borderColor: '#1e1e2e',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                }}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#1a1a2a' }}>
+                    <div>
+                        <h3 className="text-white text-[15px] font-display font-bold m-0">Đổi mật khẩu</h3>
+                        <p className="text-[#555] text-[11px] font-body mt-0.5 m-0">Người dùng: {user.name} ({user.username})</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border border-[#1e1e2e] cursor-pointer text-[#555] hover:text-white hover:border-[#333] transition-colors"
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="px-5 py-4 space-y-3">
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-[12px] font-body">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-[#777] text-[11px] font-body mb-1">Mật khẩu mới</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Tối thiểu 8 ký tự"
+                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-[#777] text-[11px] font-body mb-1">Xác nhận mật khẩu</label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Nhập lại mật khẩu"
+                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors"
+                        />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: '#1a1a2a' }}>
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-lg text-[12px] font-body text-[#777] bg-transparent border border-[#1e1e2e] cursor-pointer hover:border-[#333] hover:text-white transition-colors"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="px-4 py-2 rounded-lg text-[12px] font-body font-semibold text-white cursor-pointer border-none transition-all disabled:opacity-50"
+                        style={{
+                            background: 'linear-gradient(135deg, #ff2d78, #7c3aed)',
+                        }}
+                    >
+                        {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function UserManagerPage() {
     const { showSuccess, showError } = useToast();
     const [users, setUsers]       = useState([]);
@@ -36,6 +154,7 @@ export default function UserManagerPage() {
     const [total, setTotal]       = useState(0);
     const [loading, setLoading]   = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
+    const [resetPasswordUser, setResetPasswordUser] = useState(null);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -171,6 +290,10 @@ export default function UserManagerPage() {
                                                     onClick={() => handleUnban(u.id)}
                                                     disabled={actionLoading === u.id} />
                                             )}
+                                            {u.role !== 'admin' && (
+                                                <AdminBtn label="Đổi MK" bg="#7c3aed22" color="#7c3aed"
+                                                    onClick={() => setResetPasswordUser(u)} />
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -187,6 +310,15 @@ export default function UserManagerPage() {
                     label="người dùng"
                 />
             </div>
+
+            {/* Password Reset Modal */}
+            {resetPasswordUser && (
+                <PasswordResetModal
+                    user={resetPasswordUser}
+                    onClose={() => setResetPasswordUser(null)}
+                    onSuccess={() => fetchUsers()}
+                />
+            )}
         </AdminLayout>
     );
 }
