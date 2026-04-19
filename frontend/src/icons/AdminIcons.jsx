@@ -107,3 +107,13 @@ export function PlayAdminIcon() {
     </svg>
   );
 }
+
+export function MusicAdminIcon({ active }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke={s(active)} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 15V4l10-2v11"/>
+      <circle cx="4.5" cy="15" r="2.5"/>
+      <circle cx="14.5" cy="13" r="2.5"/>
+    </svg>
+  );
+}

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import AdminLayout    from '../../components/layout/Sidebar/AdminLayout';
-import StatCard       from '../../components/ui/StatCard';
-import StatusBadge    from '../../components/ui/StatusBadge';
-import AdminBtn       from './components/AdminBtn';
-import AdminFilters   from './components/AdminFilters';
+import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
+import StatCard from '../../components/ui/StatCard';
+import StatusBadge from '../../components/ui/StatusBadge';
+import AdminBtn from './components/AdminBtn';
+import AdminFilters from './components/AdminFilters';
 import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
-import { useToast }   from '../../components/ui/Toast';
+import { useToast } from '../../components/ui/Toast';
 import { getUsers, getUserCounts, banUser, unbanUser, resetUserPassword } from '../../services/adminService';
 
 const fmt = (n) => {
@@ -19,10 +19,10 @@ const fmt = (n) => {
 const PAGE_SIZE = 8;
 
 const FILTERS = [
-    { label: 'Tất cả',    value: 'all'     },
-    { label: 'Active',    value: 'active'  },
-    { label: 'Creator',   value: 'creator' },
-    { label: 'Banned',    value: 'banned'  },
+    { label: 'Tất cả', value: 'all' },
+    { label: 'Active', value: 'active' },
+    { label: 'Creator', value: 'creator' },
+    { label: 'Banned', value: 'banned' },
 ];
 
 // Password Reset Modal
@@ -145,14 +145,14 @@ function PasswordResetModal({ user, onClose, onSuccess }) {
 
 export default function UserManagerPage() {
     const { showSuccess, showError } = useToast();
-    const [users, setUsers]       = useState([]);
-    const [counts, setCounts]     = useState({ all: 0, active: 0, creator: 0, banned: 0 });
-    const [filter, setFilter]     = useState('all');
-    const [search, setSearch]     = useState('');
-    const [page, setPage]         = useState(1);
+    const [users, setUsers] = useState([]);
+    const [counts, setCounts] = useState({ all: 0, active: 0, creator: 0, banned: 0 });
+    const [filter, setFilter] = useState('all');
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [total, setTotal]       = useState(0);
-    const [loading, setLoading]   = useState(true);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [resetPasswordUser, setResetPasswordUser] = useState(null);
 
@@ -201,11 +201,11 @@ export default function UserManagerPage() {
         setActionLoading(id);
         try {
             await unbanUser(id);
-            showSuccess('Thành công', 'Đã unban người dùng');
+            showSuccess('Thành công', 'Đã vô hiệu hóa người dùng');
             fetchUsers();
             fetchCounts();
         } catch (e) {
-            showError('Lỗi', e.response?.data?.message || 'Không thể unban');
+            showError('Lỗi', e.response?.data?.message || 'Không thể vô hiệu hóa tài khoản');
         } finally {
             setActionLoading(null);
         }
@@ -220,10 +220,10 @@ export default function UserManagerPage() {
         <AdminLayout title="Quản lý người dùng">
             {/* Mini stats */}
             <div className="grid grid-cols-4 gap-3 mb-5">
-                <StatCard label="Tổng người dùng" value={fmt(counts.all)}      change={0} positive accent />
-                <StatCard label="Active"          value={fmt(counts.active)}    change={0} positive />
-                <StatCard label="Creator"         value={fmt(counts.creator)}   change={0} positive />
-                <StatCard label="Đã ban"          value={String(counts.banned)} change={0} positive={false} />
+                <StatCard label="Tổng người dùng" value={fmt(counts.all)} change={0} positive accent />
+                <StatCard label="Active" value={fmt(counts.active)} change={0} positive />
+                <StatCard label="Creator" value={fmt(counts.creator)} change={0} positive />
+                <StatCard label="Đã ban" value={String(counts.banned)} change={0} positive={false} />
             </div>
 
             {/* Filters + search */}
@@ -275,7 +275,7 @@ export default function UserManagerPage() {
                                         <div className="flex items-center gap-1 flex-wrap">
                                             <StatusBadge status={u.status} />
                                             {u.role === 'creator' && <StatusBadge status="creator" />}
-                                            {u.role === 'admin'   && <StatusBadge status="active" label="Admin" />}
+                                            {u.role === 'admin' && <StatusBadge status="active" label="Admin" />}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
@@ -291,7 +291,7 @@ export default function UserManagerPage() {
                                                     disabled={actionLoading === u.id} />
                                             )}
                                             {u.role !== 'admin' && (
-                                                <AdminBtn label="Đổi MK" bg="#7c3aed22" color="#7c3aed"
+                                                <AdminBtn label="Đổi mật khẩu" bg="#7c3aed22" color="#7c3aed"
                                                     onClick={() => setResetPasswordUser(u)} />
                                             )}
                                         </div>

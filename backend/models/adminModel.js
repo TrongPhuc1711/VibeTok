@@ -350,6 +350,106 @@ export const AdminModel = {
         return { users, videos, hidden };
     },
 
+    // All Music (filter/search/pagination)
+    async getMusic({ filter = 'all', search = '', page = 1, limit = 10 } = {}) {
+        const offset = (page - 1) * limit;
+        const params = [];
+        const wheres = [];
+
+        if (filter === 'trending') wheres.push('m.dang_thinh_hanh = 1');
+        if (filter === 'normal') wheres.push('m.dang_thinh_hanh = 0');
+
+        if (search.trim()) {
+            wheres.push('(m.tieu_de LIKE ? OR m.nghe_si LIKE ?)');
+            const like = `%${search.trim()}%`;
+            params.push(like, like);
+        }
+
+        const whereClause = wheres.length ? 'WHERE ' + wheres.join(' AND ') : '';
+
+        const [[{ total }]] = await pool.query(
+            `SELECT COUNT(*) AS total FROM music m ${whereClause}`, params
+        );
+
+        const [rows] = await pool.query(`
+            SELECT m.*
+            FROM music m
+            ${whereClause}
+            ORDER BY m.id DESC
+            LIMIT ? OFFSET ?
+        `, [...params, limit, offset]);
+
+        const tracks = rows.map(m => ({
+            id: String(m.id),
+            title: m.tieu_de,
+            artist: m.nghe_si,
+            duration: Number(m.thoi_luong_giay) || 0,
+            audioUrl: m.duong_dan_am_thanh,
+            cover: m.anh_bia || null,
+            trending: Boolean(m.dang_thinh_hanh),
+            uses: Number(m.luot_su_dung) || 0,
+            createdAt: m.ngay_tao ? new Date(m.ngay_tao).toLocaleDateString('vi-VN') : '',
+        }));
+
+        return { tracks, total, page, totalPages: Math.ceil(total / limit) };
+    },
+
+    // Music counts
+    async getMusicCounts() {
+        const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM music');
+        const [[{ trending }]] = await pool.query('SELECT COUNT(*) AS trending FROM music WHERE dang_thinh_hanh = 1');
+        const normal = total - trending;
+        return { all: total, trending, normal };
+    },
+
+    // Create music
+    async createMusic({ title, artist, duration, audioUrl, cover, trending }) {
+        const [result] = await pool.query(
+            `INSERT INTO music (tieu_de, nghe_si, thoi_luong_giay, duong_dan_am_thanh, anh_bia, dang_thinh_hanh, luot_su_dung)
+             VALUES (?, ?, ?, ?, ?, ?, 0)`,
+            [title, artist, duration || 0, audioUrl || '', cover || null, trending ? 1 : 0]
+        );
+        return result.insertId;
+    },
+
+    // Update music
+    async updateMusic(id, { title, artist, duration, audioUrl, cover, trending }) {
+        const fields = [];
+        const values = [];
+
+        if (title !== undefined) { fields.push('tieu_de = ?'); values.push(title); }
+        if (artist !== undefined) { fields.push('nghe_si = ?'); values.push(artist); }
+        if (duration !== undefined) { fields.push('thoi_luong_giay = ?'); values.push(duration); }
+        if (audioUrl !== undefined) { fields.push('duong_dan_am_thanh = ?'); values.push(audioUrl); }
+        if (cover !== undefined) { fields.push('anh_bia = ?'); values.push(cover); }
+        if (trending !== undefined) { fields.push('dang_thinh_hanh = ?'); values.push(trending ? 1 : 0); }
+
+        if (fields.length === 0) return false;
+
+        values.push(id);
+        const [result] = await pool.query(
+            `UPDATE music SET ${fields.join(', ')} WHERE id = ?`, values
+        );
+        return result.affectedRows > 0;
+    },
+
+    // Delete music
+    async deleteMusic(id) {
+        // Xóa liên kết với video trước
+        await pool.query('UPDATE videos SET ma_am_nhac = NULL WHERE ma_am_nhac = ?', [id]);
+        const [result] = await pool.query('DELETE FROM music WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+    },
+
+    // Toggle trending
+    async toggleMusicTrending(id) {
+        const [rows] = await pool.query('SELECT dang_thinh_hanh FROM music WHERE id = ?', [id]);
+        if (rows.length === 0) return null;
+        const newVal = rows[0].dang_thinh_hanh ? 0 : 1;
+        await pool.query('UPDATE music SET dang_thinh_hanh = ? WHERE id = ?', [newVal, id]);
+        return newVal === 1;
+    },
+
     //  Helpers 
     _fmt(n) {
         n = Number(n) || 0;

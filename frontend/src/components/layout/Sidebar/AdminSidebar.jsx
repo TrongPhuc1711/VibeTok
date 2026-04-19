@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import {
     DashIcon, ChartLineIcon, UsersAdminIcon, VideoAdminIcon,
-    ShieldAdminIcon, SettingsAdminIcon,
+    ShieldAdminIcon, SettingsAdminIcon, MusicAdminIcon,
 } from '../../../icons/AdminIcons';
 import { getSidebarCounts } from '../../../services/adminService';
 
@@ -32,6 +32,7 @@ export default function AdminSidebar() {
         { path: '/admin/analytics', label: 'Analytics', Icon: ChartLineIcon, badge: null },
         { path: '/admin/users', label: 'Người dùng', Icon: UsersAdminIcon, badge: fmt(counts.users) },
         { path: '/admin/videos', label: 'Video', Icon: VideoAdminIcon, badge: fmt(counts.videos) },
+        { path: '/admin/music', label: 'Âm nhạc', Icon: MusicAdminIcon, badge: null },
         { path: '/admin/moderation', label: 'Kiểm duyệt', Icon: ShieldAdminIcon, badge: counts.hidden > 0 ? String(counts.hidden) : null, danger: counts.hidden > 0 },
         { path: '/admin/settings', label: 'Cài đặt', Icon: SettingsAdminIcon, badge: null },
     ];

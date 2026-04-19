@@ -5,6 +5,7 @@ import {
     getUsers, getUserCounts, banUser, unbanUser, resetUserPassword,
     getVideos, getVideoCounts, hideVideo, restoreVideo,
     getViewsPerDay, getSidebarCounts,
+    getMusic, getMusicCounts, createMusic, updateMusic, deleteMusic, toggleMusicTrending,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -31,6 +32,14 @@ router.get('/videos', getVideos);
 router.get('/video-counts', getVideoCounts);
 router.patch('/videos/:id/hide', hideVideo);
 router.patch('/videos/:id/restore', restoreVideo);
+
+// Music
+router.get('/music', getMusic);
+router.get('/music-counts', getMusicCounts);
+router.post('/music', createMusic);
+router.patch('/music/:id', updateMusic);
+router.delete('/music/:id', deleteMusic);
+router.patch('/music/:id/trending', toggleMusicTrending);
 
 // Analytics
 router.get('/views-per-day', getViewsPerDay);

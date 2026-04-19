@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import AdminLayout    from '../../components/layout/Sidebar/AdminLayout';
-import StatCard       from '../../components/ui/StatCard';
-import StatusBadge    from '../../components/ui/StatusBadge';
-import AdminBtn       from './components/AdminBtn';
-import AdminFilters   from './components/AdminFilters';
+import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
+import StatCard from '../../components/ui/StatCard';
+import StatusBadge from '../../components/ui/StatusBadge';
+import AdminBtn from './components/AdminBtn';
+import AdminFilters from './components/AdminFilters';
 import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
-import { useToast }   from '../../components/ui/Toast';
+import { useToast } from '../../components/ui/Toast';
 import { PlayAdminIcon } from '../../icons/AdminIcons';
 import { getAdminVideos, getVideoCounts, hideVideo, restoreVideo } from '../../services/adminService';
 
@@ -20,22 +20,22 @@ const fmt = (n) => {
 const PAGE_SIZE = 12;
 
 const FILTERS = [
-    { label: 'Tất cả',   value: 'all'    },
+    { label: 'Tất cả', value: 'all' },
     { label: 'Đang hiển thị', value: 'active' },
-    { label: 'Bản nháp', value: 'draft'  },
-    { label: 'Đã ẩn',    value: 'hidden' },
+    { label: 'Bản nháp', value: 'draft' },
+    { label: 'Đã ẩn', value: 'hidden' },
 ];
 
 export default function ModerationPage() {
     const { showSuccess, showError } = useToast();
-    const [videos, setVideos]     = useState([]);
-    const [counts, setCounts]     = useState({ all: 0, active: 0, draft: 0, hidden: 0 });
-    const [filter, setFilter]     = useState('all');
-    const [search, setSearch]     = useState('');
-    const [page, setPage]         = useState(1);
+    const [videos, setVideos] = useState([]);
+    const [counts, setCounts] = useState({ all: 0, active: 0, draft: 0, hidden: 0 });
+    const [filter, setFilter] = useState('all');
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [total, setTotal]       = useState(0);
-    const [loading, setLoading]   = useState(true);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
 
     const fetchVideos = useCallback(async () => {
@@ -102,10 +102,10 @@ export default function ModerationPage() {
         <AdminLayout title="Kiểm duyệt & Video">
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4 mb-6">
-                <StatCard label="Tổng video"       value={fmt(counts.all)}    change={0} positive accent />
-                <StatCard label="Đang hiển thị"    value={fmt(counts.active)} change={0} positive />
-                <StatCard label="Bản nháp"         value={String(counts.draft)}  change={0} positive />
-                <StatCard label="Đã ẩn"            value={String(counts.hidden)} change={0} positive={false} />
+                <StatCard label="Tổng video" value={fmt(counts.all)} change={0} positive accent />
+                <StatCard label="Đang hiển thị" value={fmt(counts.active)} change={0} positive />
+                <StatCard label="Bản nháp" value={String(counts.draft)} change={0} positive />
+                <StatCard label="Đã ẩn" value={String(counts.hidden)} change={0} positive={false} />
             </div>
 
             {/* Filters */}

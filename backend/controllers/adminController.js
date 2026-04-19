@@ -202,3 +202,83 @@ export const resetUserPassword = async (req, res) => {
         res.status(500).json({ message: 'Lỗi đổi mật khẩu', error: e.message });
     }
 };
+
+//MUSIC 
+
+// GET /api/admin/music?filter=all&search=&page=1&limit=10
+export const getMusic = async (req, res) => {
+    try {
+        const { filter = 'all', search = '', page = 1, limit = 10 } = req.query;
+        const result = await AdminModel.getMusic({
+            filter, search,
+            page: Math.max(1, parseInt(page)),
+            limit: Math.min(50, Math.max(1, parseInt(limit))),
+        });
+        res.json(result);
+    } catch (e) {
+        console.error('Admin getMusic error:', e);
+        res.status(500).json({ message: 'Lỗi lấy danh sách nhạc', error: e.message });
+    }
+};
+
+// GET /api/admin/music-counts
+export const getMusicCounts = async (req, res) => {
+    try {
+        const counts = await AdminModel.getMusicCounts();
+        res.json({ counts });
+    } catch (e) {
+        console.error('Admin getMusicCounts error:', e);
+        res.status(500).json({ message: 'Lỗi lấy music counts', error: e.message });
+    }
+};
+
+// POST /api/admin/music
+export const createMusic = async (req, res) => {
+    try {
+        const { title, artist, duration, audioUrl, cover, trending } = req.body;
+        if (!title || !artist) {
+            return res.status(400).json({ message: 'Tên bài hát và nghệ sĩ là bắt buộc!' });
+        }
+        const id = await AdminModel.createMusic({ title, artist, duration, audioUrl, cover, trending });
+        res.status(201).json({ message: 'Đã thêm bài hát!', id });
+    } catch (e) {
+        console.error('Admin createMusic error:', e);
+        res.status(500).json({ message: 'Lỗi thêm bài hát', error: e.message });
+    }
+};
+
+// PATCH /api/admin/music/:id
+export const updateMusic = async (req, res) => {
+    try {
+        const ok = await AdminModel.updateMusic(req.params.id, req.body);
+        if (!ok) return res.status(404).json({ message: 'Bài hát không tồn tại' });
+        res.json({ message: 'Đã cập nhật bài hát!' });
+    } catch (e) {
+        console.error('Admin updateMusic error:', e);
+        res.status(500).json({ message: 'Lỗi cập nhật bài hát', error: e.message });
+    }
+};
+
+// DELETE /api/admin/music/:id
+export const deleteMusic = async (req, res) => {
+    try {
+        const ok = await AdminModel.deleteMusic(req.params.id);
+        if (!ok) return res.status(404).json({ message: 'Bài hát không tồn tại' });
+        res.json({ message: 'Đã xóa bài hát!' });
+    } catch (e) {
+        console.error('Admin deleteMusic error:', e);
+        res.status(500).json({ message: 'Lỗi xóa bài hát', error: e.message });
+    }
+};
+
+// PATCH /api/admin/music/:id/trending
+export const toggleMusicTrending = async (req, res) => {
+    try {
+        const result = await AdminModel.toggleMusicTrending(req.params.id);
+        if (result === null) return res.status(404).json({ message: 'Bài hát không tồn tại' });
+        res.json({ message: result ? 'Đã đánh dấu thịnh hành' : 'Đã bỏ thịnh hành', trending: result });
+    } catch (e) {
+        console.error('Admin toggleMusicTrending error:', e);
+        res.status(500).json({ message: 'Lỗi toggle trending', error: e.message });
+    }
+};
