@@ -14,11 +14,14 @@ export default function MusicPanel({ selectedTrackId, onSelect }) {
   const audioRef   = useRef(null);
   const location   = useLocation();
 
-  // ✅ FIX: Hàm dừng audio dùng chung, gọi được ở nhiều nơi
+  //Hàm dừng audio dùng chung, gọi được ở nhiều nơi
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.pause();
-      audioRef.current.src = '';
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
       audioRef.current = null;
     }
     setPreviewId(null);
@@ -58,39 +61,37 @@ export default function MusicPanel({ selectedTrackId, onSelect }) {
       t.artist.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handlePreview = (e, track) => {
-    e.stopPropagation();
-    if (!track.audioUrl) return;
-
-    if (previewId === track.id) {
-      // Đang phát → dừng
+  const handleSelect = (track) => {
+    onSelect(track);
+    
+    if (!track.audioUrl) {
       stopAudio();
       return;
     }
 
-    // Dừng track cũ trước
-    stopAudio();
+    if (previewId === track.id) {
+      stopAudio();
+      return;
+    }
 
-    // Phát track mới
+    stopAudio();
     const audio = new Audio(track.audioUrl);
     audio.volume = 0.6;
     audio.play().catch(() => {});
     audio.onended = () => {
-      setPreviewId(null);
-      audioRef.current = null;
+      if (audioRef.current === audio) {
+        setPreviewId(null);
+        audioRef.current = null;
+      }
     };
     audio.onerror = () => {
-      setPreviewId(null);
-      audioRef.current = null;
+      if (audioRef.current === audio) {
+        setPreviewId(null);
+        audioRef.current = null;
+      }
     };
     audioRef.current = audio;
     setPreviewId(track.id);
-  };
-
-  const handleSelect = (track) => {
-    // Dừng preview khi chọn
-    stopAudio();
-    onSelect(track);
   };
 
   return (
@@ -156,24 +157,21 @@ export default function MusicPanel({ selectedTrackId, onSelect }) {
               >
                 {/* Icon / play state */}
                 <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 relative group
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden
                     ${selected ? 'bg-brand-gradient' : 'bg-gradient-to-br from-border to-border2'}`}
-                  onClick={hasAudio ? (e) => handlePreview(e, track) : undefined}
-                  title={hasAudio ? (isPreviewing ? 'Dừng preview' : 'Nghe thử') : 'Không có file audio'}
+                  title={hasAudio ? (isPreviewing ? 'Dừng phát' : 'Phát nhạc') : 'Không có file audio'}
                 >
-                  {isPreviewing ? (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="rgba(255,255,255,.9)">
-                      <rect x="2" y="2" width="4" height="10" rx="1" />
-                      <rect x="8" y="2" width="4" height="10" rx="1" />
-                    </svg>
+                  {track.cover ? (
+                    <img src={track.cover} alt={track.title} className="w-full h-full object-cover" />
                   ) : (
-                    <MusicNoteIcon active={selected} />
+                    !isPreviewing && <MusicNoteIcon active={selected} />
                   )}
 
-                  {hasAudio && !isPreviewing && (
-                    <div className="absolute inset-0 rounded-lg bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
-                        <path d="M3 2l7 4-7 4V2z" />
+                  {isPreviewing && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="rgba(255,255,255,.9)">
+                        <rect x="2" y="2" width="4" height="10" rx="1" />
+                        <rect x="8" y="2" width="4" height="10" rx="1" />
                       </svg>
                     </div>
                   )}
