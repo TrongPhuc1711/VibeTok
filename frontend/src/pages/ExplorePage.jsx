@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ProfileVideoFeedModal from '../components/profile/ProfileVideoFeedModal';
 import PageLayout from '../components/layout/PageLayout/PageLayout';
 import UserDropdown from '../components/layout/UserDropdown';
 import { formatCount } from '../utils/formatters';
@@ -102,8 +103,7 @@ function VideoCredit({ video }) {
   );
 }
 
-function VideoGrid({ videos, loading }) {
-  const navigate = useNavigate();
+function VideoGrid({ videos, loading, onVideoClick }) {
   if (loading) {
     return (
       <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
@@ -134,7 +134,7 @@ function VideoGrid({ videos, loading }) {
     <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
       {videos.map((v, i) => (
         <div key={v.id ?? i}>
-          <VideoThumbnail video={v} style={{ aspectRatio: '9/16', width: '100%' }} onClick={() => v.id && navigate(`/video/${v.id}`)} />
+          <VideoThumbnail video={v} style={{ aspectRatio: '9/16', width: '100%' }} onClick={() => v.id && onVideoClick?.(i)} />
           <VideoCredit video={v} />
         </div>
       ))}
@@ -271,7 +271,7 @@ function SearchResults({ results, loading, query }) {
             <span className="text-white text-[13px] font-semibold font-body">Video</span>
             <span className="text-[#555] text-[11px] font-body">{videos.length}</span>
           </div>
-          <VideoGrid videos={videos} loading={false} />
+          <VideoGrid videos={videos} loading={false} onVideoClick={(idx) => openVideoFeed(videos, idx)} />
         </div>
       )}
     </div>
@@ -289,6 +289,16 @@ export default function ExplorePage() {
   const [searchResults, setSearchResults] = useState({ videos: [], users: [], hashtags: [] });
   const [searchLoading, setSearchLoading] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  // Video feed modal state
+  const [feedModalOpen, setFeedModalOpen] = useState(false);
+  const [feedModalVideos, setFeedModalVideos] = useState([]);
+  const [feedModalIndex, setFeedModalIndex] = useState(0);
+
+  const openVideoFeed = useCallback((videos, index) => {
+    setFeedModalVideos(videos);
+    setFeedModalIndex(index);
+    setFeedModalOpen(true);
+  }, []);
   const tabsRef = useRef(null);
   const searchTimerRef = useRef(null);
 
@@ -476,10 +486,19 @@ export default function ExplorePage() {
               <SearchResults results={searchResults} loading={searchLoading} query={searchQuery} />
             </>
           ) : (
-            <VideoGrid videos={displayVideos} loading={loading} />
+            <VideoGrid videos={displayVideos} loading={loading} onVideoClick={(idx) => openVideoFeed(displayVideos, idx)} />
           )}
         </div>
       </div>
+
+      {/* Video Feed Modal — giống trang cá nhân */}
+      {feedModalOpen && feedModalVideos.length > 0 && (
+        <ProfileVideoFeedModal
+          videos={feedModalVideos}
+          initialIndex={feedModalIndex}
+          onClose={() => setFeedModalOpen(false)}
+        />
+      )}
     </PageLayout>
   );
 }
