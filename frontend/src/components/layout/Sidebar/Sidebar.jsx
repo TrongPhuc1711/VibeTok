@@ -10,6 +10,7 @@ import {
   BellIcon,
   PlusIcon,
   MessageIcon,
+  SearchIcon,
 } from '../../../icons/NavIcons';
 import SidebarSearch from './SidebarSearch';
 import SidebarNav from './SidebarNav';
@@ -20,7 +21,7 @@ import { useNotifications } from '../../../hooks/useNotifications';
 import { useAuth } from '../../../hooks/useAuth';
 
 /* Collapsed (icon-only) sidebar */
-function CollapsedSidebar({ onNotifClick, notifActive }) {
+function CollapsedSidebar({ onNotifClick, notifActive, onSearchClick, searchActive }) {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
   // Reactive auth state
@@ -33,7 +34,6 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
     { path: ROUTES.UPLOAD, Icon: UploadIcon },
     { path: ROUTES.PROFILE, Icon: UserIcon },
     { path: ROUTES.MESSAGE, Icon: MessageIcon }
-
   ];
 
   return (
@@ -49,8 +49,17 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
       </div>
 
       <nav className="flex-1 py-2 flex flex-col items-center">
+        {/* Search button */}
+        <button
+          onClick={onSearchClick}
+          className={`flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
+            ${searchActive ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
+        >
+          <SearchIcon color={searchActive ? '#ff2d78' : '#666'} />
+        </button>
+
         {NAV_ITEMS.map(({ path, Icon }) => {
-          const active = !notifActive && window.location.pathname === path;
+          const active = !notifActive && !searchActive && window.location.pathname === path;
           return (
             <button
               key={path}
@@ -94,14 +103,19 @@ function CollapsedSidebar({ onNotifClick, notifActive }) {
 }
 
 /* Full sidebar */
-export default function Sidebar({ className = '', collapsed = false, onNotifClick, notifActive = false }) {
+export default function Sidebar({ className = '', collapsed = false, onNotifClick, notifActive = false, onSearchClick, searchActive = false }) {
   const navigate = useNavigate();
-  // ✅ Reactive auth state từ AuthContext
+
   const { isAuthenticated } = useAuth();
 
   if (collapsed) {
     return (
-      <CollapsedSidebar onNotifClick={onNotifClick} notifActive={notifActive} />
+      <CollapsedSidebar
+        onNotifClick={onNotifClick}
+        notifActive={notifActive}
+        onSearchClick={onSearchClick}
+        searchActive={searchActive}
+      />
     );
   }
 
@@ -118,7 +132,7 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
         </span>
       </div>
 
-      <SidebarSearch />
+      <SidebarSearch onSearchClick={onSearchClick} />
 
       <div className="flex-1 overflow-auto flex flex-col">
         <SidebarNav onNotifClick={onNotifClick} notifActive={notifActive} />

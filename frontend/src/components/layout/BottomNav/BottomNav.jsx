@@ -4,7 +4,7 @@ import { ROUTES } from '../../../utils/constants';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useUnreadMessageCount } from '../../../hooks/useMessages';
 
-export default function BottomNav({ onNotifClick, notifActive = false }) {
+export default function BottomNav({ onNotifClick, notifActive = false, onSearchClick, searchActive = false }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { unreadCount: notifCount } = useNotifications();
@@ -31,12 +31,12 @@ export default function BottomNav({ onNotifClick, notifActive = false }) {
         icon={<HomeIcon active={isActive(ROUTES.HOME)} />}
       />
 
-      {/* Explore */}
+      {/* Search */}
       <NavBtn
-        active={isActive(ROUTES.EXPLORE)}
-        onClick={() => navigate(ROUTES.EXPLORE)}
-        label="Khám phá"
-        icon={<ExploreIcon active={isActive(ROUTES.EXPLORE)} />}
+        active={searchActive}
+        onClick={onSearchClick}
+        label="Tìm kiếm"
+        icon={<ExploreIcon active={searchActive} />}
       />
 
       {/* Upload - Center button */}
