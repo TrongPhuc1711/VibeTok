@@ -25,8 +25,8 @@ export const restoreVideo = (id) => api.patch(`${BASE}/videos/${id}/restore`);
 // Music
 export const getAdminMusic = (params) => api.get(`${BASE}/music`, { params }).then(r => r.data);
 export const getMusicCounts = () => api.get(`${BASE}/music-counts`).then(r => r.data.counts);
-export const createMusic = (data) => api.post(`${BASE}/music`, data, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
-export const updateMusic = (id, data) => api.patch(`${BASE}/music/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
+export const createMusic = (data) => api.post(`${BASE}/music`, data).then(r => r.data);
+export const updateMusic = (id, data) => api.patch(`${BASE}/music/${id}`, data).then(r => r.data);
 export const deleteMusic = (id) => api.delete(`${BASE}/music/${id}`).then(r => r.data);
 export const toggleMusicTrending = (id) => api.patch(`${BASE}/music/${id}/trending`).then(r => r.data);
 
