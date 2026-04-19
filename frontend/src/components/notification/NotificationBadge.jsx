@@ -2,11 +2,6 @@ import React from 'react';
 import { BellIcon } from '../../icons/NavIcons';
 import { useNotifications } from '../../hooks/useNotifications';
 
-/*
-NotificationBadge — nav item trong Sidebar
-Chỉ hiển thị icon + badge đếm chưa đọc, delegate click lên PageLayout
-PageLayout sẽ thu sidebar + hiện NotificationPagePanel
- */
 export default function NotificationBadge({ onNotifClick, notifActive = false }) {
   const { unreadCount } = useNotifications();
 

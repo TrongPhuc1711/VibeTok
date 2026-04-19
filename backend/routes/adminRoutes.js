@@ -1,5 +1,5 @@
-import express from 'express';
 import { verifyToken, requireAdmin } from '../middlewares/authMiddleware.js';
+import { uploadMusicFiles } from '../middlewares/uploadMiddleware.js';
 import {
     getStats, getUserGrowth, getContentDistribution, getTopCreators,
     getUsers, getUserCounts, banUser, unbanUser, resetUserPassword,
@@ -36,8 +36,8 @@ router.patch('/videos/:id/restore', restoreVideo);
 // Music
 router.get('/music', getMusic);
 router.get('/music-counts', getMusicCounts);
-router.post('/music', createMusic);
-router.patch('/music/:id', updateMusic);
+router.post('/music', uploadMusicFiles, createMusic);
+router.patch('/music/:id', uploadMusicFiles, updateMusic);
 router.delete('/music/:id', deleteMusic);
 router.patch('/music/:id/trending', toggleMusicTrending);
 

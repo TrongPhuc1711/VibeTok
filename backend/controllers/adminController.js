@@ -235,11 +235,27 @@ export const getMusicCounts = async (req, res) => {
 // POST /api/admin/music
 export const createMusic = async (req, res) => {
     try {
-        const { title, artist, duration, audioUrl, cover, trending } = req.body;
+        const { title, artist, duration, trending } = req.body;
+        
+        const audioUrl = req.files?.audio?.[0]?.path;
+        const cover = req.files?.cover?.[0]?.path || '';
+
         if (!title || !artist) {
             return res.status(400).json({ message: 'Tên bài hát và nghệ sĩ là bắt buộc!' });
         }
-        const id = await AdminModel.createMusic({ title, artist, duration, audioUrl, cover, trending });
+        if (!audioUrl) {
+            return res.status(400).json({ message: 'File âm thanh là bắt buộc!' });
+        }
+
+        const id = await AdminModel.createMusic({ 
+            title, 
+            artist, 
+            duration: Number(duration) || 0, 
+            audioUrl, 
+            cover, 
+            trending: trending === 'true' 
+        });
+        
         res.status(201).json({ message: 'Đã thêm bài hát!', id });
     } catch (e) {
         console.error('Admin createMusic error:', e);
@@ -250,7 +266,19 @@ export const createMusic = async (req, res) => {
 // PATCH /api/admin/music/:id
 export const updateMusic = async (req, res) => {
     try {
-        const ok = await AdminModel.updateMusic(req.params.id, req.body);
+        const updates = { ...req.body };
+        
+        if (updates.trending !== undefined) {
+            updates.trending = updates.trending === 'true';
+        }
+        if (req.files?.audio?.[0]?.path) {
+            updates.audioUrl = req.files.audio[0].path;
+        }
+        if (req.files?.cover?.[0]?.path) {
+            updates.cover = req.files.cover[0].path;
+        }
+
+        const ok = await AdminModel.updateMusic(req.params.id, updates);
         if (!ok) return res.status(404).json({ message: 'Bài hát không tồn tại' });
         res.json({ message: 'Đã cập nhật bài hát!' });
     } catch (e) {

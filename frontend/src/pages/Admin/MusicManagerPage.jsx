@@ -29,15 +29,17 @@ const FILTERS = [
     { label: 'Bình thường', value: 'normal' },
 ];
 
-// ═══════ Music Form Modal ═══════
+// Music Form Modal
 function MusicFormModal({ track, onClose, onSuccess }) {
     const isEdit = !!track;
     const [form, setForm] = useState({
         title: track?.title || '',
         artist: track?.artist || '',
         duration: track?.duration || 0,
+        audioFile: null,
         audioUrl: track?.audioUrl || '',
-        cover: track?.cover || '',
+        coverFile: null,
+        coverUrl: track?.cover || '',
         trending: track?.trending || false,
     });
     const [loading, setLoading] = useState(false);
@@ -50,19 +52,53 @@ function MusicFormModal({ track, onClose, onSuccess }) {
         setError('');
     };
 
+    const handleAudioChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setForm(p => ({ ...p, audioFile: file }));
+            const objectUrl = URL.createObjectURL(file);
+            const audio = new Audio(objectUrl);
+            audio.onloadedmetadata = () => {
+                setForm(p => ({ ...p, duration: Math.round(audio.duration) }));
+                URL.revokeObjectURL(objectUrl);
+            };
+        }
+    };
+
+    const handleCoverChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setForm(p => ({ ...p, coverFile: file, coverUrl: URL.createObjectURL(file) }));
+        }
+    };
+
     const handleSubmit = async () => {
         setError('');
         if (!form.title.trim() || !form.artist.trim()) {
             setError('Tên bài hát và nghệ sĩ là bắt buộc!');
             return;
         }
+        if (!isEdit && !form.audioFile) {
+            setError('File âm thanh là bắt buộc khi thêm bài hát mới!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('title', form.title);
+        formData.append('artist', form.artist);
+        formData.append('duration', form.duration);
+        formData.append('trending', form.trending);
+        
+        if (form.audioFile) formData.append('audio', form.audioFile);
+        if (form.coverFile) formData.append('cover', form.coverFile);
+
         setLoading(true);
         try {
             if (isEdit) {
-                await updateMusic(track.id, form);
+                await updateMusic(track.id, formData);
                 showSuccess('Thành công', 'Đã cập nhật bài hát');
             } else {
-                await createMusic(form);
+                await createMusic(formData);
                 showSuccess('Thành công', 'Đã thêm bài hát mới');
             }
             onSuccess();
@@ -126,24 +162,34 @@ function MusicFormModal({ track, onClose, onSuccess }) {
                     </div>
 
                     <div>
-                        <label className="block text-[#777] text-[11px] font-body mb-1">URL âm thanh</label>
-                        <input type="text" value={form.audioUrl} onChange={set('audioUrl')}
-                            placeholder="https://... (.mp3, .wav)"
-                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors" />
+                        <label className="block text-[#777] text-[11px] font-body mb-1">File âm thanh (.mp3, .wav) *</label>
+                        <input type="file" accept="audio/*" onChange={handleAudioChange}
+                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-[#aaa] text-[12px] font-body outline-none focus:border-primary/50 transition-colors file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-primary/20 file:text-primary cursor-pointer hover:file:bg-primary/30" />
+                        {isEdit && !form.audioFile && form.audioUrl && (
+                            <p className="text-[#555] text-[10px] mt-1 ml-1 truncate">Hiện tại: {form.audioUrl.split('/').pop()}</p>
+                        )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 items-end">
                         <div>
-                            <label className="block text-[#777] text-[11px] font-body mb-1">URL ảnh bìa</label>
-                            <input type="text" value={form.cover} onChange={set('cover')}
-                                placeholder="https://... (jpg, png)"
-                                className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors" />
+                            <label className="block text-[#777] text-[11px] font-body mb-1">Ảnh bìa (Tùy chọn)</label>
+                            <input type="file" accept="image/*" onChange={handleCoverChange}
+                                className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-[#aaa] text-[12px] font-body outline-none focus:border-primary/50 transition-colors file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#7c3aed22] file:text-[#7c3aed] cursor-pointer hover:file:bg-[#7c3aed33]" />
                         </div>
-                        <div>
-                            <label className="block text-[#777] text-[11px] font-body mb-1">Thời lượng (giây)</label>
-                            <input type="number" value={form.duration} onChange={set('duration')}
-                                min="0" placeholder="0"
-                                className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors" />
+                        <div className="flex gap-3">
+                            <div className="w-[38px] h-[38px] rounded flex items-center justify-center bg-[#111120] border border-[#1e1e2e] overflow-hidden shrink-0">
+                                {form.coverUrl ? (
+                                    <img src={form.coverUrl} alt="Cover preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-[16px]">🎵</span>
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-[#777] text-[11px] font-body mb-1">Thời lượng (giây)</label>
+                                <input type="number" value={form.duration} onChange={set('duration')}
+                                    min="0" placeholder="0" disabled
+                                    className="w-full bg-[#1a1a2a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-[#777] text-[13px] font-body outline-none cursor-not-allowed" />
+                            </div>
                         </div>
                     </div>
 
