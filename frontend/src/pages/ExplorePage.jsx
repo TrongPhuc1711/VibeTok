@@ -491,7 +491,7 @@ export default function ExplorePage() {
         </div>
       </div>
 
-      {/* Video Feed Modal — giống trang cá nhân */}
+      {/* Video Feed Modal */}
       {feedModalOpen && feedModalVideos.length > 0 && (
         <ProfileVideoFeedModal
           videos={feedModalVideos}

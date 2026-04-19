@@ -226,6 +226,10 @@ export const forgotPassword = async (req, res) => {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: 'Vui lòng nhập email!' });
 
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ message: 'Email không đúng định dạng!' });
+        }
+
         const normalizedEmail = email.toLowerCase().trim();
 
         // Rate limit: max 3 OTP requests per hour per email
@@ -307,6 +311,10 @@ export const resetPasswordWithOTP = async (req, res) => {
 
         if (!email || !otp || !mat_khau_moi) {
             return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin!' });
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ message: 'Email không đúng định dạng!' });
         }
 
         if (mat_khau_moi.length < 8) {

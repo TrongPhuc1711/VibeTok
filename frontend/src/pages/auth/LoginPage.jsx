@@ -125,7 +125,7 @@ export default function LoginPage() {
 
                 <FormInput label="Email" type="email" value={form.email}
                     onChange={set('email')} onBlur={v => validateField('email', v)}
-                    placeholder="nguyenvibe@email.com" error={errors.email}
+                    placeholder="vibetok@email.com" error={errors.email}
                     icon={<EmailIcon />} required />
 
                 <FormInput label="Mật khẩu" type="password" value={form.password}

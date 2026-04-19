@@ -13,6 +13,7 @@ export default function ForgotPasswordPage() {
 
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
+    const [emailError, setEmailError] = useState('');
     const [otp, setOtp] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -25,9 +26,20 @@ export default function ForgotPasswordPage() {
         return () => clearTimeout(t);
     }, [countdown]);
 
+    const handleEmailChange = (v) => {
+        setEmail(v);
+        if (emailError) setEmailError('');
+    };
+
     const handleSendOTP = async () => {
-        if (!email.trim()) return showWarning('Thiếu thông tin', 'Vui lòng nhập email');
-        if (!isValidEmail(email)) return showError('Lỗi', 'Email không đúng định dạng');
+        if (!email.trim()) {
+            setEmailError('Vui lòng nhập email');
+            return showWarning('Thiếu thông tin', 'Vui lòng nhập email');
+        }
+        if (!isValidEmail(email)) {
+            setEmailError('Email không đúng định dạng (VD: example@gmail.com)');
+            return showError('Lỗi', 'Email không đúng định dạng');
+        }
 
         setLoading(true);
         try {
@@ -91,8 +103,9 @@ export default function ForgotPasswordPage() {
                             label="Email"
                             type="email"
                             value={email}
-                            onChange={v => setEmail(v)}
-                            placeholder="nguyenvibe@email.com"
+                            onChange={handleEmailChange}
+                            placeholder="vibetok@email.com"
+                            error={emailError}
                             required
                         />
                         <Button onClick={handleSendOTP} loading={loading} fullWidth>
