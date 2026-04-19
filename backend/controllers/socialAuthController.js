@@ -1,26 +1,23 @@
-import { OAuth2Client } from 'google-auth-library';
+import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { socialAuthModel } from '../models/socialAuthModel.js';
 import { UserModel, normalizeUser } from '../models/userModel.js';
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const getJwtSecret = () => process.env.JWT_SECRET || 'vibetok_secret_key_default';
 
 export const googleLogin = async (req, res) => {
     try {
-        const { credential } = req.body;
-        if (!credential) {
-            return res.status(400).json({ message: 'Missing credential string' });
+        const { access_token } = req.body;
+        if (!access_token) {
+            return res.status(400).json({ message: 'Missing access_token string' });
         }
 
-        // 1. Verify token với Google
-        const ticket = await client.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID,
+        // 1. Lấy thông tin user từ Google API bằng access_token
+        const googleResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${access_token}` }
         });
-        const payload = ticket.getPayload();
-        const { sub, email, name, picture } = payload; // sub là UID của Google
+        
+        const { sub, email, name, picture } = googleResponse.data; // sub là UID của Google
 
         // 2. Tìm liên kết
         let linkedAccount = await socialAuthModel.findByProvider('google', sub);

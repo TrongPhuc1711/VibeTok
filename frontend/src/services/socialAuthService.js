@@ -1,9 +1,9 @@
 import api from '../api/api';
 import { setToken, setStoredUser } from '../utils/helpers';
 
-export const googleLoginService = async (credential) => {
+export const googleLoginService = async (access_token) => {
     try {
-        const response = await api.post('/auth/social/google', { credential });
+        const response = await api.post('/auth/social/google', { access_token });
         const { token, user } = response.data;
         
         // Normalize user giống login thường

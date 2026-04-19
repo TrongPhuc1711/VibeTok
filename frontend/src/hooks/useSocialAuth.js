@@ -14,8 +14,8 @@ export const useSocialAuth = () => {
     const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);
         try {
-            const { credential } = credentialResponse;
-            const { user } = await googleLoginService(credential);
+            const { access_token } = credentialResponse;
+            const { user } = await googleLoginService(access_token);
             
             contextLogin(user);
             showSuccess('Đăng nhập thành công!', `Chào mừng ${user.fullName} 👋`);
