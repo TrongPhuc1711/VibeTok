@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout';
 import VideoCard from '../components/video/VideoCard/VideoCard';
 import VideoCardActions from '../components/video/VideoCard/VideoCardActions';
@@ -210,7 +211,19 @@ function MobileFeed({ videos, loading, hasMore, loadMore }) {
 
 // ── Main component ──
 export default function HomePage({ feedType = 'forYou' }) {
-    const { videos, loading, loadMore, hasMore } = useVideoFeed(feedType);
+    const location = useLocation();
+    // Lấy startVideoId từ location state (khi user mở link chia sẻ /video/:id)
+    const startVideoId = location.state?.startVideoId || null;
+    // Memo để tránh re-create options object mỗi render
+    const feedOptions = useMemo(() => ({ startVideoId }), [startVideoId]);
+    const { videos, loading, loadMore, hasMore } = useVideoFeed(feedType, feedOptions);
+
+    // Xóa state sau khi đã đọc để refresh trang không giữ lại startVideoId
+    useEffect(() => {
+        if (startVideoId) {
+            window.history.replaceState({}, '');
+        }
+    }, [startVideoId]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const [commentVideoId, setCommentVideoId] = useState(null);
     const [aspectRatio, setAspectRatio] = useState(9 / 16);

@@ -1,32 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import PageLayout from '../components/layout/PageLayout/PageLayout';
-import VideoDetailOverlay from '../components/video/VideoDetailOverlay/VideoDetailOverlay';
 
 /*
-VideoDetailPage — trang xem video theo URL /video/:id
-Dùng lại VideoDetailOverlay nhưng render như trang đầy đủ
+VideoDetailPage — khi user mở link /video/:id (chia sẻ link)
+Thay vì hiển thị 1 video đơn lẻ, redirect về HomePage
+và đặt video đó lên đầu feed để user lướt tiếp các video khác
  */
 export default function VideoDetailPage() {
     const { id }   = useParams();
     const navigate = useNavigate();
 
-    const handleClose = () => {
-        // Nếu có lịch sử trình duyệt (user đến từ trang nội bộ), quay lại
-        // Nếu mở link trực tiếp (tab mới), không có history → về trang chủ
-        if (window.history.length > 1) {
-            navigate(-1);
-        } else {
-            navigate('/', { replace: true });
-        }
-    };
+    useEffect(() => {
+        // Chuyển về trang chủ, truyền startVideoId qua location state
+        // replace: true để user bấm back không quay lại trang /video/:id
+        navigate('/', { replace: true, state: { startVideoId: id } });
+    }, [id, navigate]);
 
+    // Hiển thị loading trong lúc redirect
     return (
-        <PageLayout noPadding>
-            <VideoDetailOverlay
-                videoId={id}
-                onClose={handleClose}
-            />
-        </PageLayout>
+        <div style={{
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#0a0a0f',
+        }}>
+            <div style={{
+                width: 32,
+                height: 32,
+                border: '2px solid rgba(255,255,255,0.1)',
+                borderTopColor: '#ff2d78',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+            }} />
+        </div>
     );
 }
