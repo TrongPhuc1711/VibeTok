@@ -145,7 +145,7 @@ import {
   
   // DOMAIN VALIDATORS  
   export const isValidEmail = (v) =>
-    isNotEmpty(v) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    isNotEmpty(v) && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/.test(v);
   
   export const isValidPassword = (v) =>
     isNotEmpty(v) &&

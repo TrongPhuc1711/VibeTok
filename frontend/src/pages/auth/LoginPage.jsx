@@ -10,6 +10,9 @@ import { useToast } from '../../components/ui/Toast';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { FacebookIcon ,GoogleIcon } from '../../icons/CommonIcons';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useSocialAuth } from '../../hooks/useSocialAuth';
+
 export default function LoginPage() {
     const navigate = useNavigate();
     const { showSuccess, showError } = useToast();
@@ -20,6 +23,12 @@ export default function LoginPage() {
     const { isDark, toggleTheme } = useTheme();
     // Dùng AuthContext để update state reactive - sidebar tự reload
     const { login: contextLogin } = useAuthContext();
+    const { loading: socialLoading, handleGoogleSuccess, handleGoogleError } = useSocialAuth();
+
+    const googleLoginBtn = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: handleGoogleError,
+    });
 
     const set = (field) => (value) => {
         setForm(p => ({ ...p, [field]: value }));
@@ -141,7 +150,7 @@ export default function LoginPage() {
                     </button>
                 </div>
 
-                <Button onClick={handleSubmit} loading={loading} fullWidth size="lg">
+                <Button onClick={handleSubmit} loading={loading || socialLoading} fullWidth size="lg">
                     Đăng nhập
                 </Button>
 
@@ -154,16 +163,25 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex gap-2.5">
-                    {['Facebook', 'Google'].map(p => (
-                        <button key={p}
-                            className={`flex-1 rounded-lg py-2.5 text-[13px] font-body cursor-pointer flex items-center justify-center gap-2 transition-colors border
-                                ${isDark
-                                    ? 'bg-elevated border-border2 text-text-secondary hover:border-primary/40'
-                                    : 'bg-[#f5f5fa] border-[#d0d0e0] text-[#555] hover:border-primary/40'
-                                }`}>
-                            {p === 'Facebook' ? <FacebookIcon /> : <GoogleIcon />} {p}
-                        </button>
-                    ))}
+                    <button 
+                        onClick={() => showError('Chưa hỗ trợ', 'Đăng nhập bằng Facebook sẽ sớm được cập nhật!')}
+                        className={`flex-1 rounded-lg py-2.5 text-[13px] font-body cursor-pointer flex items-center justify-center gap-2 transition-colors border
+                            ${isDark
+                                ? 'bg-elevated border-border2 text-text-secondary hover:border-primary/40'
+                                : 'bg-[#f5f5fa] border-[#d0d0e0] text-[#555] hover:border-primary/40'
+                            }`}>
+                        <FacebookIcon /> Facebook
+                    </button>
+                    
+                    <button 
+                        onClick={() => googleLoginBtn()}
+                        className={`flex-1 rounded-lg py-2.5 text-[13px] font-body cursor-pointer flex items-center justify-center gap-2 transition-colors border
+                            ${isDark
+                                ? 'bg-elevated border-border2 text-text-secondary hover:border-primary/40'
+                                : 'bg-[#f5f5fa] border-[#d0d0e0] text-[#555] hover:border-primary/40'
+                            }`}>
+                        <GoogleIcon /> Google
+                    </button>
                 </div>
 
                 <p className={`text-center text-sm m-0 ${isDark ? 'text-text-faint' : 'text-[#777]'}`}>

@@ -13,6 +13,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import { initSocket } from './utils/socket.js';
 import messageRoutes from './routes/messageRoutes.js';
 import adminRoutes   from './routes/adminRoutes.js';
+import socialAuthRoutes from './routes/socialAuthRoutes.js';
 
 const app = express();
 const server = createServer(app);
@@ -64,6 +65,7 @@ app.get('/api/check-db', async (req, res) => {
 });
 
 app.use('/api/auth',    authRoutes);
+app.use('/api/auth/social', socialAuthRoutes);
 app.use('/api/videos',  videoRoutes);
 
 app.use('/api/users',   userRoutes);

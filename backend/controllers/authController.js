@@ -43,7 +43,7 @@ export const register = async (req, res) => {
         if (mat_khau.length < 8) {
             return res.status(400).json({ message: 'Mật khẩu tối thiểu 8 ký tự!' });
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/.test(email)) {
             return res.status(400).json({ message: 'Email không hợp lệ!' });
         }
         if (!/^[a-zA-Z0-9_.]{3,30}$/.test(ten_dang_nhap)) {
@@ -226,7 +226,7 @@ export const forgotPassword = async (req, res) => {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: 'Vui lòng nhập email!' });
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/.test(email)) {
             return res.status(400).json({ message: 'Email không đúng định dạng!' });
         }
 
@@ -313,7 +313,7 @@ export const resetPasswordWithOTP = async (req, res) => {
             return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin!' });
         }
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/.test(email)) {
             return res.status(400).json({ message: 'Email không đúng định dạng!' });
         }
 

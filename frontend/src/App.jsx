@@ -26,6 +26,12 @@ import AdminRoutes from './pages/Admin/AdminRoutes';
 // Component bắt lỗi giao diện
 import ErrorBoundary from './components/common/ErrorBoundary';
 
+// Google OAuth
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+// Lấy ID Client từ biến môi trường
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 /*  Route guards  */
 function PrivateRoute({ children }) {
   return isLoggedIn() ? children : <Navigate to={ROUTES.LOGIN} replace />;
@@ -50,11 +56,12 @@ function AdminRoute({ children }) {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      {/* AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
-      <AuthProvider>
-        <BrowserRouter>
-          <ToastProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <ThemeProvider>
+        {/* AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
+        <AuthProvider>
+          <BrowserRouter>
+            <ToastProvider>
             <ErrorBoundary>
               <Routes>
                 {/* Auth — chỉ hiện khi chưa đăng nhập */}
@@ -92,5 +99,6 @@ export default function App() {
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
+    </GoogleOAuthProvider>
   );
 }
