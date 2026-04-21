@@ -1,6 +1,3 @@
-/*
- CommonIcons — icons dùng rải rác trong app
- */
 
 export function EyeIcon() {
   return (
@@ -286,8 +283,8 @@ export function StopSmallIcon() {
 export function SoundPanelSearchIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#666" strokeWidth="1.2" strokeLinecap="round">
-      <circle cx="5.5" cy="5.5" r="4.5"/>
-      <path d="M9 9l3 3"/>
+      <circle cx="5.5" cy="5.5" r="4.5" />
+      <path d="M9 9l3 3" />
     </svg>
   );
 }
@@ -296,10 +293,10 @@ export function VolumeMixerIcon({ active = false }) {
   const color = active ? '#ff2d78' : '#777';
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" className="transition-colors">
-      <path d="M2 3h10M2 7h10M2 11h10"/>
-      <rect x="3" y="1.5" width="3" height="3" rx="1" fill={color} stroke="none"/>
-      <rect x="8" y="5.5" width="3" height="3" rx="1" fill={color} stroke="none"/>
-      <rect x="4" y="9.5" width="3" height="3" rx="1" fill={color} stroke="none"/>
+      <path d="M2 3h10M2 7h10M2 11h10" />
+      <rect x="3" y="1.5" width="3" height="3" rx="1" fill={color} stroke="none" />
+      <rect x="8" y="5.5" width="3" height="3" rx="1" fill={color} stroke="none" />
+      <rect x="4" y="9.5" width="3" height="3" rx="1" fill={color} stroke="none" />
     </svg>
   );
 }
@@ -307,7 +304,7 @@ export function VolumeMixerIcon({ active = false }) {
 export function OriginalBadgeIcon() {
   return (
     <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
-      <path d="M4 9V3l6-1.5V7M4 9C4 10.1 3.1 11 2 11S0 10.1 0 9s.9-2 2-2 2 .9 2 2zm6-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/>
+      <path d="M4 9V3l6-1.5V7M4 9C4 10.1 3.1 11 2 11S0 10.1 0 9s.9-2 2-2 2 .9 2 2zm6-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" />
     </svg>
   );
 }
@@ -319,7 +316,17 @@ export function MixerChevronIcon({ open }) {
       stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
       className={`text-zinc-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
     >
-      <path d="M2 4.5L6 8L10 4.5"/>
+      <path d="M2 4.5L6 8L10 4.5" />
+    </svg>
+  );
+}
+
+export function MusicDiskIcon({ open }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#888" strokeWidth="1.2" className="opacity-50">
+      <path d="M5 10V3l7-1.5V8.5" />
+      <circle cx="3" cy="10" r="2" />
+      <circle cx="10" cy="8.5" r="2" />
     </svg>
   );
 }

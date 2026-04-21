@@ -1,7 +1,3 @@
-/*
- NavIcons — icons dùng trong Sidebar navigation
- Mỗi icon nhận prop `active` để đổi màu
- */
 
 const c = (active) => (active ? '#ff2d78' : '#666');
 
