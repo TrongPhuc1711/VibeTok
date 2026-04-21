@@ -83,6 +83,8 @@ export const uploadVideo = async (req, res) => {
             location = '',
             musicId,
             isDraft,
+            originalVolume = '1',
+            musicVolume = '0.5',
         } = req.body;
 
         // Validate privacy
@@ -92,6 +94,8 @@ export const uploadVideo = async (req, res) => {
         const videoId = await VideoModel.create({
             userId: req.user.id,
             musicId: musicId || null,
+            originalVolume: parseFloat(originalVolume),
+            musicVolume: parseFloat(musicVolume),
             caption: caption.slice(0, 500),
             videoUrl: req.file.path,
             thumbnail: req.file.path

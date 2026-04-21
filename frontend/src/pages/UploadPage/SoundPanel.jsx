@@ -5,8 +5,7 @@ import { formatDuration } from '../../utils/formatters';
 import { getStoredUser } from '../../utils/helpers';
 
 import { PlaySmallIcon, StopSmallIcon, SoundPanelSearchIcon, VolumeMixerIcon, OriginalBadgeIcon, MixerChevronIcon } from '../../icons/CommonIcons';
-
-// ─── Waveform animated bars ───────────────────────────────────────────────────
+ 
 function WaveBars({ active = false, color = '#ff2d78', barCount = 5 }) {
   return (
     <div className="flex items-center gap-[2px] h-[18px]">

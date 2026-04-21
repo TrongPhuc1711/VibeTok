@@ -32,10 +32,14 @@ export const normalizeVideo = (v) => {
             initials: (v.ten_hien_thi || '').trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U',
             isFollowing: Boolean(v.is_following),
         } : null,
+        originalVolume: v.am_luong_goc ?? 1.0,
+        musicVolume: v.am_luong_nhac ?? 0.5,
         music: v.music_id ? {
             id: String(v.music_id),
             title: v.tieu_de_nhac,
             artist: v.nghe_si,
+            audioUrl: v.duong_dan_am_thanh,
+            cover: v.anh_bia,
         } : null,
     };
 };
@@ -56,7 +60,7 @@ const buildVideoQuery = (currentUserId = null) => {
     return `
         SELECT v.*,
             u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
-            m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si,
+            m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
             (${followingSubquery}) AS is_following,
             (${likedSubquery}) AS is_liked
         FROM videos v
@@ -150,13 +154,13 @@ export const VideoModel = {
         return rows.map(normalizeVideo);
     },
 
-    async create({ userId, musicId, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt }) {
+    async create({ userId, musicId, originalVolume, musicVolume, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt }) {
         const [result] = await pool.query(
-            `INSERT INTO videos (ma_nguoi_dung, ma_am_nhac, mo_ta, duong_dan_video, anh_thu_nho,
+            `INSERT INTO videos (ma_nguoi_dung, ma_am_nhac, am_luong_goc, am_luong_nhac, mo_ta, duong_dan_video, anh_thu_nho,
                 thoi_luong_giay, quyen_rieng_tu, cho_phep_duet, cho_phep_stitch, vi_tri,
                 ngay_len_lich, la_ban_nhap, hoat_dong)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [userId, musicId || null, caption, videoUrl, thumbnail || null,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            [userId, musicId || null, originalVolume, musicVolume, caption, videoUrl, thumbnail || null,
                 duration || 0, privacy || 'public', allowDuet ? 1 : 0, allowStitch ? 1 : 0,
                 location || null, scheduleAt || null, isDraft ? 1 : 0]
         );
