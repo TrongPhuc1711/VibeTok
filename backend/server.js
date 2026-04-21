@@ -5,15 +5,16 @@ import cors from 'cors';
 import { createServer } from 'http';
 import pool from './config/db.js';
 
-import authRoutes    from './routes/authRoutes.js';
-import videoRoutes   from './routes/videoRoutes.js';
-import userRoutes    from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import videoRoutes from './routes/videoRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import { initSocket } from './utils/socket.js';
 import messageRoutes from './routes/messageRoutes.js';
-import adminRoutes   from './routes/adminRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import socialAuthRoutes from './routes/socialAuthRoutes.js';
+import bookmarkRoutes from './routes/bookmarkRoutes.js';
 
 const app = express();
 const server = createServer(app);
@@ -64,16 +65,16 @@ app.get('/api/check-db', async (req, res) => {
     }
 });
 
-app.use('/api/auth',    authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/auth/social', socialAuthRoutes);
-app.use('/api/videos',  videoRoutes);
+app.use('/api/videos', videoRoutes);
 
-app.use('/api/users',   userRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api', contentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/admin',    adminRoutes);
-
+app.use('/api/admin', adminRoutes);
+app.use('/api/bookmarks', bookmarkRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server: http://localhost:${PORT}`));
