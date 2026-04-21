@@ -40,7 +40,7 @@ export function useUpload({ onSuccess } = {}) {
         setErrors(p => ({ ...p, file: '' }));
     }, []);
 
-    const submit = useCallback(async (isDraft = false) => {
+    const submit = useCallback(async (isDraft = false, extraData = {}) => {
         const { valid, errors: e } = validateForm(form, uploadSchema);
         if (!file && !isDraft) { setErrors({ ...e, file: 'Vui lòng chọn video' }); return false; }
         if (!valid) { setErrors(e); return false; }
@@ -58,6 +58,8 @@ export function useUpload({ onSuccess } = {}) {
             data.append('location',    form.location || '');
             data.append('isDraft',     String(isDraft));
             if (form.music?.id) data.append('musicId', String(form.music.id));
+            if (extraData.originalVolume !== undefined) data.append('originalVolume', String(extraData.originalVolume));
+            if (extraData.musicVolume !== undefined) data.append('musicVolume', String(extraData.musicVolume));
 
             await api.post('/videos/upload', data, {
                 headers: { 'Content-Type': 'multipart/form-data' },

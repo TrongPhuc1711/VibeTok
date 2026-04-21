@@ -30,40 +30,86 @@ export default function VideoCard({
 
     const hue = (parseInt(video?.id?.slice(-3) ?? '0', 16) || 0) % 360;
 
-    // Sync volume to video element
+    const audioRef = useRef(null);
+
+    // Sync actual volume combining global + per-video mixing
+    const applyVolumes = useCallback(() => {
+        const v = videoRef.current;
+        const a = audioRef.current;
+        const origVol = video?.originalVolume ?? 1.0;
+        const musVol = video?.musicVolume ?? 0.5;
+
+        if (v) {
+            v.volume = muted ? 0 : volume * origVol;
+            v.muted = muted || (volume * origVol === 0);
+        }
+        if (a) {
+            a.volume = muted ? 0 : volume * musVol;
+            a.muted = muted || (volume * musVol === 0);
+        }
+    }, [volume, muted, video?.originalVolume, video?.musicVolume]);
+
     useEffect(() => {
-        if (isActive) applyToVideo(videoRef.current);
-    }, [volume, muted, isActive, applyToVideo]);
+        if (isActive) applyVolumes();
+    }, [applyVolumes, isActive]);
+
+    // Setup background audio if present
+    useEffect(() => {
+        if (video?.music?.audioUrl) {
+            const a = new Audio(video.music.audioUrl);
+            a.loop = true;
+            a.volume = 0; // handled by applyVolumes immediately after
+            audioRef.current = a;
+        }
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.src = '';
+                audioRef.current = null;
+            }
+        };
+    }, [video?.music?.audioUrl]);
 
     // Auto play/pause based on isActive
     useEffect(() => {
         const v = videoRef.current;
+        const a = audioRef.current;
         if (!v) return;
 
         if (isActive) {
             intendedPlayRef.current = true;
-            applyToVideo(v);
+            applyVolumes();
             const p = v.play();
             playPromiseRef.current = p;
+            
+            if (a) {
+                a.currentTime = v.currentTime;
+                a.play().catch(() => {});
+            }
+
             if (p) {
                 p.then(() => { if (intendedPlayRef.current) setPlaying(true); playPromiseRef.current = null; })
                     .catch((err) => { if (err.name !== 'AbortError') console.warn('[VideoCard] play():', err.name); setPlaying(false); playPromiseRef.current = null; });
             }
         } else {
             intendedPlayRef.current = false;
-            v.muted = true;
-            const doPause = () => { v.pause(); v.currentTime = 0; setPlaying(false); setProgress(0); };
+            applyVolumes(); // Ensure they are muted quickly
+            const doPause = () => { 
+                v.pause(); v.currentTime = 0; 
+                setPlaying(false); setProgress(0); 
+                if (a) { a.pause(); a.currentTime = 0; }
+            };
             if (playPromiseRef.current) playPromiseRef.current.then(doPause).catch(doPause);
             else doPause();
         }
-    }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isActive, applyVolumes]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Cleanup on unmount
     useEffect(() => {
         return () => {
             intendedPlayRef.current = false;
-            const v = videoRef.current;
-            if (v) { v.muted = true; v.pause(); v.currentTime = 0; }
+            if (videoRef.current) { videoRef.current.muted = true; videoRef.current.pause(); videoRef.current.currentTime = 0; }
+            if (audioRef.current) { audioRef.current.muted = true; audioRef.current.pause(); }
         };
     }, []);
 
@@ -86,24 +132,31 @@ export default function VideoCard({
 
     const togglePlay = useCallback(() => {
         const v = videoRef.current;
+        const a = audioRef.current;
         if (!v) return;
         if (v.paused) {
             intendedPlayRef.current = true;
-            applyToVideo(v);
+            applyVolumes();
             v.play().then(() => setPlaying(true)).catch(() => { });
+            if (a) {
+                a.currentTime = v.currentTime;
+                a.play().catch(() => {});
+            }
         } else {
             intendedPlayRef.current = false;
-            v.muted = true;
             v.pause();
+            if (a) a.pause();
             setPlaying(false);
         }
-    }, [applyToVideo]);
+    }, [applyVolumes]);
 
     const seekToRatio = useCallback((ratio) => {
         const v = videoRef.current;
+        const a = audioRef.current;
         if (!v || !v.duration) return;
         const c = Math.max(0, Math.min(1, ratio));
         v.currentTime = c * v.duration;
+        if (a) a.currentTime = v.currentTime;
         setProgress(c * 100);
     }, []);
 

@@ -58,7 +58,10 @@ export default function UploadPage() {
       showWarning('Chưa chọn video', 'Vui lòng chọn file video trước khi đăng');
       return;
     }
-    const ok = await submit(isDraft);
+    const ok = await submit(isDraft, {
+      originalVolume: useOriginalSound ? originalVolume : 0,
+      musicVolume
+    });
     if (isDraft && ok) showSuccess('Đã lưu nháp', 'Video của bạn đã được lưu vào bản nháp');
     else if (!ok && errors.submit) showError('Đăng video thất bại', errors.submit);
   };
