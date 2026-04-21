@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import PageLayout from '../../components/layout/PageLayout/PageLayout';
@@ -8,7 +8,7 @@ import UserDropdown from '../../components/layout/UserDropdown/UserDropdown';
 import DropZone from './DropZone';
 import VideoPreview from './VideoPreview';
 import SelectField from './SelectField';
-import MusicPanel from './MusicPanel';
+import SoundPanel from './SoundPanel';
 
 import { useUpload } from '../../hooks/useUpload';
 import { VIDEO_PRIVACY_LABELS, DUET_LABELS, DUET_OPTIONS, ROUTES } from '../../utils/constants';
@@ -19,6 +19,12 @@ export default function UploadPage() {
   const navigate = useNavigate();
   const { showSuccess, showError, showInfo, showWarning } = useToast();
 
+  // Sound state
+  const [selectedMusic, setSelectedMusic] = useState(null);
+  const [useOriginalSound, setUseOriginalSound] = useState(true);
+  const [originalVolume, setOriginalVolume] = useState(1.0);
+  const [musicVolume, setMusicVolume] = useState(0.5);
+
   const { form, file, errors, uploading, progress, setField, selectFile, submit } = useUpload({
     onSuccess: () => {
       showSuccess('Đăng video thành công! 🎬', 'Video của bạn đang được xử lý và sẽ hiển thị trên feed sớm nhất');
@@ -26,17 +32,23 @@ export default function UploadPage() {
     },
   });
 
-  const [trackId, setTrackId] = React.useState(form.music?.id);
-
   const handleMusicSelect = (track) => {
-    setTrackId(track.id);
+    if (!track) {
+      setSelectedMusic(null);
+      setField('music')(null);
+      return;
+    }
+    setSelectedMusic(track);
     setField('music')(track);
     showInfo('Đã chọn nhạc nền', `${track.title} — ${track.artist}`);
+    // Auto enable original sound if not set
+    if (!useOriginalSound && file) setUseOriginalSound(true);
   };
 
   const handleFileSelect = (f) => {
     selectFile(f);
     if (f && f.type.startsWith('video/')) {
+      setUseOriginalSound(true); // auto enable original sound
       showInfo('Đã chọn video', f.name);
     }
   };
@@ -46,21 +58,28 @@ export default function UploadPage() {
       showWarning('Chưa chọn video', 'Vui lòng chọn file video trước khi đăng');
       return;
     }
-    if (isDraft) {
-      const ok = await submit(true);
-      if (ok) showSuccess('Đã lưu nháp', 'Video của bạn đã được lưu vào bản nháp');
-      else if (errors.submit) showError('Lưu nháp thất bại', errors.submit);
-    } else {
-      const ok = await submit(false);
-      if (!ok && errors.submit) showError('Đăng video thất bại', errors.submit);
-    }
+    const ok = await submit(isDraft);
+    if (isDraft && ok) showSuccess('Đã lưu nháp', 'Video của bạn đã được lưu vào bản nháp');
+    else if (!ok && errors.submit) showError('Đăng video thất bại', errors.submit);
   };
 
   return (
     <PageLayout>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
-        <h1 className="font-display font-bold text-[22px] text-white m-0">Đăng video mới</h1>
+        <div>
+          <h1 className="font-display font-bold text-[22px] text-white m-0">Đăng video mới</h1>
+          {file && (
+            <p className="text-text-faint text-[12px] font-body mt-0.5">
+              {selectedMusic
+                ? `${selectedMusic.title} · ${useOriginalSound ? 'Mix với âm gốc' : 'Chỉ nhạc nền'}`
+                : useOriginalSound
+                  ? 'Dùng âm thanh gốc từ video'
+                  : 'Không có âm thanh'
+              }
+            </p>
+          )}
+        </div>
         <UserDropdown />
       </div>
 
@@ -72,7 +91,13 @@ export default function UploadPage() {
             {/* Drop zone / preview */}
             <div className="shrink-0">
               {file
-                ? <VideoPreview file={file} />
+                ? <VideoPreview 
+                    file={file} 
+                    selectedMusic={selectedMusic}
+                    originalVolume={originalVolume}
+                    musicVolume={musicVolume}
+                    useOriginalSound={useOriginalSound}
+                  />
                 : <DropZone error={errors.file} onSelect={handleFileSelect} />
               }
             </div>
@@ -96,7 +121,6 @@ export default function UploadPage() {
                     rows={3}
                     className="w-full bg-transparent border-none outline-none text-white text-[13px] font-body p-3.5 resize-none"
                   />
-
                   {form.caption && (
                     <div className="px-3.5 pb-2.5 flex flex-wrap gap-1.5">
                       {(form.caption.match(/#[\w]+/g) || []).map((tag) => (
@@ -109,16 +133,10 @@ export default function UploadPage() {
                       ))}
                     </div>
                   )}
-
-                  <div
-                    className={`px-3.5 pb-2.5 text-right text-[11px] ${form.caption.length > 450 ? 'text-primary' : 'text-text-subtle'}`}
-                  >
+                  <div className={`px-3.5 pb-2.5 text-right text-[11px] ${form.caption.length > 450 ? 'text-primary' : 'text-text-subtle'}`}>
                     {form.caption.length}/500
                   </div>
                 </div>
-                {errors.caption && (
-                  <p className="text-primary text-[11px] mt-1">{errors.caption}</p>
-                )}
               </div>
 
               {/* Privacy + Duet */}
@@ -132,13 +150,9 @@ export default function UploadPage() {
                 <SelectField
                   label="Cho phép"
                   value={
-                    form.allowDuet && form.allowStitch
-                      ? 'both'
-                      : form.allowDuet
-                        ? 'duet'
-                        : form.allowStitch
-                          ? 'stitch'
-                          : 'none'
+                    form.allowDuet && form.allowStitch ? 'both'
+                    : form.allowDuet ? 'duet'
+                    : form.allowStitch ? 'stitch' : 'none'
                   }
                   options={Object.entries(DUET_LABELS).map(([v, l]) => ({ value: v, label: l }))}
                   onChange={(v) => {
@@ -159,7 +173,7 @@ export default function UploadPage() {
               <div className="grid grid-cols-2 gap-3">
                 <SelectField
                   label="Lên lịch đăng"
-                  value={form.scheduleType}
+                  value={form.scheduleType || 'now'}
                   options={[
                     { value: 'now', label: 'Đăng ngay' },
                     { value: 'schedule', label: 'Lên lịch' },
@@ -168,7 +182,7 @@ export default function UploadPage() {
                 />
                 <SelectField
                   label="Thumbnail"
-                  value={form.thumbnail}
+                  value={form.thumbnail || 'auto'}
                   options={[
                     { value: 'auto', label: 'Tự động' },
                     { value: 'custom', label: 'Tuỳ chỉnh' },
@@ -176,6 +190,37 @@ export default function UploadPage() {
                   onChange={setField('thumbnail')}
                 />
               </div>
+
+              {/* Sound summary badge */}
+              {file && (
+                <div className="flex items-center gap-3 bg-elevated border border-border2 rounded-lg px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm flex-shrink-0 overflow-hidden">
+                    {selectedMusic ? (
+                      <img src={selectedMusic.cover} alt="cover" className="w-full h-full object-cover" />
+                    ) : useOriginalSound ? '📹' : '🔇'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-[12px] font-semibold font-body m-0 truncate">
+                      {selectedMusic
+                        ? selectedMusic.title
+                        : useOriginalSound
+                          ? 'Âm thanh gốc từ video'
+                          : 'Không có âm thanh'
+                      }
+                    </p>
+                    <p className="text-text-faint text-[11px] font-body m-0 truncate">
+                      {selectedMusic && useOriginalSound
+                        ? `Video: ${Math.round(originalVolume * 100)}% · Nhạc: ${Math.round(musicVolume * 100)}%`
+                        : selectedMusic
+                          ? selectedMusic.artist
+                          : useOriginalSound
+                            ? 'Trích xuất từ video đã tải lên'
+                            : 'Tắt âm thanh'
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Upload progress */}
               {uploading && (
@@ -200,19 +245,10 @@ export default function UploadPage() {
 
               {/* Submit buttons */}
               <div className="flex gap-3 mt-1">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSubmit(true)}
-                  disabled={uploading}
-                  className="flex-1"
-                >
+                <Button variant="ghost" onClick={() => handleSubmit(true)} disabled={uploading} className="flex-1">
                   Lưu nháp
                 </Button>
-                <Button
-                  onClick={() => handleSubmit(false)}
-                  loading={uploading}
-                  className="flex-[2]"
-                >
+                <Button onClick={() => handleSubmit(false)} loading={uploading} className="flex-[2]">
                   Đăng lên VibeTok
                 </Button>
               </div>
@@ -220,8 +256,18 @@ export default function UploadPage() {
           </div>
         </div>
 
-        {/* Right — music panel */}
-        <MusicPanel selectedTrackId={trackId} onSelect={handleMusicSelect} />
+        {/* Right — Sound panel */}
+        <SoundPanel
+          videoFile={file}
+          selectedMusic={selectedMusic}
+          onMusicSelect={handleMusicSelect}
+          originalVolume={originalVolume}
+          musicVolume={musicVolume}
+          onOriginalVolumeChange={setOriginalVolume}
+          onMusicVolumeChange={setMusicVolume}
+          useOriginalSound={useOriginalSound}
+          onUseOriginalSoundChange={setUseOriginalSound}
+        />
       </div>
     </PageLayout>
   );
