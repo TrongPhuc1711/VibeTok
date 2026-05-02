@@ -99,6 +99,11 @@ export const login = async (req, res) => {
 
         const user = users[0];
 
+        // User đăng nhập qua Google không có mật khẩu
+        if (!user.mat_khau) {
+            return res.status(400).json({ message: 'Tài khoản này sử dụng đăng nhập Google. Vui lòng đăng nhập bằng Google!' });
+        }
+
         const isMatch = await bcrypt.compare(mat_khau, user.mat_khau);
         if (!isMatch) {
             return res.status(400).json({ message: 'Email hoặc mật khẩu không chính xác!' });
@@ -199,6 +204,12 @@ export const changePassword = async (req, res) => {
         }
 
         const user = users[0];
+
+        // User Google không có mật khẩu -> không cần đổi
+        if (!user.mat_khau) {
+            return res.status(400).json({ message: 'Tài khoản của bạn sử dụng đăng nhập Google, không cần mật khẩu.' });
+        }
+
         const isMatch = await bcrypt.compare(mat_khau_cu, user.mat_khau);
         if (!isMatch) {
             return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });

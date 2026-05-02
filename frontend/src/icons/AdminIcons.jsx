@@ -117,3 +117,16 @@ export function MusicAdminIcon({ active }) {
     </svg>
   );
 }
+
+export function CollapseIcon({ collapsed }) {
+  return (
+    <svg
+      width="16" height="16" viewBox="0 0 16 16" fill="none"
+      stroke="#fff" strokeWidth="1.4" strokeLinecap="round"
+      style={{ transition: 'transform 0.3s', transform: collapsed ? 'rotate(180deg)' : 'none' }}
+    >
+      <path d="M10 3L5 8l5 5" />
+      <path d="M15 1v14" strokeOpacity="0.3" />
+    </svg>
+  );
+}
