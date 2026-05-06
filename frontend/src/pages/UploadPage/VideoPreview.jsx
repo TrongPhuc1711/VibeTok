@@ -70,7 +70,7 @@ export default function VideoPreview({
   }, [musicVolume]);
 
   return (
-    <div className="w-[260px] h-[390px] rounded-xl overflow-hidden bg-black relative">
+    <div className="w-[300px] h-[460px] rounded-xl overflow-hidden bg-black relative">
       <video 
         ref={videoRef}
         src={videoUrl} 

@@ -1,5 +1,6 @@
 import { UserModel, normalizeUser } from '../models/userModel.js';
-import { FollowModel }              from '../models/follow/followLikeModel.js';
+import { FollowModel } from '../models/follow/followLikeModel.js';
+import pool from '../config/db.js';
 
 // GET /api/users/:username
 export const getUserProfile = async (req, res) => {
@@ -112,8 +113,8 @@ export const updateMyProfile = async (req, res) => {
 
         const updates = {};
         if (ten_hien_thi !== undefined) updates.ten_hien_thi = ten_hien_thi;
-        if (tieu_su      !== undefined) updates.tieu_su      = tieu_su;
-        if (vi_tri       !== undefined) updates.vi_tri        = vi_tri;
+        if (tieu_su !== undefined) updates.tieu_su = tieu_su;
+        if (vi_tri !== undefined) updates.vi_tri = vi_tri;
 
         const updated = await UserModel.updateProfile(req.user.id, updates);
 
@@ -133,5 +134,47 @@ export const updateMyProfile = async (req, res) => {
         });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi cập nhật profile', error: e.message });
+    }
+};
+
+// GET /api/users/mention-search?q= — Tìm user để @mention (chỉ hiển thị người đang follow / bạn bè)
+export const searchMentionUsers = async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        const limit = Math.min(20, parseInt(req.query.limit) || 10);
+        const currentUserId = req.user.id;
+
+        const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+
+        // Tìm trong danh sách đang follow trước, check xem có mutual không (Bạn bè)
+        const [followingRows] = await pool.query(
+            `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
+                    (SELECT 1 FROM follows f2 WHERE f2.ma_nguoi_theo_doi = u.id AND f2.ma_nguoi_duoc_theo_doi = ?) AS is_mutual
+             FROM follows f
+             JOIN users u ON f.ma_nguoi_duoc_theo_doi = u.id
+             WHERE f.ma_nguoi_theo_doi = ?
+               AND u.hoat_dong = 1
+               AND u.vai_tro != 'admin'
+               AND (u.ten_dang_nhap LIKE ? OR u.ten_hien_thi LIKE ?)
+             ORDER BY is_mutual DESC, u.ten_dang_nhap ASC
+             LIMIT ?`,
+            [currentUserId, currentUserId, like, like, limit]
+        );
+
+        const formatUser = (u) => ({
+            id: String(u.id),
+            username: u.ten_dang_nhap,
+            fullName: u.ten_hien_thi || '',
+            anh_dai_dien: u.anh_dai_dien || null,
+            isFollowing: true,
+            isMutual: Boolean(u.is_mutual)
+        });
+
+        const users = followingRows.map(formatUser);
+
+        res.json({ users });
+    } catch (e) {
+        console.error('searchMentionUsers error:', e);
+        res.status(500).json({ message: 'Lỗi tìm kiếm người dùng', error: e.message });
     }
 };

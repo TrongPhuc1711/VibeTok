@@ -20,8 +20,26 @@ export const getComments = async (videoId, { page = 1, limit = 20 } = {}) => {
 };
 
 // POST /api/videos/:id/comments
-export const postComment = async (videoId, { content, parentId = null }) => {
-    const res = await api.post(`/videos/${videoId}/comments`, { content, parentId });
+export const postComment = async (videoId, { content, parentId = null, mentions = null }) => {
+    const res = await api.post(`/videos/${videoId}/comments`, { content, parentId, mentions });
+    return { data: res.data };
+};
+
+// GET /api/videos/:id/comments/:commentId/replies
+export const getReplies = async (videoId, commentId, { page = 1, limit = 10 } = {}) => {
+    const res = await api.get(`/videos/${videoId}/comments/${commentId}/replies`, { params: { page, limit } });
+    return { data: res.data };
+};
+
+// POST /api/videos/:id/comments/:commentId/like
+export const likeComment = async (videoId, commentId) => {
+    const res = await api.post(`/videos/${videoId}/comments/${commentId}/like`);
+    return { data: res.data };
+};
+
+// DELETE /api/videos/:id/comments/:commentId/like
+export const unlikeComment = async (videoId, commentId) => {
+    const res = await api.delete(`/videos/${videoId}/comments/${commentId}/like`);
     return { data: res.data };
 };
 

@@ -238,7 +238,7 @@ export default function SoundPanel({
   const hasBoth = hasMusic && hasOriginal;
 
   return (
-    <div className="w-[340px] border-l border-zinc-800 bg-[#0d0d18] flex flex-col overflow-hidden shrink-0">
+    <div className="w-full border-l border-zinc-800 bg-[#0d0d18] flex flex-col overflow-hidden shrink-0">
       {/* ── Header ── */}
       <div className="px-4 pt-4 border-b border-[#1a1a2a]">
         <p className="text-white text-sm font-bold font-body m-0 mb-3">Âm thanh</p>

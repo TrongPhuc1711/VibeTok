@@ -3,8 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useUnreadMessageCount } from '../../../hooks/useMessages';
+import {
+  HomeIcon, ExploreIcon, PlusIcon, MsgIcon, ProfileIcon
+} from '../../../icons/BottomNavIcons';
 
-export default function BottomNav({ onNotifClick, notifActive = false, onSearchClick, searchActive = false }) {
+export default function BottomNav({ onNotifClick, notifActive, onSearchClick, searchActive }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { unreadCount: notifCount } = useNotifications();
@@ -14,179 +17,75 @@ export default function BottomNav({ onNotifClick, notifActive = false, onSearchC
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: 'rgba(10,10,15,0.96)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(10,10,15,0.97)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
         paddingBottom: 'env(safe-area-inset-bottom)',
-        height: 'calc(56px + env(safe-area-inset-bottom))',
       }}
     >
-      {/* Home */}
-      <NavBtn
-        active={isActive(ROUTES.HOME)}
-        onClick={() => navigate(ROUTES.HOME)}
-        label="Trang chủ"
-        icon={<HomeIcon active={isActive(ROUTES.HOME)} />}
-      />
+      <div className="flex items-center justify-around" style={{ height: 56 }}>
+        <NavBtn active={isActive(ROUTES.HOME)} onClick={() => navigate(ROUTES.HOME)}
+          label="Trang chủ" icon={<HomeIcon active={isActive(ROUTES.HOME)} />} />
 
-      {/* Search */}
-      <NavBtn
-        active={searchActive}
-        onClick={onSearchClick}
-        label="Tìm kiếm"
-        icon={<ExploreIcon active={searchActive} />}
-      />
+        <NavBtn active={isActive(ROUTES.EXPLORE) || searchActive} onClick={() => navigate(ROUTES.EXPLORE)}
+          label="Khám phá" icon={<ExploreIcon active={isActive(ROUTES.EXPLORE) || searchActive} />} />
 
-      {/* Upload - Center button */}
-      <button
-        onClick={() => navigate(ROUTES.UPLOAD)}
-        className="flex flex-col items-center gap-0.5 border-none bg-transparent cursor-pointer"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-      >
-        <div
-          className="flex items-center justify-center rounded-xl"
-          style={{
-            width: 42,
-            height: 30,
-            background: 'linear-gradient(135deg, #ff2d78, #ff6b35)',
-            boxShadow: '0 0 14px rgba(255,45,120,0.4)',
-          }}
-        >
-          <PlusIcon />
-        </div>
-        <span style={{ fontSize: 9, color: '#888', fontFamily: 'DM Sans, sans-serif' }}>Đăng</span>
-      </button>
+        {/* Center create button */}
+        <CreateButton onClick={() => navigate(ROUTES.UPLOAD)} />
 
-      {/* Messages */}
-      <NavBtn
-        active={isActive(ROUTES.MESSAGE)}
-        onClick={() => navigate(ROUTES.MESSAGE)}
-        label="Inbox"
-        badge={msgCount}
-        icon={<MsgIcon active={isActive(ROUTES.MESSAGE)} />}
-      />
+        <NavBtn active={isActive(ROUTES.MESSAGE)} onClick={() => navigate(ROUTES.MESSAGE)}
+          label="Hộp thư" badge={msgCount} icon={<MsgIcon active={isActive(ROUTES.MESSAGE)} />} />
 
-      {/* Notifications / Profile - tap to toggle notif panel */}
-      <NavBtn
-        active={notifActive || isActive(ROUTES.PROFILE)}
-        onClick={() => {
-          if (notifActive) {
-            onNotifClick?.();
-          } else {
-            navigate(ROUTES.PROFILE);
-          }
-        }}
-        onLongPress={onNotifClick}
-        label="Hồ sơ"
-        badge={notifCount}
-        icon={<ProfileIcon active={isActive(ROUTES.PROFILE) || notifActive} />}
-      />
+        <NavBtn active={isActive(ROUTES.PROFILE)} onClick={() => navigate(ROUTES.PROFILE)}
+          label="Hồ sơ" badge={notifCount} icon={<ProfileIcon active={isActive(ROUTES.PROFILE)} />} />
+      </div>
     </nav>
   );
 }
 
-function NavBtn({ active, onClick, label, icon, badge, onLongPress }) {
-  let pressTimer;
-  const handlePressStart = () => {
-    if (onLongPress) {
-      pressTimer = setTimeout(() => onLongPress(), 500);
-    }
-  };
-  const handlePressEnd = () => {
-    clearTimeout(pressTimer);
-  };
-
+/* ── Create button — TikTok style ── */
+function CreateButton({ onClick }) {
   return (
-    <button
-      onClick={onClick}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-      onMouseDown={handlePressStart}
-      onMouseUp={handlePressEnd}
-      className="relative flex flex-col items-center gap-0.5 border-none bg-transparent cursor-pointer px-3 py-2"
-      style={{ WebkitTapHighlightColor: 'transparent', minWidth: 48 }}
-    >
-      <div className="relative">
-        {icon}
-        {badge > 0 && (
-          <span
-            className="absolute flex items-center justify-center font-bold text-white"
-            style={{
-              top: -4,
-              right: -6,
-              minWidth: 14,
-              height: 14,
-              borderRadius: 7,
-              background: '#ff2d78',
-              fontSize: 8,
-              padding: '0 3px',
-              boxShadow: '0 0 0 1.5px #0a0a0f',
-              fontFamily: 'DM Sans, sans-serif',
-            }}
-          >
-            {badge > 99 ? '99+' : badge}
-          </span>
-        )}
+    <button onClick={onClick}
+      className="flex flex-col items-center justify-center border-none bg-transparent cursor-pointer -mt-1"
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+      aria-label="Đăng video">
+      <div className="flex items-center justify-center rounded-lg relative overflow-hidden" style={{ width: 44, height: 30 }}>
+        <div className="absolute inset-0 rounded-lg" style={{ background: '#25f4ee', transform: 'translateX(-4px)' }} />
+        <div className="absolute inset-0 rounded-lg" style={{ background: '#ff2d78', transform: 'translateX(4px)' }} />
+        <div className="absolute inset-0 rounded-lg flex items-center justify-center" style={{ background: '#fff' }}>
+          <PlusIcon />
+        </div>
       </div>
-      <span
-        style={{
-          fontSize: 9,
-          fontFamily: 'DM Sans, sans-serif',
-          color: active ? '#ff2d78' : '#777',
-          fontWeight: active ? 700 : 400,
-          transition: 'color 0.15s',
-        }}
-      >
-        {label}
-      </span>
     </button>
   );
 }
 
-/* ── Icons ── */
-function HomeIcon({ active }) {
+/* ── Nav button ── */
+function NavBtn({ active, onClick, label, icon, badge }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#ff2d78' : 'none'}
-      stroke={active ? '#ff2d78' : '#888'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
-      <path d="M9 21V12h6v9" />
-    </svg>
-  );
-}
-function ExploreIcon({ active }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke={active ? '#ff2d78' : '#888'} strokeWidth="1.8" strokeLinecap="round">
-      <circle cx="11" cy="11" r="8" />
-      <path d="M21 21l-4.35-4.35" />
-    </svg>
-  );
-}
-function PlusIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
-      stroke="white" strokeWidth="2.2" strokeLinecap="round">
-      <path d="M9 1v16M1 9h16" />
-    </svg>
-  );
-}
-function MsgIcon({ active }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24"
-      fill={active ? '#ff2d78' : 'none'}
-      stroke={active ? '#ff2d78' : '#888'} strokeWidth="1.8" strokeLinecap="round">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-    </svg>
-  );
-}
-function ProfileIcon({ active }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke={active ? '#ff2d78' : '#888'} strokeWidth="1.8" strokeLinecap="round">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-    </svg>
+    <button onClick={onClick}
+      className="relative flex flex-col items-center gap-0.5 border-none bg-transparent cursor-pointer px-3 py-1.5"
+      style={{ WebkitTapHighlightColor: 'transparent', minWidth: 50 }}>
+      <div className="relative">
+        {icon}
+        {badge > 0 && (
+          <span className="absolute flex items-center justify-center font-bold text-white"
+            style={{ top: -5, right: -8, minWidth: 16, height: 16, borderRadius: 8,
+              background: '#ff2d78', fontSize: 9, padding: '0 4px',
+              boxShadow: '0 0 0 2px rgba(10,10,15,0.97)', fontFamily: 'DM Sans, sans-serif' }}>
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </div>
+      <span style={{ fontSize: 10, fontFamily: 'DM Sans, sans-serif',
+        color: active ? '#fff' : '#8a8a8e', fontWeight: active ? 600 : 400,
+        transition: 'color 0.15s', letterSpacing: '-0.01em' }}>
+        {label}
+      </span>
+    </button>
   );
 }

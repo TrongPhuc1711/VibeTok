@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevDownIcon } from '../../icons/CommonIcons';
 
-/*SelectField — custom dropdown (thay thế <select> native)
- 
- Props:
- label    – string
- value    – string
- options  – [{ value, label }]
- onChange – (value: string) => void
- */
+
 export default function SelectField({ label, value, options, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);

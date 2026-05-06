@@ -28,6 +28,8 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
     const [followStates, setFollowStates] = useState({});
     const [loadingStates, setLoadingStates] = useState({});
 
+    const [counts, setCounts] = useState({ followers: 0, following: 0, friends: 0 });
+
     const fetchList = useCallback(async (t) => {
         setLoading(true);
         setUsers([]);
@@ -35,6 +37,8 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
             const res = await api.get(`/users/${username}/${t}`, { params: { limit: 50 } });
             const list = res.data.users || [];
             setUsers(list);
+            
+            setCounts(prev => ({ ...prev, [t]: res.data.total || list.length }));
 
             // ⭐ KEY FIX:
             // Tab "following" của chính mình → tất cả users đều đang được follow (= true)
@@ -43,6 +47,8 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
             const states = {};
             list.forEach(u => {
                 if (t === 'following' && isMyProfile) {
+                    states[u.id] = true;
+                } else if (t === 'friends' && isMyProfile) {
                     states[u.id] = true;
                 } else {
                     states[u.id] = u.isFollowing ?? false;
@@ -103,8 +109,9 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
         : users;
 
     const tabs = [
-        { key: 'followers', label: 'Người theo dõi' },
-        { key: 'following', label: 'Đang theo dõi' },
+        { key: 'following', label: `Đã follow ${counts.following > 0 ? counts.following : ''}`.trim() },
+        { key: 'followers', label: `Follower ${counts.followers > 0 ? counts.followers : ''}`.trim() },
+        { key: 'friends', label: `Bạn bè ${counts.friends > 0 ? counts.friends : ''}`.trim() },
     ];
 
     return (
@@ -112,17 +119,28 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <div className="w-full sm:w-[420px] bg-[#111118] rounded-t-2xl sm:rounded-2xl border border-[#1e1e2e] shadow-2xl flex flex-col"
-                style={{ maxHeight: '80vh' }}>
+            <div className="w-full sm:w-[500px] bg-[#111118] rounded-t-2xl sm:rounded-2xl border border-[#1e1e2e] shadow-2xl flex flex-col"
+                style={{ maxHeight: '85vh', height: '600px' }}>
+                
+                {/* Header Profile Title */}
+                <div className="relative flex items-center justify-center py-4 border-b border-transparent">
+                    <h2 className="text-white text-lg font-bold m-0">{username}</h2>
+                    <button
+                        onClick={onClose}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-transparent border-none text-white text-xl cursor-pointer flex items-center justify-center hover:bg-white/10 transition-colors"
+                    >
+                        ✕
+                    </button>
+                </div>
 
                 {/* Header tabs */}
-                <div className="flex items-center border-b border-[#1e1e2e] relative">
+                <div className="flex items-center border-b border-[#1e1e2e] relative px-2">
                     {tabs.map(tab => (
                         <button
                             key={tab.key}
                             onClick={() => onTabChange(tab.key)}
-                            className={`flex-1 py-4 text-sm font-semibold font-body border-none bg-transparent cursor-pointer transition-all relative
-                                ${type === tab.key ? 'text-white' : 'text-[#555] hover:text-[#888]'}`}
+                            className={`flex-1 py-3 text-[15px] font-semibold font-body border-none bg-transparent cursor-pointer transition-all relative whitespace-nowrap
+                                ${type === tab.key ? 'text-white' : 'text-[#888] hover:text-[#bbb]'}`}
                         >
                             {tab.label}
                             {type === tab.key && (
@@ -130,14 +148,6 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
                             )}
                         </button>
                     ))}
-
-                    {/* Nút đóng */}
-                    <button
-                        onClick={onClose}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/8 border-none text-[#888] text-lg cursor-pointer flex items-center justify-center hover:bg-white/15 hover:text-white transition-colors"
-                    >
-                        ×
-                    </button>
                 </div>
 
                 {/* Search */}
@@ -225,16 +235,31 @@ export default function FollowListModal({ username, type, onClose, onTabChange }
                                         {/* Follow / Đang follow button */}
                                         {!isSelf && me && (
                                             <button
-                                                onClick={() => handleFollowToggle(user)}
+                                                onClick={() => {
+                                                    if (user.isMutual && type === 'friends') {
+                                                        // Nếu là tab bạn bè, nút sẽ là "Tin nhắn" -> chuyển sang chat
+                                                        onClose();
+                                                        navigate(`/messages?u=${user.username}`);
+                                                    } else {
+                                                        // Ở tab khác, nút là "Bạn bè" -> bấm để huỷ follow
+                                                        handleFollowToggle(user);
+                                                    }
+                                                }}
                                                 disabled={isLoadingThis}
-                                                className={`shrink-0 text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer
+                                                className={`shrink-0 text-[14px] font-semibold font-body px-5 py-2 rounded-lg border transition-all cursor-pointer
                                                     disabled:opacity-50 disabled:cursor-not-allowed
                                                     ${isFollowing
-                                                        ? 'bg-transparent border-[#2a2a3e] text-[#888] hover:border-red-500/40 hover:text-red-400'
+                                                        ? (user.isMutual
+                                                            ? 'bg-[#333] border-[#333] text-white hover:bg-[#444]'
+                                                            : 'bg-[#333] border-[#333] text-white hover:bg-[#444]')
                                                         : 'bg-[#ff2d78] border-[#ff2d78] text-white hover:bg-[#e0266b]'
                                                     }`}
                                             >
-                                                {isFollowing ? 'Đang follow' : 'Follow'}
+                                                {isFollowing 
+                                                    ? (user.isMutual 
+                                                        ? (type === 'friends' ? 'Tin nhắn' : 'Bạn bè') 
+                                                        : 'Đang follow') 
+                                                    : (type === 'followers' ? 'Follow lại' : 'Follow')}
                                             </button>
                                         )}
                                     </div>

@@ -1,0 +1,272 @@
+================================================================
+       HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY DỰ ÁN VIBETOK
+================================================================
+
+YÊU CẦU HỆ THỐNG
+-----------------
+- Node.js >= 20.x
+- npm >= 9.x
+- MySQL >= 8.0
+- Git
+
+================================================================
+BƯỚC 1: CLONE DỰ ÁN
+================================================================
+
+git clone <url-repository>
+cd vibetok
+
+
+================================================================
+BƯỚC 2: CÀI ĐẶT BACKEND
+================================================================
+
+1. Di chuyển vào thư mục backend:
+   cd backend
+
+2. Cài đặt các dependencies:
+   npm install
+
+3. Tạo file cấu hình môi trường:
+   Sao chép file mẫu:
+   cp .env.example .env
+
+4. Mở file .env và điền đầy đủ thông tin:
+
+   # Cơ sở dữ liệu MySQL
+   DB_HOST=localhost
+   DB_USER=root
+   DB_PASSWORD=mat_khau_mysql_cua_ban
+   DB_NAME=vibetok
+   DB_PORT=3306
+
+   # JWT Secret (chuỗi bí mật bất kỳ, càng dài càng tốt)
+   JWT_SECRET=vibetok_super_secret_key_2024
+
+   # Port server (mặc định 5000)
+   PORT=5000
+
+   # CORS - địa chỉ frontend
+   CORS_ORIGINS=http://localhost:5173
+
+   # Cloudinary (lưu trữ video/ảnh) - đăng ký tại cloudinary.com
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+
+   # Brevo (gửi email OTP) - đăng ký tại brevo.com
+   BREVO_SENDER_EMAIL=your_email@example.com
+   BREVO_API_KEY=your_brevo_api_key
+
+   # Google OAuth - tạo tại console.cloud.google.com
+   GOOGLE_CLIENT_ID=your_google_client_id
+
+5. Tạo database MySQL:
+   Đăng nhập MySQL và chạy lệnh:
+   CREATE DATABASE vibetok CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+6. Import schema database:
+   mysql -u root -p vibetok < database/schema.sql
+   (Nếu có file schema.sql trong dự án)
+
+   Hoặc tạo thủ công các bảng cần thiết:
+   - users
+   - videos
+   - comments
+   - likes
+   - follows
+   - bookmarks
+   - notifications
+   - messages
+   - music
+   - hashtags
+   - categories
+   - video_hashtags
+   - video_categories
+   - password_resets
+   - user_auth_providers
+
+7. Khởi động backend:
+   
+   Môi trường development (có hot-reload):
+   npm run dev
+
+   Môi trường production:
+   npm start
+
+   Server sẽ chạy tại: http://localhost:5000
+
+
+================================================================
+BƯỚC 3: CÀI ĐẶT FRONTEND
+================================================================
+
+1. Mở terminal mới, di chuyển vào thư mục frontend:
+   cd frontend
+
+2. Cài đặt các dependencies:
+   npm install
+
+3. Tạo file cấu hình môi trường:
+   Sao chép file mẫu:
+   cp .env.emxample .env
+
+   (Lưu ý: tên file mẫu là .env.emxample)
+
+4. Mở file .env và điền thông tin:
+
+   # URL của backend API
+   VITE_API_URL=http://localhost:5000
+
+   # Google OAuth Client ID (giống với backend)
+   VITE_GOOGLE_CLIENT_ID=your_google_client_id
+
+5. Khởi động frontend:
+   npm run dev
+
+   Ứng dụng sẽ chạy tại: http://localhost:5173
+
+
+================================================================
+BƯỚC 4: TẠO TÀI KHOẢN ADMIN
+================================================================
+
+Sau khi hệ thống đã chạy, tạo tài khoản admin thủ công trong MySQL:
+
+1. Đăng ký tài khoản bình thường qua giao diện web
+
+2. Cập nhật vai trò admin trong database:
+   UPDATE users SET vai_tro = 'admin' WHERE email = 'your_email@example.com';
+
+3. Truy cập trang admin tại: http://localhost:5173/admin
+
+
+================================================================
+HƯỚNG DẪN ĐĂNG KÝ DỊCH VỤ BÊN NGOÀI
+================================================================
+
+CLOUDINARY (Lưu trữ media):
+- Truy cập: https://cloudinary.com
+- Đăng ký tài khoản miễn phí
+- Vào Dashboard lấy: Cloud Name, API Key, API Secret
+
+BREVO (Gửi email):
+- Truy cập: https://brevo.com
+- Đăng ký tài khoản miễn phí
+- Vào Settings > API Keys để lấy API Key
+- Xác minh email người gửi trong phần Senders
+
+GOOGLE OAUTH (Đăng nhập Google):
+- Truy cập: https://console.cloud.google.com
+- Tạo project mới
+- Vào APIs & Services > Credentials
+- Tạo OAuth 2.0 Client ID
+- Thêm http://localhost:5173 vào Authorized JavaScript origins
+- Sao chép Client ID
+
+
+================================================================
+CÁC LỆNH HỮU ÍCH
+================================================================
+
+Backend:
+  npm run dev      - Chạy development server (nodemon)
+  npm start        - Chạy production server
+
+Frontend:
+  npm run dev      - Chạy development server (Vite)
+  npm run build    - Build cho production
+  npm run preview  - Xem trước bản build
+  npm run lint     - Kiểm tra lỗi code
+
+
+================================================================
+TRIỂN KHAI LÊN PRODUCTION
+================================================================
+
+Frontend (Vercel - khuyến nghị):
+1. Push code lên GitHub
+2. Kết nối repo với Vercel
+3. Đặt biến môi trường VITE_API_URL = URL backend thật
+4. Deploy
+
+Backend (Render - khuyến nghị):
+1. Push code lên GitHub
+2. Tạo Web Service trên Render
+3. Cài đặt tất cả biến môi trường trong .env
+4. Cập nhật CORS_ORIGINS = URL frontend thật
+5. Deploy
+
+Database (PlanetScale / Railway / Aiven):
+- Tạo MySQL database trên một trong các dịch vụ trên
+- Lấy connection string và cập nhật vào biến môi trường DB_*
+
+
+================================================================
+XỬ LÝ SỰ CỐ THƯỜNG GẶP
+================================================================
+
+Lỗi "Cannot connect to database":
+- Kiểm tra MySQL đang chạy
+- Kiểm tra thông tin DB_HOST, DB_USER, DB_PASSWORD, DB_NAME trong .env
+- Kiểm tra database đã được tạo chưa
+
+Lỗi CORS:
+- Kiểm tra CORS_ORIGINS trong backend .env
+- Đảm bảo URL frontend khớp chính xác (bao gồm port)
+
+Lỗi upload video/ảnh:
+- Kiểm tra thông tin Cloudinary trong .env
+- Đảm bảo tài khoản Cloudinary còn dung lượng miễn phí
+
+Lỗi gửi OTP email:
+- Kiểm tra BREVO_API_KEY và BREVO_SENDER_EMAIL
+- Đảm bảo email người gửi đã được xác minh trên Brevo
+
+Lỗi đăng nhập Google:
+- Kiểm tra GOOGLE_CLIENT_ID trong cả backend và frontend .env
+- Đảm bảo đã thêm localhost:5173 vào Authorized origins trên Google Console
+
+
+================================================================
+CẤU TRÚC THƯ MỤC DỰ ÁN
+================================================================
+
+vibetok/
+├── backend/
+│   ├── config/          - Cấu hình DB, Cloudinary
+│   ├── controllers/     - Xử lý logic request
+│   ├── middlewares/     - Auth, Upload middleware
+│   ├── models/          - Tương tác database
+│   ├── routes/          - Định nghĩa API routes
+│   ├── services/        - Business logic
+│   ├── utils/           - Socket.io, helpers
+│   ├── .env             - Biến môi trường (KHÔNG commit)
+│   ├── .env.example     - Mẫu biến môi trường
+│   └── server.js        - Entry point
+│
+└── frontend/
+    ├── src/
+    │   ├── api/         - Axios instance
+    │   ├── components/  - React components
+    │   ├── contexts/    - React contexts
+    │   ├── hooks/       - Custom hooks
+    │   ├── icons/       - SVG icons
+    │   ├── pages/       - Các trang
+    │   ├── services/    - API calls
+    │   └── utils/       - Helpers, validators
+    ├── .env             - Biến môi trường (KHÔNG commit)
+    └── vite.config.js   - Cấu hình Vite
+
+
+================================================================
+LIÊN HỆ & HỖ TRỢ
+================================================================
+
+Nếu gặp vấn đề trong quá trình cài đặt, hãy:
+1. Kiểm tra kỹ các biến môi trường trong file .env
+2. Đảm bảo tất cả dependencies đã được cài đặt
+3. Kiểm tra phiên bản Node.js (>= 20.x)
+4. Xem log lỗi trong terminal để biết nguyên nhân cụ thể
+
+================================================================

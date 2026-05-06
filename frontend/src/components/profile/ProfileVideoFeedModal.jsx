@@ -5,6 +5,7 @@ import { followUser, unfollowUser } from '../../services/userService';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../../utils/helpers';
 import { ArrowDownIcon, ArrowUpIcon } from '../../icons/NavIcons';
+import EmojiPickerButton from '../ui/EmojiPickerButton';
 
 // ── Comment Section ──
 function CommentSection({ videoId, totalComments }) {
@@ -54,7 +55,7 @@ function CommentSection({ videoId, totalComments }) {
                     </div>
                 ) : comments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3 text-[#444]">
-                        <span className="text-3xl">💬</span>
+            
                         <p className="text-[13px] font-body text-center">Chưa có bình luận nào.<br />Hãy là người đầu tiên!</p>
                     </div>
                 ) : (
@@ -88,6 +89,11 @@ function CommentSection({ videoId, totalComments }) {
                                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSubmit(); }}
                                 placeholder="Thêm bình luận..."
                                 className="flex-1 bg-transparent border-none outline-none text-white text-[13px] font-body placeholder:text-white/25"
+                            />
+                            <EmojiPickerButton
+                                onSelect={(emoji) => setInput((p) => p + emoji)}
+                                position="top"
+                                size={16}
                             />
                             <button
                                 onClick={handleSubmit}

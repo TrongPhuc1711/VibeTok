@@ -79,8 +79,7 @@ export default function NotificationPagePanel({ onClose }) {
   return (
     <>
       <div
-        className="flex flex-col h-screen bg-base border-r border-border shrink-0 overflow-hidden"
-        style={{ width: 440 }}
+        className="flex flex-col h-screen bg-base border-r border-border shrink-0 overflow-hidden w-full md:w-[440px]"
       >
         {/* Header */}
         <div className="px-6 py-[18px] border-b border-border shrink-0">

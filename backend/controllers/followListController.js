@@ -49,3 +49,28 @@ export const getFollowing = async (req, res) => {
         res.status(500).json({ message: 'Lỗi lấy danh sách following', error: e.message });
     }
 };
+
+// GET /api/users/:username/friends
+export const getFriends = async (req, res) => {
+    try {
+        const { username } = req.params;
+        const page  = parseInt(req.query.page)  || 1;
+        const limit = parseInt(req.query.limit) || 20;
+
+        const result = await FollowListService.getFriends(username, {
+            page,
+            limit,
+            currentUserId:   req.user?.id       ?? null,
+            currentUserRole: req.user?.vai_tro   ?? null,
+        });
+
+        if (!result) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        res.json(result);
+    } catch (e) {
+        console.error('Lỗi getFriends:', e);
+        res.status(500).json({ message: 'Lỗi lấy danh sách bạn bè', error: e.message });
+    }
+};

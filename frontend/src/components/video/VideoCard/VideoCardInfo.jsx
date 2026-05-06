@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseHashtags, stripHashtags } from '../../../utils/formatters';
+import { MusicFilledIcon } from '../../../icons/CommonIcons';
 
 /*
   VideoCardInfo — vùng thông tin góc dưới bên trái video (Chuẩn giao diện TikTok Web)
@@ -22,9 +23,8 @@ export default function VideoCardInfo({ video }) {
 
   return (
     <div
-      // w-full, p-4 (padding đều các cạnh), pt-24 (kéo dài gradient lên trên một chút để chữ không bị chìm)
       // pointer-events-none để vùng gradient đen không vô tình chặn thao tác click/pause video của người dùng
-      className="absolute bottom-0 left-0 w-full p-4 pt-24 z-10 flex flex-col gap-1.5 pointer-events-none"
+      className="absolute bottom-0 left-0 w-full px-4 pt-24 pb-20 md:pb-6 z-10 flex flex-col gap-1.5 pointer-events-none"
       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)' }}
     >
       {/* Tên người dùng */}
@@ -56,7 +56,7 @@ export default function VideoCardInfo({ video }) {
       {/*Music - Nếu bạn vẫn muốn giữ lại dòng nhạc đang phát */}
       {video?.music && (
         <div className="flex items-center gap-1.5 mt-1 pointer-events-auto cursor-pointer w-fit hover:underline">
-           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white drop-shadow-md"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+           <MusicFilledIcon size={14} className="text-white drop-shadow-md" />
           <span className="text-white text-[14px] font-medium drop-shadow-md">
             {video.music.title} – {video.music.artist}
           </span>

@@ -1,11 +1,14 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import PageLayout from '../components/layout/PageLayout';
 import VideoCard from '../components/video/VideoCard/VideoCard';
 import VideoCardActions from '../components/video/VideoCard/VideoCardActions';
 import CommentPanel from '../components/video/CommentPannel/CommentPanel';
+import { MobileFeed } from '../components/mobile';
 import { BounceDots } from '../components/ui/Spinner';
 import { useVideoFeed } from '../hooks/useVideoFeed';
+
+import { ArrowUpIcon, ArrowDownIcon } from '../icons/NavIcons';
 
 const stopAllVideos = () => {
     document.querySelectorAll('video').forEach((v) => {
@@ -25,15 +28,7 @@ function NavArrow({ direction, onClick, disabled }) {
             style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', color: 'white' }}
             aria-label={direction === 'up' ? 'Video trước' : 'Video tiếp theo'}
         >
-            {direction === 'up' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <polyline points="18 15 12 9 6 15" />
-                </svg>
-            ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <polyline points="6 9 12 15 18 9" />
-                </svg>
-            )}
+            {direction === 'up' ? <ArrowUpIcon size={18} /> : <ArrowDownIcon size={18} />}
         </button>
     );
 }
@@ -67,151 +62,12 @@ function useVideoContainerSize(aspectRatio, showComments) {
     return size;
 }
 
-// Mobile: full-screen 
-function MobileFeed({ videos, loading, hasMore, loadMore }) {
-    const [currentIdx, setCurrentIdx] = useState(0);
-    const [commentVideoId, setCommentVideoId] = useState(null);
-    const touchStartY = useRef(0);
-    const touchStartTime = useRef(0);
-    const isAnimating = useRef(false);
-    const prevVideosLength = useRef(0);
 
-    // Reset when feed type changes (first video changes)
-    const firstVideoId = videos[0]?.id ?? null;
-    useEffect(() => {
-        if (prevVideosLength.current === 0 && videos.length > 0) {
-            setCurrentIdx(0);
-            setCommentVideoId(null);
-        }
-        prevVideosLength.current = videos.length;
-    }, [firstVideoId, videos.length]);
-
-    const go = useCallback((dir) => {
-        if (isAnimating.current) return;
-
-        const next = currentIdx + dir;
-
-        // Preload more videos when near end
-        if (dir > 0 && next >= videos.length - 3 && hasMore) {
-            loadMore();
-        }
-
-        if (next >= 0 && next < videos.length) {
-            stopAllVideos();
-            isAnimating.current = true;
-            setCurrentIdx(next);
-            setCommentVideoId(null);
-            setTimeout(() => { isAnimating.current = false; }, 350);
-        }
-    }, [currentIdx, videos.length, hasMore, loadMore]);
-
-    const handleTouchStart = (e) => {
-        touchStartY.current = e.touches[0].clientY;
-        touchStartTime.current = Date.now();
-    };
-
-    const handleTouchEnd = (e) => {
-        const dy = touchStartY.current - e.changedTouches[0].clientY;
-        const dt = Date.now() - touchStartTime.current;
-        // Swipe: min 60px, max 400ms
-        if (Math.abs(dy) > 60 && dt < 400) {
-            go(dy > 0 ? 1 : -1);
-        }
-    };
-
-    if (loading && videos.length === 0) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <BounceDots />
-            </div>
-        );
-    }
-
-    const current = videos[currentIdx];
-    if (!current) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-white/30 font-body px-6 text-center">
-                <p className="text-sm">Không có video nào</p>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="relative w-full flex-1 overflow-hidden"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            style={{ background: '#000', touchAction: 'pan-x' }}
-        >
-            {/* Full-screen video */}
-            <div className="absolute inset-0">
-                <VideoCard
-                    key={current.id}
-                    video={current}
-                    isActive
-                    hideActions
-                    hideTopBar
-                    onComment={() => setCommentVideoId(current.id)}
-                />
-            </div>
-
-            {/* Right-side actions */}
-            <div
-                className="absolute right-3 flex flex-col items-center gap-4 z-20"
-                style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))' }}
-            >
-                <VideoCardActions
-                    key={`${current.id}-actions`}
-                    video={current}
-                    inline
-                    onComment={() => setCommentVideoId(current.id)}
-                />
-            </div>
-
-            {/* Comment panel */}
-            {commentVideoId && (
-                <CommentPanel
-                    videoId={commentVideoId}
-                    totalComments={current.comments}
-                    onClose={() => setCommentVideoId(null)}
-                />
-            )}
-
-            {/* Progress dots */}
-            {videos.length > 1 && (
-                <div
-                    className="absolute left-1/2 -translate-x-1/2 flex gap-1 pointer-events-none z-10"
-                    style={{ bottom: 'calc(66px + env(safe-area-inset-bottom))' }}
-                >
-                    {videos
-                        .slice(Math.max(0, currentIdx - 3), Math.min(videos.length, currentIdx + 4))
-                        .map((_, i) => {
-                            const realIdx = Math.max(0, currentIdx - 3) + i;
-                            return (
-                                <div
-                                    key={realIdx}
-                                    style={{
-                                        width: realIdx === currentIdx ? 16 : 5,
-                                        height: 5,
-                                        borderRadius: 2.5,
-                                        background: realIdx === currentIdx
-                                            ? '#ff2d78'
-                                            : 'rgba(255,255,255,0.3)',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                />
-                            );
-                        })
-                    }
-                </div>
-            )}
-        </div>
-    );
-}
 
 // ── Main component ──
 export default function HomePage({ feedType = 'forYou' }) {
     const location = useLocation();
+    const navigate = useNavigate();
     // Lấy startVideoId từ location state (khi user mở link chia sẻ /video/:id)
     const startVideoId = location.state?.startVideoId || null;
     // Memo để tránh re-create options object mỗi render
@@ -232,6 +88,12 @@ export default function HomePage({ feedType = 'forYou' }) {
     );
     const desktopRef = useRef(null);
     const prevFeedType = useRef(feedType);
+
+    // Mobile feed type switch handler
+    const handleMobileFeedTypeChange = useCallback((type) => {
+        if (type === 'following') navigate('/following');
+        else navigate('/');
+    }, [navigate]);
 
     // Detect mobile
     useEffect(() => {
@@ -316,6 +178,8 @@ export default function HomePage({ feedType = 'forYou' }) {
                         loading={loading}
                         hasMore={hasMore}
                         loadMore={loadMore}
+                        feedType={feedType}
+                        onFeedTypeChange={handleMobileFeedTypeChange}
                     />
                 </div>
             )}

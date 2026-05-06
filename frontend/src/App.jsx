@@ -16,9 +16,10 @@ import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
 import ProfilePage from './pages/ProfilePage';
 import UploadPage from './pages/UploadPage/UploadPage';
-import MessagesPage from './pages/MessagesPage';
+import MessagesPage from './pages/Messages';
 import NotFoundPage from './pages/NotFoundPage';
 import VideoDetailPage from './pages/VideoDetailPage';
+import ImageSlideshowDemo from './pages/ImageSlideshowDemo';
 
 // Admin
 import AdminRoutes from './pages/Admin/AdminRoutes';
@@ -86,6 +87,7 @@ export default function App() {
                 <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
                 <Route path="/video/:id" element={<VideoDetailPage />} />
+                <Route path="/slideshow-demo" element={<ImageSlideshowDemo />} />
 
                 {/* Messages */}
                 <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />

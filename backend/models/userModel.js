@@ -127,4 +127,4 @@ export const UserModel = {
             [delta, userId]
         );
     },
-};
+};

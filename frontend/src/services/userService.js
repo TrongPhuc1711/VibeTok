@@ -59,3 +59,9 @@ export const updateAvatar = async (file) => {
     });
     return { data: res.data };
 };
+
+// GET /api/users/mention-search?q= — Tìm user để @nhắc đến
+export const searchMentionUsers = async (q = '', limit = 10) => {
+    const res = await api.get('/users/mention-search', { params: { q, limit } });
+    return { data: res.data };
+};

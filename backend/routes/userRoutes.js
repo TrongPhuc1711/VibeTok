@@ -4,17 +4,19 @@ import { uploadAvatar } from '../middlewares/uploadMiddleware.js';
 import {
     getUserProfile, getSuggestions, searchUsers,
     followUser, unfollowUser,
-    updateMyProfile
+    updateMyProfile, searchMentionUsers
 } from '../controllers/userController.js';
-import { getFollowers, getFollowing } from '../controllers/followListController.js';
+import { getFollowers, getFollowing, getFriends } from '../controllers/followListController.js';
 
 const router = express.Router();
 
 // Public (nhưng dùng optionalAuth để biết user hiện tại → check isFollowing đúng)
 router.get('/suggestions', optionalAuth, getSuggestions);
-router.get('/search',optionalAuth, searchUsers);
+router.get('/search', optionalAuth, searchUsers);
+router.get('/mention-search', verifyToken, searchMentionUsers);
 router.get('/:username/followers', optionalAuth, getFollowers);
 router.get('/:username/following', optionalAuth, getFollowing);
+router.get('/:username/friends', optionalAuth, getFriends);
 router.get('/:username', optionalAuth, getUserProfile);
 
 // Protected 

@@ -13,7 +13,7 @@ export default function DropZone({ error, onSelect }) {
   return (
     <div
       className={`
-        w-[260px] h-[390px] rounded-xl flex flex-col items-center justify-center gap-3
+        w-[300px] h-[460px] rounded-xl flex flex-col items-center justify-center gap-3
         cursor-pointer transition-all border-2 border-dashed
         ${drag
           ? 'border-primary bg-primary/5'

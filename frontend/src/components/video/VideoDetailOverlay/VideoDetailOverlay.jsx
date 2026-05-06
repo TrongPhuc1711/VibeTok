@@ -5,13 +5,6 @@ import { followUser, unfollowUser } from '../../../services/userService';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
 
-/**
- * VideoDetailOverlay
- * Props:
- *  videoId          – string
- *  highlightComment – boolean
- *  onClose          – () => void
- */
 export default function VideoDetailOverlay({ videoId, highlightComment = false, onClose }) {
   const navigate = useNavigate();
   const me = getStoredUser();
@@ -19,7 +12,6 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
-  // ✅ FIX: liked lấy từ DB (video.isLiked), không dùng localStorage
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [following, setFollowing] = useState(false);

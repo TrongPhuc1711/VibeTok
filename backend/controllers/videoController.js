@@ -130,11 +130,26 @@ export const getComments = async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
-        const comments = await CommentModel.getByVideoId(req.params.id, { page, limit });
+        const currentUserId = req.user?.id ?? null;
+        const comments = await CommentModel.getByVideoId(req.params.id, { page, limit, currentUserId });
         res.json({ comments });
     } catch (e) {
         console.error('getComments error:', e);
         res.status(500).json({ message: 'Lỗi lấy bình luận', error: e.message });
+    }
+};
+
+// GET /api/videos/:id/comments/:commentId/replies
+export const getReplies = async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+        const currentUserId = req.user?.id ?? null;
+        const data = await CommentModel.getReplies(req.params.commentId, { page, limit, currentUserId });
+        res.json(data);
+    } catch (e) {
+        console.error('getReplies error:', e);
+        res.status(500).json({ message: 'Lỗi lấy trả lời', error: e.message });
     }
 };
 
@@ -145,17 +160,18 @@ export const postComment = async (req, res) => {
         if (!content) return res.status(400).json({ message: 'Nội dung không được trống' });
         if (content.length > 300) return res.status(400).json({ message: 'Bình luận tối đa 300 ký tự' });
 
-        const { parentId } = req.body;
+        const { parentId, mentions } = req.body;
 
         const comment = await CommentModel.create({
             videoId: req.params.id,
             userId: req.user.id,
             content,
             parentId: parentId || null,
+            mentions: mentions || null,
         });
         await VideoModel.updateCommentCount(req.params.id, 1);
 
-        // Trigger notification (fire-and-forget)
+        // Trigger notification for video owner (fire-and-forget)
         VideoModel.findById(req.params.id).then(async (video) => {
             if (video && String(video.userId) !== String(req.user.id)) {
                 const senderDb = await UserModel.findById(req.user.id);
@@ -164,10 +180,57 @@ export const postComment = async (req, res) => {
             }
         }).catch(() => {});
 
+        // Trigger notification for mentioned users (fire-and-forget)
+        if (mentions && Array.isArray(mentions) && mentions.length > 0) {
+            const senderDb = await UserModel.findById(req.user.id);
+            const sender = senderDb ? normalizeUser(senderDb) : req.user;
+            for (const m of mentions) {
+                if (String(m.userId) !== String(req.user.id)) {
+                    triggerNotification(m.userId, sender, 'mention', req.params.id, comment.id).catch(() => {});
+                }
+            }
+        }
+
+        // Trigger notification for reply target (fire-and-forget)
+        if (parentId) {
+            import('../models/commentModel.js').then(async () => {
+                const [rows] = await (await import('../config/db.js')).default.query(
+                    'SELECT ma_nguoi_dung FROM comments WHERE id = ?', [parentId]
+                );
+                if (rows[0] && String(rows[0].ma_nguoi_dung) !== String(req.user.id)) {
+                    const senderDb = await UserModel.findById(req.user.id);
+                    const sender = senderDb ? normalizeUser(senderDb) : req.user;
+                    triggerNotification(rows[0].ma_nguoi_dung, sender, 'reply', req.params.id, comment.id).catch(() => {});
+                }
+            }).catch(() => {});
+        }
+
         res.status(201).json({ message: 'Bình luận thành công!', comment });
     } catch (e) {
         console.error('postComment error:', e);
         res.status(500).json({ message: 'Lỗi đăng bình luận', error: e.message });
+    }
+};
+
+// POST /api/videos/:id/comments/:commentId/like
+export const likeComment = async (req, res) => {
+    try {
+        const liked = await CommentModel.likeComment(req.params.commentId, req.user.id);
+        res.json({ message: liked ? 'Đã thích' : 'Đã thích rồi', liked: true });
+    } catch (e) {
+        console.error('likeComment error:', e);
+        res.status(500).json({ message: 'Lỗi thích bình luận', error: e.message });
+    }
+};
+
+// DELETE /api/videos/:id/comments/:commentId/like
+export const unlikeComment = async (req, res) => {
+    try {
+        await CommentModel.unlikeComment(req.params.commentId, req.user.id);
+        res.json({ message: 'Đã bỏ thích', liked: false });
+    } catch (e) {
+        console.error('unlikeComment error:', e);
+        res.status(500).json({ message: 'Lỗi bỏ thích bình luận', error: e.message });
     }
 };
 
