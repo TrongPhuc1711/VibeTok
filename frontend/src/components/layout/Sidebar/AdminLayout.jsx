@@ -4,10 +4,6 @@ import AdminSidebar from './AdminSidebar';
 import { BellAdminIcon, SearchAdminIcon } from '../../../icons/AdminIcons';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
-/*
-AdminLayout — wrapper layout cho tất cả admin pages
-Props: title, subtitle, actions, children
- */
 export default function AdminLayout({ title, subtitle, actions, children }) {
   const navigate = useNavigate();
   const { user } = useAuthContext();
