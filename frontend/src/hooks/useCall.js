@@ -1,12 +1,3 @@
-/*
- useCall.js — WebRTC Voice & Video Call Hook
- *
- Flow:
-  Caller:  startCall() → getUserMedia → createOffer → emit call_offer
- Callee:  socket 'call_incoming' → acceptCall() → getUserMedia → createAnswer → emit call_answer
- Both:    exchange ICE candidates via socket
- End:     endCall() | rejectCall() → emit call_end | call_reject
- */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSharedSocket } from './useMessages';
 import { getStoredUser } from '../utils/helpers';
@@ -17,14 +8,7 @@ const ICE_SERVERS = [
     { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
-/**
- * @param {object} params
- * @param {string} params.partnerId      — userId của đối phương
- * @param {object} params.partnerInfo    — { partnerFullname, partnerAvatar, partnerInitials }
- * @param {function} params.onCallEnd    — callback khi cuộc gọi kết thúc
- * @param {function} params.onCallLog    — callback lưu log cuộc gọi (chỉ caller gọi)
- */
-export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
+export function useCall() {
     const me = getStoredUser();
 
     // ── State ──
@@ -37,6 +21,9 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
     const [incomingCall, setIncomingCall] = useState(null);
     // { fromUserId, callerInfo, offer, callType }
 
+    const [currentPartnerId, setCurrentPartnerId] = useState(null);
+    const [currentPartnerInfo, setCurrentPartnerInfo] = useState(null);
+
     // ── Refs ──
     const pcRef          = useRef(null);   // RTCPeerConnection
     const localStreamRef = useRef(null);   // MediaStream (local)
@@ -45,10 +32,8 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
     const remoteVideoRef = useRef(null);   // <video> element
     const timerRef       = useRef(null);
     const mountedRef     = useRef(true);
-    const onCallLogRef   = useRef(onCallLog);
+    const onCallLogRef   = useRef(null);
     const callTypeRef    = useRef('voice');
-
-    useEffect(() => { onCallLogRef.current = onCallLog; }, [onCallLog]);
 
     // ── Socket listener cho incoming call ──
     useEffect(() => {
@@ -83,7 +68,13 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
             onCallLogRef.current?.(`Cuộc gọi ${callTypeRef.current} bị từ chối`, 'call');
             cleanup();
             setCallState('ended');
-            setTimeout(() => { if (mountedRef.current) setCallState('idle'); }, 2000);
+            setTimeout(() => { 
+                if (mountedRef.current) {
+                    setCallState('idle');
+                    setCurrentPartnerId(null);
+                    setCurrentPartnerInfo(null);
+                } 
+            }, 2000);
         };
 
         const onEnded = () => {
@@ -92,8 +83,13 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
             // trừ khi đang kết nối mà B kết thúc thì A cũng log? Tốt nhất để người chủ động kết thúc sẽ log.
             cleanup();
             setCallState('ended');
-            onCallEnd?.();
-            setTimeout(() => { if (mountedRef.current) setCallState('idle'); }, 2000);
+            setTimeout(() => { 
+                if (mountedRef.current) {
+                    setCallState('idle');
+                    setCurrentPartnerId(null);
+                    setCurrentPartnerInfo(null);
+                } 
+            }, 2000);
         };
 
         const onRinging = () => {
@@ -121,13 +117,13 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
 
     // ── Helpers ──
 
-    const createPeerConnection = useCallback((onTrack) => {
+    const createPeerConnection = useCallback((targetId, onTrack) => {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
         pc.onicecandidate = ({ candidate }) => {
             if (candidate) {
                 getSharedSocket().emit('call_ice_candidate', {
-                    toUserId: partnerId || incomingCall?.fromUserId,
+                    toUserId: targetId,
                     candidate,
                 });
             }
@@ -141,8 +137,13 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
             if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
                 cleanup();
                 setCallState('ended');
-                onCallEnd?.();
-                setTimeout(() => { if (mountedRef.current) setCallState('idle'); }, 2000);
+                setTimeout(() => { 
+                    if (mountedRef.current) {
+                        setCallState('idle');
+                        setCurrentPartnerId(null);
+                        setCurrentPartnerInfo(null);
+                    } 
+                }, 2000);
             }
         };
 
@@ -154,7 +155,7 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
         };
 
         return pc;
-    }, [partnerId, incomingCall?.fromUserId, onCallEnd]); // eslint-disable-line
+    }, []);
 
     const getMedia = useCallback(async (type) => {
         const constraints = {
@@ -194,15 +195,18 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
 
     // ── Actions ──
 
-    const startCall = useCallback(async (type = 'voice') => {
-        if (callState !== 'idle' || !partnerId) return;
+    const startCall = useCallback(async (targetId, targetInfo, type = 'voice', onLog = null) => {
+        if (callState !== 'idle' || !targetId) return;
         setCallType(type);
         callTypeRef.current = type;
+        setCurrentPartnerId(targetId);
+        setCurrentPartnerInfo(targetInfo);
+        onCallLogRef.current = onLog;
         setCallState('calling');
 
         try {
             const stream = await getMedia(type);
-            const pc = createPeerConnection();
+            const pc = createPeerConnection(targetId);
             pcRef.current = pc;
 
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -211,7 +215,7 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
             await pc.setLocalDescription(offer);
 
             getSharedSocket().emit('call_offer', {
-                toUserId:   partnerId,
+                toUserId:   targetId,
                 offer,
                 callType:   type,
                 callerInfo: {
@@ -224,20 +228,24 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
             console.error('[Call] startCall error:', e);
             cleanup();
             setCallState('idle');
+            setCurrentPartnerId(null);
+            setCurrentPartnerInfo(null);
         }
-    }, [callState, partnerId, getMedia, createPeerConnection, cleanup, me]);
+    }, [callState, getMedia, createPeerConnection, cleanup, me]);
 
     const acceptCall = useCallback(async () => {
         if (!incomingCall) return;
-        const { fromUserId, offer, callType: ct } = incomingCall;
+        const { fromUserId, offer, callType: ct, callerInfo } = incomingCall;
         setCallType(ct);
         callTypeRef.current = ct;
+        setCurrentPartnerId(fromUserId);
+        setCurrentPartnerInfo(callerInfo);
         setCallState('ringing');
         setIncomingCall(null);
 
         try {
             const stream = await getMedia(ct);
-            const pc = createPeerConnection();
+            const pc = createPeerConnection(fromUserId);
             pcRef.current = pc;
 
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -251,6 +259,8 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
             console.error('[Call] acceptCall error:', e);
             cleanup();
             setCallState('idle');
+            setCurrentPartnerId(null);
+            setCurrentPartnerInfo(null);
         }
     }, [incomingCall, getMedia, createPeerConnection, cleanup]);
 
@@ -262,7 +272,7 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
     }, [incomingCall]);
 
     const endCall = useCallback(() => {
-        const toId = partnerId || incomingCall?.fromUserId;
+        const toId = currentPartnerId || incomingCall?.fromUserId;
         if (toId) getSharedSocket().emit('call_end', { toUserId: toId });
         
         // Log the call based on state
@@ -276,9 +286,15 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
 
         cleanup();
         setCallState('ended');
-        onCallEnd?.();
-        setTimeout(() => { if (mountedRef.current) setCallState('idle'); }, 2000);
-    }, [partnerId, incomingCall, cleanup, onCallEnd, callState, callType, callDuration]);
+        setTimeout(() => { 
+            if (mountedRef.current) {
+                setCallState('idle');
+                setCurrentPartnerId(null);
+                setCurrentPartnerInfo(null);
+                onCallLogRef.current = null;
+            } 
+        }, 2000);
+    }, [currentPartnerId, incomingCall, cleanup, callState, callType, callDuration]);
 
     const toggleMute = useCallback(() => {
         if (!localStreamRef.current) return;
@@ -308,6 +324,8 @@ export function useCall({ partnerId, partnerInfo, onCallEnd, onCallLog } = {}) {
         callDuration,
         formattedDuration: formatDuration(callDuration),
         incomingCall,
+        currentPartnerId,
+        currentPartnerInfo,
         // Video refs (attach to <video ref={...}>)
         localVideoRef,
         remoteVideoRef,

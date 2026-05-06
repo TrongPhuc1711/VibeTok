@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageLayout from '../../components/layout/PageLayout/PageLayout';
 import { useInbox } from '../../hooks/useMessages';
-import { useCall } from '../../hooks/useCall';
 import { getStoredUser } from '../../utils/helpers';
 import ConversationSidebar from './ConversationSidebar';
 import ChatWindow from './ChatWindow';
-import IncomingCallBanner from './IncomingCallBanner';
 import { ChatBubbleIcon } from '../../icons/MessageIcons';
 
 /* ── Empty State ── */
@@ -64,11 +62,6 @@ export default function MessagesPage() {
 
     const activeConv = conversations.find(c => c.partnerUsername === activeUsername) || fetchedPartner;
 
-    // Global incoming call (hiện ở mọi trang)
-    const globalCall = useCall({
-        partnerId: activeConv?.partnerId,
-        partnerInfo: activeConv,
-    });
 
     const handleSelect = (username) => {
         setSearchParams({ u: username }, { replace: true });
@@ -108,15 +101,6 @@ export default function MessagesPage() {
                     )}
                 </div>
             </div>
-
-            {/* ── Incoming call banner (global) ── */}
-            {globalCall.incomingCall && (
-                <IncomingCallBanner
-                    incomingCall={globalCall.incomingCall}
-                    onAccept={globalCall.acceptCall}
-                    onReject={globalCall.rejectCall}
-                />
-            )}
         </PageLayout>
     );
 }

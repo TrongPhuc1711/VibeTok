@@ -5,6 +5,7 @@ import { ROUTES } from './utils/constants';
 import { ToastProvider } from './components/ui/Toast';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { CallProvider } from './contexts/CallContext';
 
 // Auth
 import LoginPage from './pages/auth/LoginPage';
@@ -61,8 +62,9 @@ export default function App() {
       <ThemeProvider>
         {/* AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
         <AuthProvider>
-          <BrowserRouter>
-            <ToastProvider>
+          <CallProvider>
+            <BrowserRouter>
+              <ToastProvider>
             <ErrorBoundary>
               <Routes>
                 {/* Auth — chỉ hiện khi chưa đăng nhập */}
@@ -97,8 +99,9 @@ export default function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </ErrorBoundary>
-          </ToastProvider>
-        </BrowserRouter>
+              </ToastProvider>
+            </BrowserRouter>
+          </CallProvider>
       </AuthProvider>
     </ThemeProvider>
     </GoogleOAuthProvider>

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useChat } from '../../hooks/useMessages';
-import { useCall } from '../../hooks/useCall';
+import { useCallContext } from '../../contexts/CallContext';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { useToast } from '../../components/ui/Toast';
 import { getStoredUser } from '../../utils/helpers';
 import { SpinnerCenter } from '../../components/ui/Spinner';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import CallOverlay from './CallOverlay';
 import { MsgAvatar } from './ConversationSidebar';
 import {
     BackChevronIcon, PhoneCallIcon, VideoCallIcon,
@@ -134,13 +133,17 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
     const typingRef   = useRef(null);
     const msgRefs     = useRef({});
 
-    // Call hook
-    const call = useCall({
-        partnerId: partnerInfo?.partnerId,
-        partnerInfo,
-        onCallLog: (msg) => send(msg, 'call'),
-        onCallEnd: () => {},
-    });
+    // Call hook global
+    const call = useCallContext();
+    const handleStartCall = (type) => {
+        if (!partnerInfo?.partnerId) return;
+        call.startCall(
+            partnerInfo.partnerId,
+            partnerInfo,
+            type,
+            (msg) => send(msg, 'call')
+        );
+    };
 
     // Auto scroll
     useEffect(() => {
@@ -184,8 +187,6 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
             <SpinnerCenter text="Đang tải tin nhắn..." />
         </div>
     );
-
-    const isCallActive = ['calling', 'ringing', 'connected', 'ended'].includes(call.callState);
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -235,8 +236,8 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
 
                     {/* Voice call */}
                     <button
-                        onClick={() => call.startCall('voice')}
-                        disabled={isCallActive}
+                        onClick={() => handleStartCall('voice')}
+                        disabled={call.callState !== 'idle'}
                         className="w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer text-[#ccc] hover:bg-white/10 hover:text-white transition-all disabled:opacity-30 bg-transparent"
                         title="Gọi thoại"
                     >
@@ -245,8 +246,8 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
 
                     {/* Video call */}
                     <button
-                        onClick={() => call.startCall('video')}
-                        disabled={isCallActive}
+                        onClick={() => handleStartCall('video')}
+                        disabled={call.callState !== 'idle'}
                         className="w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer text-[#ccc] hover:bg-white/10 hover:text-white transition-all disabled:opacity-30 bg-transparent"
                         title="Gọi video"
                     >
@@ -301,7 +302,7 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                                         onReact={react}
                                         onUnreact={unreact}
                                         searchQuery={searchQuery}
-                                        onCallClick={(type) => call.startCall(type)}
+                                        onCallClick={(type) => handleStartCall(type)}
                                     />
                                 </div>
                             );
@@ -325,23 +326,6 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                 partnerUsername={partnerUsername}
                 disabled={sending}
             />
-
-            {/* ── Call Overlay ── */}
-            {isCallActive && (
-                <CallOverlay
-                    callState={call.callState}
-                    callType={call.callType}
-                    partnerInfo={partnerInfo}
-                    formattedDuration={call.formattedDuration}
-                    isMuted={call.isMuted}
-                    isCameraOff={call.isCameraOff}
-                    localVideoRef={call.localVideoRef}
-                    remoteVideoRef={call.remoteVideoRef}
-                    onEnd={call.endCall}
-                    onToggleMute={call.toggleMute}
-                    onToggleCamera={call.toggleCamera}
-                />
-            )}
         </div>
     );
 }
