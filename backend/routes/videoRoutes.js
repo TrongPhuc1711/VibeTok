@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken, optionalAuth } from '../middlewares/authMiddleware.js';
-import { uploadVideo as uploadVideoMiddleware } from '../middlewares/uploadMiddleware.js';
+import { uploadContent } from '../middlewares/uploadMiddleware.js';
 import {
     getFeed, searchVideos, getVideoById, getVideosByUser,
     uploadVideo, getComments, postComment, getReplies,
@@ -20,7 +20,7 @@ router.get('/:id/comments', optionalAuth, getComments);
 router.get('/:id', optionalAuth, getVideoById);
 
 // Protected (cần đăng nhập)
-router.post('/upload', verifyToken, uploadVideoMiddleware, uploadVideo);
+router.post('/upload', verifyToken, uploadContent, uploadVideo);
 router.post('/:id/comments', verifyToken, postComment);
 router.post('/:id/comments/:commentId/like', verifyToken, likeComment);
 router.delete('/:id/comments/:commentId/like', verifyToken, unlikeComment);

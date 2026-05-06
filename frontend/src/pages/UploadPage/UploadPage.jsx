@@ -85,16 +85,16 @@ export default function UploadPage() {
   };
 
   const handleSubmit = async (isDraft = false) => {
-    if (!file && !isDraft) {
-      showWarning('Chưa chọn video', 'Vui lòng chọn file video trước khi đăng');
+    if (!file && images.length === 0 && !isDraft) {
+      showWarning('Chưa chọn video hoặc ảnh', 'Vui lòng chọn file video hoặc ảnh trước khi đăng');
       return;
     }
     const ok = await submit(isDraft, {
       originalVolume: useOriginalSound ? originalVolume : 0,
       musicVolume
-    });
-    if (isDraft && ok) showSuccess('Đã lưu nháp', 'Video của bạn đã được lưu vào bản nháp');
-    else if (!ok && errors.submit) showError('Đăng video thất bại', errors.submit);
+    }, uploadType === 'images' ? images : []);
+    if (isDraft && ok) showSuccess('Đã lưu nháp', 'Bài viết của bạn đã được lưu vào bản nháp');
+    else if (!ok && errors.submit) showError('Đăng thất bại', errors.submit);
   };
 
   return (

@@ -40,9 +40,9 @@ export function useUpload({ onSuccess } = {}) {
         setErrors(p => ({ ...p, file: '' }));
     }, []);
 
-    const submit = useCallback(async (isDraft = false, extraData = {}) => {
+    const submit = useCallback(async (isDraft = false, extraData = {}, images = []) => {
         const { valid, errors: e } = validateForm(form, uploadSchema);
-        if (!file && !isDraft) { setErrors({ ...e, file: 'Vui lòng chọn video' }); return false; }
+        if (!file && images.length === 0 && !isDraft) { setErrors({ ...e, file: 'Vui lòng chọn video hoặc ảnh' }); return false; }
         if (!valid) { setErrors(e); return false; }
 
         setUploading(true);
@@ -50,7 +50,13 @@ export function useUpload({ onSuccess } = {}) {
 
         try {
             const data = new FormData();
-            if (file) data.append('video', file);
+            if (file) {
+                data.append('video', file);
+            } else if (images.length > 0) {
+                images.forEach(img => {
+                    data.append('images', img.file);
+                });
+            }
             data.append('caption',     form.caption || '');
             data.append('privacy',     form.privacy || 'public');
             data.append('allowDuet',   String(form.allowDuet  ?? true));

@@ -73,7 +73,30 @@ export const getVideosByUser = async (req, res) => {
 // POST /api/videos/upload
 export const uploadVideo = async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ message: 'Vui lòng chọn file video' });
+        const videoFile = req.files?.video?.[0];
+        const imageFiles = req.files?.images;
+
+        if (!videoFile && (!imageFiles || imageFiles.length === 0)) {
+            return res.status(400).json({ message: 'Vui lòng chọn file video hoặc ảnh' });
+        }
+
+        const isSlideshow = !videoFile && imageFiles?.length > 0;
+
+        let videoUrl, thumbnail, duration;
+
+        if (isSlideshow) {
+            videoUrl = JSON.stringify(imageFiles.map(f => f.path));
+            thumbnail = imageFiles[0].path
+                .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
+                .replace(/\.[^.]+$/, '.jpg');
+            duration = imageFiles.length * 3;
+        } else {
+            videoUrl = videoFile.path;
+            thumbnail = videoFile.path
+                .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
+                .replace(/\.[^.]+$/, '.jpg');
+            duration = videoFile.duration || 0;
+        }
 
         const {
             caption = '',
@@ -97,11 +120,9 @@ export const uploadVideo = async (req, res) => {
             originalVolume: parseFloat(originalVolume),
             musicVolume: parseFloat(musicVolume),
             caption: caption.slice(0, 500),
-            videoUrl: req.file.path,
-            thumbnail: req.file.path
-                .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
-                .replace(/\.[^.]+$/, '.jpg'),
-            duration: req.file.duration || 0,
+            videoUrl: videoUrl,
+            thumbnail: thumbnail,
+            duration: duration,
             privacy: safePrivacy,
             allowDuet: allowDuet !== 'false',
             allowStitch: allowStitch !== 'false',

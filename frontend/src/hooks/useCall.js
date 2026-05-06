@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSharedSocket } from './useMessages';
 import { getStoredUser } from '../utils/helpers';
+import { useToast } from '../components/ui/Toast';
 
 // Google public STUN server (free, works for most networks)
 const ICE_SERVERS = [
@@ -10,6 +11,7 @@ const ICE_SERVERS = [
 
 export function useCall() {
     const me = getStoredUser();
+    const toast = useToast();
 
     // ── State ──
     const [callState, setCallState]     = useState('idle');
@@ -37,6 +39,7 @@ export function useCall() {
 
     // ── Socket listener cho incoming call ──
     useEffect(() => {
+        if (!me?.id) return;
         mountedRef.current = true;
         const socket = getSharedSocket();
 
@@ -113,7 +116,7 @@ export function useCall() {
             socket.off('call_ended',         onEnded);
             socket.off('call_ringing',       onRinging);
         };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Helpers ──
 
@@ -226,12 +229,13 @@ export function useCall() {
             });
         } catch (e) {
             console.error('[Call] startCall error:', e);
+            toast?.showError('Lỗi cuộc gọi', 'Không thể truy cập Camera/Mic. Vui lòng cấp quyền hoặc dùng HTTPS.');
             cleanup();
             setCallState('idle');
             setCurrentPartnerId(null);
             setCurrentPartnerInfo(null);
         }
-    }, [callState, getMedia, createPeerConnection, cleanup, me]);
+    }, [callState, getMedia, createPeerConnection, cleanup, me, toast]);
 
     const acceptCall = useCallback(async () => {
         if (!incomingCall) return;
@@ -257,12 +261,13 @@ export function useCall() {
             getSharedSocket().emit('call_answer', { toUserId: fromUserId, answer });
         } catch (e) {
             console.error('[Call] acceptCall error:', e);
+            toast?.showError('Lỗi cuộc gọi', 'Không thể truy cập Camera/Mic. Vui lòng cấp quyền hoặc dùng HTTPS.');
             cleanup();
             setCallState('idle');
             setCurrentPartnerId(null);
             setCurrentPartnerInfo(null);
         }
-    }, [incomingCall, getMedia, createPeerConnection, cleanup]);
+    }, [incomingCall, getMedia, createPeerConnection, cleanup, toast]);
 
     const rejectCall = useCallback(() => {
         if (!incomingCall) return;

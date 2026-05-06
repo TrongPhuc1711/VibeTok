@@ -14,6 +14,7 @@ let _socketToken = null;
 
 const getSocket = () => {
     const token = getToken();
+    const me = getStoredUser();
     if (_socket && _socketToken !== token) {
         _socket.removeAllListeners();
         _socket.disconnect();
@@ -29,7 +30,10 @@ const getSocket = () => {
             reconnectionDelay: 2000,
             timeout: 10000,
         });
-        _socket.on('connect', () => console.log('[Socket] Connected:', _socket.id));
+        _socket.on('connect', () => {
+            console.log('[Socket] Connected:', _socket.id);
+            if (me?.id) _socket.emit('join_user_room', me.id);
+        });
         _socket.on('disconnect', (reason) => console.log('[Socket] Disconnected:', reason));
         _socket.on('connect_error', (err) => console.warn('[Socket] Error:', err.message));
     }

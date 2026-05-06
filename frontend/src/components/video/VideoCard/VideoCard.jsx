@@ -3,6 +3,7 @@ import VideoCardTopBar from './VideoCardTopBar';
 import VideoCardInfo from './VideoCardInfo';
 import VideoCardActions from './VideoCardActions';
 import VolumeControl, { useVideoVolume } from '../../video/VolumnControl/index';
+import { ImageSlideshow } from '../../ui/ImageSlideshow';
 
 export default function VideoCard({
     video,
@@ -192,13 +193,20 @@ export default function VideoCard({
 
     const currentSec = duration ? (progress / 100) * duration : 0;
 
+    const isSlideshow = video?.videoUrl?.startsWith('["') && video?.videoUrl?.endsWith('"]');
+    const imagesArray = isSlideshow ? JSON.parse(video.videoUrl).map((url, i) => ({ id: String(i), url })) : [];
+
     return (
         <div
             className="relative w-full h-full overflow-hidden group"
             style={{ background: `linear-gradient(135deg,hsl(${hue},25%,7%),hsl(${(hue + 60) % 360},18%,4%))` }}
         >
-            {/* Video */}
-            {video?.videoUrl ? (
+            {/* Video or ImageSlideshow */}
+            {isSlideshow ? (
+                <div className="absolute inset-0 w-full h-full z-[1]">
+                    <ImageSlideshow images={imagesArray} autoPlay={isActive} duration={3000} />
+                </div>
+            ) : video?.videoUrl ? (
                 <video
                     ref={videoRef}
                     src={video.videoUrl}

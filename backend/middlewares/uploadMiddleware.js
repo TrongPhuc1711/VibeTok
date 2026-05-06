@@ -2,14 +2,24 @@ import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../config/cloudinary.js';
 
-// Storage cho VIDEO
-const videoStorage = new CloudinaryStorage({
+// Storage cho VIDEO & SLIDESHOW
+const contentStorage = new CloudinaryStorage({
     cloudinary,
-    params: {
-        folder: 'vibetok/videos',
-        resource_type: 'video',
-        allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
-        transformation: [{ quality: 'auto' }],
+    params: async (req, file) => {
+        if (file.mimetype.startsWith('image/')) {
+            return {
+                folder: 'vibetok/slideshows',
+                resource_type: 'image',
+                allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+                transformation: [{ quality: 'auto' }],
+            };
+        }
+        return {
+            folder: 'vibetok/videos',
+            resource_type: 'video',
+            allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
+            transformation: [{ quality: 'auto' }],
+        };
     },
 });
 
@@ -51,10 +61,13 @@ const fileSizeLimits = {
     music: 50 * 1024 * 1024, // 50 MB cho audio
 };
 
-export const uploadVideo = multer({
-    storage: videoStorage,
+export const uploadContent = multer({
+    storage: contentStorage,
     limits: { fileSize: fileSizeLimits.video }
-}).single('video');
+}).fields([
+    { name: 'video', maxCount: 1 },
+    { name: 'images', maxCount: 20 }
+]);
 export const uploadAvatar = multer({
     storage: avatarStorage,
     limits: { fileSize: fileSizeLimits.avatar }
