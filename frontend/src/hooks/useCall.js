@@ -30,8 +30,22 @@ export function useCall() {
     const pcRef          = useRef(null);   // RTCPeerConnection
     const localStreamRef = useRef(null);   // MediaStream (local)
     const remoteStreamRef = useRef(null);  // MediaStream (remote)
-    const localVideoRef  = useRef(null);   // <video> element
-    const remoteVideoRef = useRef(null);   // <video> element
+    const localVideoElementRef = useRef(null);   // <video> element internal
+    const remoteVideoElementRef = useRef(null);  // <video> element internal
+
+    const localVideoRef = useCallback((node) => {
+        localVideoElementRef.current = node;
+        if (node && localStreamRef.current && node.srcObject !== localStreamRef.current) {
+            node.srcObject = localStreamRef.current;
+        }
+    }, []);
+
+    const remoteVideoRef = useCallback((node) => {
+        remoteVideoElementRef.current = node;
+        if (node && remoteStreamRef.current && node.srcObject !== remoteStreamRef.current) {
+            node.srcObject = remoteStreamRef.current;
+        }
+    }, []);
     const timerRef       = useRef(null);
     const mountedRef     = useRef(true);
     const onCallLogRef   = useRef(null);
@@ -153,7 +167,7 @@ export function useCall() {
         pc.ontrack = (event) => {
             const [stream] = event.streams;
             remoteStreamRef.current = stream;
-            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream;
+            if (remoteVideoElementRef.current) remoteVideoElementRef.current.srcObject = stream;
             onTrack?.(stream);
         };
 
@@ -167,7 +181,7 @@ export function useCall() {
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         localStreamRef.current = stream;
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+        if (localVideoElementRef.current) localVideoElementRef.current.srcObject = stream;
         return stream;
     }, []);
 
@@ -190,8 +204,8 @@ export function useCall() {
             pcRef.current.close();
             pcRef.current = null;
         }
-        if (localVideoRef.current)  localVideoRef.current.srcObject = null;
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+        if (localVideoElementRef.current)  localVideoElementRef.current.srcObject = null;
+        if (remoteVideoElementRef.current) remoteVideoElementRef.current.srcObject = null;
         setIsMuted(false);
         setIsCameraOff(false);
     }, []);

@@ -42,8 +42,15 @@ export function useUpload({ onSuccess } = {}) {
 
     const submit = useCallback(async (isDraft = false, extraData = {}, images = []) => {
         const { valid, errors: e } = validateForm(form, uploadSchema);
-        if (!file && images.length === 0 && !isDraft) { setErrors({ ...e, file: 'Vui lòng chọn video hoặc ảnh' }); return false; }
-        if (!valid) { setErrors(e); return false; }
+        if (!file && images.length === 0 && !isDraft) { 
+            const errs = { ...e, file: 'Vui lòng chọn video hoặc ảnh' };
+            setErrors(errs); 
+            return { success: false, errors: errs }; 
+        }
+        if (!valid) { 
+            setErrors(e); 
+            return { success: false, errors: e }; 
+        }
 
         setUploading(true);
         setProgress(0);
@@ -77,11 +84,11 @@ export function useUpload({ onSuccess } = {}) {
 
             setProgress(100);
             onSuccess?.();
-            return true;
+            return { success: true };
         } catch (err) {
             const msg = err.response?.data?.message || err.message || 'Đăng video thất bại';
             setErrors(p => ({ ...p, submit: msg }));
-            return false;
+            return { success: false, errors: { submit: msg } };
         } finally {
             setUploading(false);
         }

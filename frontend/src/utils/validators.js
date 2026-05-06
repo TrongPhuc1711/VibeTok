@@ -221,7 +221,6 @@ import {
   
   export const uploadSchema = {
     caption: [
-      { validator: (v) => isNotEmpty(v),                  message: 'Mô tả không được để trống' },
       { validator: (v) => hasMaxLength(v, MAX_CAPTION_LENGTH), message: `Mô tả tối đa ${MAX_CAPTION_LENGTH} ký tự` },
     ],
   };

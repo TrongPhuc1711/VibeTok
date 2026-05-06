@@ -89,12 +89,22 @@ export default function UploadPage() {
       showWarning('Chưa chọn video hoặc ảnh', 'Vui lòng chọn file video hoặc ảnh trước khi đăng');
       return;
     }
-    const ok = await submit(isDraft, {
+    const result = await submit(isDraft, {
       originalVolume: useOriginalSound ? originalVolume : 0,
       musicVolume
     }, uploadType === 'images' ? images : []);
-    if (isDraft && ok) showSuccess('Đã lưu nháp', 'Bài viết của bạn đã được lưu vào bản nháp');
-    else if (!ok && errors.submit) showError('Đăng thất bại', errors.submit);
+
+    const ok = typeof result === 'boolean' ? result : result?.success;
+    const errs = typeof result === 'object' ? result.errors : errors;
+
+    if (isDraft && ok) {
+        showSuccess('Đã lưu nháp', 'Bài viết của bạn đã được lưu vào bản nháp');
+    } else if (!ok) {
+        if (errs?.submit) showError('Đăng thất bại', errs.submit);
+        else if (errs?.caption) showError('Lỗi thông tin', errs.caption);
+        else if (errs?.file) showError('Lỗi file', errs.file);
+        else showError('Thông tin không hợp lệ', 'Vui lòng kiểm tra lại các trường thông tin');
+    }
   };
 
   return (
