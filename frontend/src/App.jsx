@@ -62,15 +62,15 @@ export default function App() {
       <ThemeProvider>
         {/* AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
         <AuthProvider>
-          <CallProvider>
-            <BrowserRouter>
-              <ToastProvider>
-            <ErrorBoundary>
-              <Routes>
-                {/* Auth — chỉ hiện khi chưa đăng nhập */}
-                <Route path={ROUTES.LOGIN} element={<AuthRoute><LoginPage /></AuthRoute>} />
-                <Route path={ROUTES.REGISTER} element={<AuthRoute><RegisterPage /></AuthRoute>} />
-                <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+          <ToastProvider>
+            <CallProvider>
+              <BrowserRouter>
+                <ErrorBoundary>
+                  <Routes>
+                    {/* Auth — chỉ hiện khi chưa đăng nhập */}
+                    <Route path={ROUTES.LOGIN} element={<AuthRoute><LoginPage /></AuthRoute>} />
+                    <Route path={ROUTES.REGISTER} element={<AuthRoute><RegisterPage /></AuthRoute>} />
+                    <Route path='/change-password' element={<PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
                 <Route path='/forgot-password' element={<ForgotPasswordPage />} />
 
                 {/* Admin */}
@@ -99,11 +99,11 @@ export default function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </ErrorBoundary>
-              </ToastProvider>
-            </BrowserRouter>
-          </CallProvider>
-      </AuthProvider>
-    </ThemeProvider>
-    </GoogleOAuthProvider>
+          </BrowserRouter>
+        </CallProvider>
+      </ToastProvider>
+    </AuthProvider>
+  </ThemeProvider>
+</GoogleOAuthProvider>
   );
 }
