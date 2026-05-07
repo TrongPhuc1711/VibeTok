@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { getSharedSocket } from './useMessages';
 import { getStoredUser } from '../utils/helpers';
 import { useToast } from '../components/ui/Toast';
@@ -214,12 +215,17 @@ export function useCall() {
 
     const startCall = useCallback(async (targetId, targetInfo, type = 'voice', onLog = null) => {
         if (callState !== 'idle' || !targetId) return;
-        setCallType(type);
-        callTypeRef.current = type;
-        setCurrentPartnerId(targetId);
-        setCurrentPartnerInfo(targetInfo);
-        onCallLogRef.current = onLog;
-        setCallState('calling');
+
+        // flushSync forces synchronous re-render so CallOverlay mounts
+        // BEFORE getMedia() tries to attach stream to video/audio elements
+        flushSync(() => {
+            setCallType(type);
+            callTypeRef.current = type;
+            setCurrentPartnerId(targetId);
+            setCurrentPartnerInfo(targetInfo);
+            onCallLogRef.current = onLog;
+            setCallState('calling');
+        });
 
         try {
             const stream = await getMedia(type);
@@ -254,12 +260,17 @@ export function useCall() {
     const acceptCall = useCallback(async () => {
         if (!incomingCall) return;
         const { fromUserId, offer, callType: ct, callerInfo } = incomingCall;
-        setCallType(ct);
-        callTypeRef.current = ct;
-        setCurrentPartnerId(fromUserId);
-        setCurrentPartnerInfo(callerInfo);
-        setCallState('ringing');
-        setIncomingCall(null);
+
+        // flushSync forces synchronous re-render so CallOverlay mounts
+        // BEFORE getMedia() tries to attach stream to video/audio elements
+        flushSync(() => {
+            setCallType(ct);
+            callTypeRef.current = ct;
+            setCurrentPartnerId(fromUserId);
+            setCurrentPartnerInfo(callerInfo);
+            setCallState('ringing');
+            setIncomingCall(null);
+        });
 
         try {
             const stream = await getMedia(ct);

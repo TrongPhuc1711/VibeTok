@@ -2,20 +2,20 @@ import { FollowListModel } from "../models/follow/followListModel.js";
 
 // Chuẩn hoá một user row thành object trả về frontend
 const normalizeUser = (u, followingSet, followersSet) => ({
-    id:           String(u.id),
-    username:     u.ten_dang_nhap,
-    fullName:     u.ten_hien_thi || '',
+    id: String(u.id),
+    username: u.ten_dang_nhap,
+    fullName: u.ten_hien_thi || '',
     anh_dai_dien: u.anh_dai_dien || null,
-    followers:    Number(u.so_nguoi_theo_doi) || 0,
-    isCreator:    u.vai_tro === 'creator' || u.vai_tro === 'admin',
-    isFollowing:  followingSet.has(u.id),
-    isMutual:     followingSet.has(u.id) && followersSet.has(u.id),
-    initials:     (u.ten_hien_thi || '')
-                    .trim()
-                    .split(/\s+/)
-                    .map(w => w[0]?.toUpperCase() ?? '')
-                    .slice(0, 2)
-                    .join('') || 'U',
+    followers: Number(u.so_nguoi_theo_doi) || 0,
+    isCreator: u.vai_tro === 'creator' || u.vai_tro === 'admin',
+    isFollowing: followingSet.has(u.id),
+    isMutual: followingSet.has(u.id) && followersSet.has(u.id),
+    initials: (u.ten_hien_thi || '')
+        .trim()
+        .split(/\s+/)
+        .map(w => w[0]?.toUpperCase() ?? '')
+        .slice(0, 2)
+        .join('') || 'U',
 });
 
 export const FollowListService = {
@@ -34,7 +34,7 @@ export const FollowListService = {
         ]);
 
         return {
-            users:   rows.map(u => normalizeUser(u, followingSet, followersSet)),
+            users: rows.map(u => normalizeUser(u, followingSet, followersSet)),
             total,
             hasMore: (page - 1) * limit + rows.length < total,
         };
@@ -54,29 +54,28 @@ export const FollowListService = {
         ]);
 
         return {
-            users:   rows.map(u => normalizeUser(u, followingSet, followersSet)),
+            users: rows.map(u => normalizeUser(u, followingSet, followersSet)),
             total,
             hasMore: (page - 1) * limit + rows.length < total,
-        };
-    },
+            async getFriends(username, { page, limit, currentUserId, currentUserRole }) {
+                const userId = await FollowListModel.findUserIdByUsername(username);
+                if (!userId) return null;
 
-    async getFriends(username, { page, limit, currentUserId, currentUserRole }) {
-        const userId = await FollowListModel.findUserIdByUsername(username);
-        if (!userId) return null;
+                // Ẩn admin khỏi danh sách nếu người xem không phải admin
+                const hideAdmins = currentUserRole !== 'admin';
 
-        // Ẩn admin khỏi danh sách nếu người xem không phải admin
-        const hideAdmins = currentUserRole !== 'admin';
+                const [{ rows, total }, followingSet, followersSet] = await Promise.all([
+                    FollowListModel.getFriends(userId, { page, limit }, hideAdmins),
+                    FollowListModel.getMyFollowingSet(currentUserId),
+                    FollowListModel.getMyFollowersSet(currentUserId),
+                ]);
 
-        const [{ rows, total }, followingSet, followersSet] = await Promise.all([
-            FollowListModel.getFriends(userId, { page, limit }, hideAdmins),
-            FollowListModel.getMyFollowingSet(currentUserId),
-            FollowListModel.getMyFollowersSet(currentUserId),
-        ]);
-
-        return {
-            users:   rows.map(u => normalizeUser(u, followingSet, followersSet)),
-            total,
-            hasMore: (page - 1) * limit + rows.length < total,
-        };
-    },
+                return {
+                    users: rows.map(u => normalizeUser(u, followingSet, followersSet)),
+                    total,
+                    hasMore: (page - 1) * limit + rows.length < total,
+                };
+            },
+        }
+    }
 };
