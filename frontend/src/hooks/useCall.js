@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { getSharedSocket } from './useMessages';
-import { getStoredUser } from '../utils/helpers';
+import { useAuthContext } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
 
 // Google public STUN server (free, works for most networks)
@@ -11,7 +11,7 @@ const ICE_SERVERS = [
 ];
 
 export function useCall() {
-    const me = getStoredUser();
+    const { user: me } = useAuthContext();
     const toast = useToast();
 
     // ── State ──

@@ -73,8 +73,11 @@ export const getVideosByUser = async (req, res) => {
 // POST /api/videos/upload
 export const uploadVideo = async (req, res) => {
     try {
-        const videoFile = req.files?.video?.[0];
-        const imageFiles = req.files?.images;
+        if (!req.files) {
+            return res.status(400).json({ message: 'Không nhận được file. Vui lòng thử lại.' });
+        }
+        const videoFile = req.files.video?.[0];
+        const imageFiles = req.files.images;
 
         if (!videoFile && (!imageFiles || imageFiles.length === 0)) {
             return res.status(400).json({ message: 'Vui lòng chọn file video hoặc ảnh' });

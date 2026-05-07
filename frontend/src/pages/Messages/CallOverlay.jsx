@@ -85,7 +85,7 @@ export default function CallOverlay({
                 </>
             )}
 
-            {/* ── Voice call background overlay + hidden audio for remote stream ── */}
+            {/*Voice call background overlay + hidden audio for remote stream */}
             {callType === 'voice' && (
                 <>
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d20] via-[#0a0a18] to-[#080810]" />
