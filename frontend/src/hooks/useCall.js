@@ -15,10 +15,10 @@ export function useCall() {
     const toast = useToast();
 
     // ── State ──
-    const [callState, setCallState]     = useState('idle');
+    const [callState, setCallState] = useState('idle');
     // 'idle' | 'calling' | 'ringing' | 'connected' | 'ended'
-    const [callType, setCallType]       = useState('voice'); // 'voice' | 'video'
-    const [isMuted, setIsMuted]         = useState(false);
+    const [callType, setCallType] = useState('voice'); // 'voice' | 'video'
+    const [isMuted, setIsMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const [incomingCall, setIncomingCall] = useState(null);
@@ -28,7 +28,7 @@ export function useCall() {
     const [currentPartnerInfo, setCurrentPartnerInfo] = useState(null);
 
     // ── Refs ──
-    const pcRef          = useRef(null);   // RTCPeerConnection
+    const pcRef = useRef(null);   // RTCPeerConnection
     const localStreamRef = useRef(null);   // MediaStream (local)
     const remoteStreamRef = useRef(null);  // MediaStream (remote)
     const localVideoElementRef = useRef(null);   // <video> element internal
@@ -47,25 +47,41 @@ export function useCall() {
             node.srcObject = remoteStreamRef.current;
         }
     }, []);
-    const timerRef       = useRef(null);
-    const mountedRef     = useRef(true);
-    const onCallLogRef   = useRef(null);
-    const callTypeRef    = useRef('voice');
+    const timerRef = useRef(null);
+    const mountedRef = useRef(true);
+    const onCallLogRef = useRef(null);
+    const callTypeRef = useRef('voice');
 
     // ── Socket listener cho incoming call ──
     useEffect(() => {
         if (!me?.id) return;
         mountedRef.current = true;
         const socket = getSharedSocket();
+        const myId = String(me.id);
+
+        const ensureJoin = () => {
+            try {
+                console.log('[Call][Socket] ensure join_user_room', { myId, sid: socket.id, connected: socket.connected });
+                socket.emit('join_user_room', myId);
+            } catch (e) {
+                console.warn('[Call][Socket] ensureJoin failed', e);
+            }
+        };
+
+        // Join immediately (if already connected) and also on every reconnect.
+        if (socket.connected) ensureJoin();
+        socket.on('connect', ensureJoin);
 
         const onIncoming = ({ fromUserId, offer, callType: ct, callerInfo }) => {
             if (!mountedRef.current) return;
+            console.log('[Call][Socket] call_incoming', { fromUserId, callType: ct, hasOffer: !!offer });
             setIncomingCall({ fromUserId, offer, callType: ct || 'voice', callerInfo });
         };
 
         const onAnswered = async ({ answer }) => {
             if (!mountedRef.current || !pcRef.current) return;
             try {
+                console.log('[Call][Socket] call_answered', { hasAnswer: !!answer });
                 await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
             } catch (e) {
                 console.error('[Call] setRemoteDescription error:', e);
@@ -75,61 +91,79 @@ export function useCall() {
         const onIceCandidate = async ({ candidate }) => {
             if (!mountedRef.current || !pcRef.current || !candidate) return;
             try {
+                console.log('[Call][Socket] call_ice_candidate', { hasCandidate: !!candidate });
                 await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
             } catch (e) {
                 console.error('[Call] addIceCandidate error:', e);
             }
         };
 
+        const onUserOffline = ({ toUserId, lastSeen }) => {
+            if (!mountedRef.current) return;
+            console.warn('[Call][Socket] call_user_offline', { toUserId, lastSeen });
+            toast?.showError?.('Người dùng đang offline', 'Không thể thực hiện cuộc gọi lúc này.');
+            cleanup();
+            setCallState('idle');
+            setCurrentPartnerId(null);
+            setCurrentPartnerInfo(null);
+            onCallLogRef.current?.('Người nhận đang offline', 'call');
+        };
+
         const onRejected = () => {
             if (!mountedRef.current) return;
+            console.log('[Call][Socket] call_rejected');
             onCallLogRef.current?.(`Cuộc gọi ${callTypeRef.current} bị từ chối`, 'call');
             cleanup();
             setCallState('ended');
-            setTimeout(() => { 
+            setTimeout(() => {
                 if (mountedRef.current) {
                     setCallState('idle');
                     setCurrentPartnerId(null);
                     setCurrentPartnerInfo(null);
-                } 
+                }
             }, 2000);
         };
 
         const onEnded = () => {
             if (!mountedRef.current) return;
+            console.log('[Call][Socket] call_ended');
             // Callee (B) nhận được onEnded thì không cần log, chỉ Caller (A) mới chủ động log lúc bấm kết thúc,
             // trừ khi đang kết nối mà B kết thúc thì A cũng log? Tốt nhất để người chủ động kết thúc sẽ log.
             cleanup();
             setCallState('ended');
-            setTimeout(() => { 
+            setTimeout(() => {
                 if (mountedRef.current) {
                     setCallState('idle');
                     setCurrentPartnerId(null);
                     setCurrentPartnerInfo(null);
-                } 
+                }
             }, 2000);
         };
 
         const onRinging = () => {
             if (!mountedRef.current) return;
+            console.log('[Call][Socket] call_ringing');
             setCallState('calling'); // người kia đang đổ chuông
         };
 
-        socket.on('call_incoming',      onIncoming);
-        socket.on('call_answered',      onAnswered);
+        socket.on('call_incoming', onIncoming);
+        socket.on('call_answered', onAnswered);
         socket.on('call_ice_candidate', onIceCandidate);
-        socket.on('call_rejected',      onRejected);
-        socket.on('call_ended',         onEnded);
-        socket.on('call_ringing',       onRinging);
+        socket.on('call_user_offline', onUserOffline);
+        socket.on('call_rejected', onRejected);
+        socket.on('call_ended', onEnded);
+        socket.on('call_ringing', onRinging);
 
         return () => {
             mountedRef.current = false;
-            socket.off('call_incoming',      onIncoming);
-            socket.off('call_answered',      onAnswered);
+            socket.off('connect', ensureJoin);
+            socket.off('call_incoming', onIncoming);
+            socket.off('call_answered', onAnswered);
             socket.off('call_ice_candidate', onIceCandidate);
-            socket.off('call_rejected',      onRejected);
-            socket.off('call_ended',         onEnded);
-            socket.off('call_ringing',       onRinging);
+            socket.off('call_user_offline', onUserOffline);
+            socket.off('call_rejected', onRejected);
+            socket.off('call_ended', onEnded);
+            socket.off('call_ringing', onRinging);
         };
     }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -137,9 +171,11 @@ export function useCall() {
 
     const createPeerConnection = useCallback((targetId, onTrack) => {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        console.log('[Call][WebRTC] createPeerConnection', { targetId: String(targetId) });
 
         pc.onicecandidate = ({ candidate }) => {
             if (candidate) {
+                console.log('[Call][WebRTC] onicecandidate -> emit', { targetId: String(targetId) });
                 getSharedSocket().emit('call_ice_candidate', {
                     toUserId: targetId,
                     candidate,
@@ -148,6 +184,7 @@ export function useCall() {
         };
 
         pc.onconnectionstatechange = () => {
+            console.log('[Call][WebRTC] connectionState', pc.connectionState);
             if (pc.connectionState === 'connected') {
                 setCallState('connected');
                 startTimer();
@@ -155,18 +192,19 @@ export function useCall() {
             if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
                 cleanup();
                 setCallState('ended');
-                setTimeout(() => { 
+                setTimeout(() => {
                     if (mountedRef.current) {
                         setCallState('idle');
                         setCurrentPartnerId(null);
                         setCurrentPartnerInfo(null);
-                    } 
+                    }
                 }, 2000);
             }
         };
 
         pc.ontrack = (event) => {
             const [stream] = event.streams;
+            console.log('[Call][WebRTC] ontrack', { hasStream: !!stream, tracks: stream?.getTracks?.().length });
             remoteStreamRef.current = stream;
             if (remoteVideoElementRef.current) remoteVideoElementRef.current.srcObject = stream;
             onTrack?.(stream);
@@ -205,7 +243,7 @@ export function useCall() {
             pcRef.current.close();
             pcRef.current = null;
         }
-        if (localVideoElementRef.current)  localVideoElementRef.current.srcObject = null;
+        if (localVideoElementRef.current) localVideoElementRef.current.srcObject = null;
         if (remoteVideoElementRef.current) remoteVideoElementRef.current.srcObject = null;
         setIsMuted(false);
         setIsCameraOff(false);
@@ -215,6 +253,7 @@ export function useCall() {
 
     const startCall = useCallback(async (targetId, targetInfo, type = 'voice', onLog = null) => {
         if (callState !== 'idle' || !targetId) return;
+        console.log('[Call] startCall', { fromUserId: me?.id, toUserId: targetId, type });
 
         // flushSync forces synchronous re-render so CallOverlay mounts
         // BEFORE getMedia() tries to attach stream to video/audio elements
@@ -237,13 +276,14 @@ export function useCall() {
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
 
+            console.log('[Call] emit call_offer', { toUserId: targetId, type, hasOffer: !!offer });
             getSharedSocket().emit('call_offer', {
-                toUserId:   targetId,
+                toUserId: targetId,
                 offer,
-                callType:   type,
+                callType: type,
                 callerInfo: {
                     fullName: me?.fullName || me?.username,
-                    avatar:   me?.anh_dai_dien,
+                    avatar: me?.anh_dai_dien,
                     initials: me?.initials || 'U',
                 },
             });
@@ -260,6 +300,7 @@ export function useCall() {
     const acceptCall = useCallback(async () => {
         if (!incomingCall) return;
         const { fromUserId, offer, callType: ct, callerInfo } = incomingCall;
+        console.log('[Call] acceptCall', { fromUserId, callType: ct, hasOffer: !!offer });
 
         // flushSync forces synchronous re-render so CallOverlay mounts
         // BEFORE getMedia() tries to attach stream to video/audio elements
@@ -283,6 +324,7 @@ export function useCall() {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
+            console.log('[Call] emit call_answer', { toUserId: fromUserId, hasAnswer: !!answer });
             getSharedSocket().emit('call_answer', { toUserId: fromUserId, answer });
         } catch (e) {
             console.error('[Call] acceptCall error:', e);
@@ -304,7 +346,7 @@ export function useCall() {
     const endCall = useCallback(() => {
         const toId = currentPartnerId || incomingCall?.fromUserId;
         if (toId) getSharedSocket().emit('call_end', { toUserId: toId });
-        
+
         // Log the call based on state
         if (callState === 'calling' || callState === 'ringing') {
             onCallLogRef.current?.(`Cuộc gọi ${callType} nhỡ`, 'call');
@@ -316,13 +358,13 @@ export function useCall() {
 
         cleanup();
         setCallState('ended');
-        setTimeout(() => { 
+        setTimeout(() => {
             if (mountedRef.current) {
                 setCallState('idle');
                 setCurrentPartnerId(null);
                 setCurrentPartnerInfo(null);
                 onCallLogRef.current = null;
-            } 
+            }
         }, 2000);
     }, [currentPartnerId, incomingCall, cleanup, callState, callType, callDuration]);
 

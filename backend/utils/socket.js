@@ -82,6 +82,10 @@ export const initSocket = (server) => {
     });
 
     io.on('connection', (socket) => {
+        const sid = socket.id;
+        const authedUserId = socket.userId ? String(socket.userId) : null;
+
+        console.log('[Socket] connection', { sid, authedUserId });
 
         // ── Room management + Online tracking ──
         socket.on('join_user_room', (userId) => {
@@ -94,7 +98,18 @@ export const initSocket = (server) => {
             // Track gắn userId vào socket để xử lý disconnect
             socket._vibetokUserId = requestedId;
             markUserOnline(requestedId, socket.id);
+            console.log('[Socket] join_user_room', { sid, requestedId, authedUserId });
         });
+
+        // Auto-join personal room for authenticated sockets.
+        // This prevents "no incoming events" when client forgets to emit join_user_room
+        // (e.g. user not on Messages page, or stale user in connect handler).
+        if (authedUserId) {
+            socket.join(`user_${authedUserId}`);
+            socket._vibetokUserId = authedUserId;
+            markUserOnline(authedUserId, sid);
+            console.log('[Socket] auto_join_user_room', { sid, authedUserId });
+        }
 
         // ── Client yêu cầu danh sách online ──
         socket.on('get_online_users', (userIds, callback) => {
@@ -134,8 +149,29 @@ export const initSocket = (server) => {
          * payload: { toUserId, offer (RTCSessionDescription), callType: 'voice'|'video', callerInfo }
          */
         socket.on('call_offer', ({ toUserId, offer, callType, callerInfo }) => {
-            if (!socket.userId) return;
-            io.to(`user_${toUserId}`).emit('call_incoming', {
+            if (!socket.userId) {
+                console.warn('[Socket][Call] call_offer ignored: unauthenticated', { sid });
+                return;
+            }
+            const targetId = String(toUserId);
+            const targetSockets = onlineUsers.get(targetId);
+            const targetOnline = targetSockets ? targetSockets.size > 0 : false;
+            console.log('[Socket][Call] call_offer', {
+                fromUserId: String(socket.userId),
+                toUserId: targetId,
+                callType: callType || 'voice',
+                targetOnline,
+            });
+
+            if (!targetOnline) {
+                socket.emit('call_user_offline', {
+                    toUserId: targetId,
+                    lastSeen: lastSeenMap.get(targetId) || null,
+                });
+                return;
+            }
+
+            io.to(`user_${targetId}`).emit('call_incoming', {
                 fromUserId: socket.userId,
                 offer,
                 callType:   callType || 'voice',
@@ -148,8 +184,13 @@ export const initSocket = (server) => {
          * payload: { toUserId, answer (RTCSessionDescription) }
          */
         socket.on('call_answer', ({ toUserId, answer }) => {
-            if (!socket.userId) return;
-            io.to(`user_${toUserId}`).emit('call_answered', {
+            if (!socket.userId) {
+                console.warn('[Socket][Call] call_answer ignored: unauthenticated', { sid });
+                return;
+            }
+            const targetId = String(toUserId);
+            console.log('[Socket][Call] call_answer', { fromUserId: String(socket.userId), toUserId: targetId });
+            io.to(`user_${targetId}`).emit('call_answered', {
                 fromUserId: socket.userId,
                 answer,
             });
@@ -160,8 +201,17 @@ export const initSocket = (server) => {
          * payload: { toUserId, candidate (RTCIceCandidate) }
          */
         socket.on('call_ice_candidate', ({ toUserId, candidate }) => {
-            if (!socket.userId) return;
-            io.to(`user_${toUserId}`).emit('call_ice_candidate', {
+            if (!socket.userId) {
+                console.warn('[Socket][Call] call_ice_candidate ignored: unauthenticated', { sid });
+                return;
+            }
+            const targetId = String(toUserId);
+            console.log('[Socket][Call] call_ice_candidate', {
+                fromUserId: String(socket.userId),
+                toUserId: targetId,
+                hasCandidate: !!candidate,
+            });
+            io.to(`user_${targetId}`).emit('call_ice_candidate', {
                 fromUserId: socket.userId,
                 candidate,
             });
@@ -172,8 +222,13 @@ export const initSocket = (server) => {
          * payload: { toUserId }
          */
         socket.on('call_reject', ({ toUserId }) => {
-            if (!socket.userId) return;
-            io.to(`user_${toUserId}`).emit('call_rejected', {
+            if (!socket.userId) {
+                console.warn('[Socket][Call] call_reject ignored: unauthenticated', { sid });
+                return;
+            }
+            const targetId = String(toUserId);
+            console.log('[Socket][Call] call_reject', { fromUserId: String(socket.userId), toUserId: targetId });
+            io.to(`user_${targetId}`).emit('call_rejected', {
                 fromUserId: socket.userId,
             });
         });
@@ -183,8 +238,13 @@ export const initSocket = (server) => {
          * payload: { toUserId }
          */
         socket.on('call_end', ({ toUserId }) => {
-            if (!socket.userId) return;
-            io.to(`user_${toUserId}`).emit('call_ended', {
+            if (!socket.userId) {
+                console.warn('[Socket][Call] call_end ignored: unauthenticated', { sid });
+                return;
+            }
+            const targetId = String(toUserId);
+            console.log('[Socket][Call] call_end', { fromUserId: String(socket.userId), toUserId: targetId });
+            io.to(`user_${targetId}`).emit('call_ended', {
                 fromUserId: socket.userId,
             });
         });
@@ -194,14 +254,20 @@ export const initSocket = (server) => {
          * payload: { toUserId }
          */
         socket.on('call_ringing', ({ toUserId }) => {
-            if (!socket.userId) return;
-            io.to(`user_${toUserId}`).emit('call_ringing', {
+            if (!socket.userId) {
+                console.warn('[Socket][Call] call_ringing ignored: unauthenticated', { sid });
+                return;
+            }
+            const targetId = String(toUserId);
+            console.log('[Socket][Call] call_ringing', { fromUserId: String(socket.userId), toUserId: targetId });
+            io.to(`user_${targetId}`).emit('call_ringing', {
                 fromUserId: socket.userId,
             });
         });
 
         // ── Disconnect ──
         socket.on('disconnect', () => {
+            console.log('[Socket] disconnect', { sid, authedUserId, trackedUserId: socket._vibetokUserId });
             // Online tracking: đánh dấu offline
             if (socket._vibetokUserId) {
                 markUserOffline(socket._vibetokUserId, socket.id);

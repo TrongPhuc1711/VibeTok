@@ -195,7 +195,7 @@ function HashtagResultCard({ hashtag }) {
   );
 }
 
-function SearchResults({ results, loading, query }) {
+function SearchResults({ results, loading, query, onOpenVideoFeed }) {
   const { videos = [], users = [], hashtags = [] } = results;
   const hasResults = videos.length > 0 || users.length > 0 || hashtags.length > 0;
 
@@ -271,7 +271,11 @@ function SearchResults({ results, loading, query }) {
             <span className="text-white text-[13px] font-semibold font-body">Video</span>
             <span className="text-[#555] text-[11px] font-body">{videos.length}</span>
           </div>
-          <VideoGrid videos={videos} loading={false} onVideoClick={(idx) => openVideoFeed(videos, idx)} />
+          <VideoGrid
+            videos={videos}
+            loading={false}
+            onVideoClick={(idx) => onOpenVideoFeed?.(videos, idx)}
+          />
         </div>
       )}
     </div>
@@ -483,7 +487,12 @@ export default function ExplorePage() {
                 <span className="text-[#888] text-[12px] font-body">Kết quả cho</span>
                 <span className="text-white text-[12px] font-semibold font-body">"{searchQuery}"</span>
               </div>
-              <SearchResults results={searchResults} loading={searchLoading} query={searchQuery} />
+              <SearchResults
+                results={searchResults}
+                loading={searchLoading}
+                query={searchQuery}
+                onOpenVideoFeed={openVideoFeed}
+              />
             </>
           ) : (
             <VideoGrid videos={displayVideos} loading={loading} onVideoClick={(idx) => openVideoFeed(displayVideos, idx)} />

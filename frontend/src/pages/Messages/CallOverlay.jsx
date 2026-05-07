@@ -103,7 +103,7 @@ export default function CallOverlay({
 
                 <div className="text-center">
                     <p className="text-white text-[20px] font-semibold font-display">
-                        {partnerInfo?.partnerFullname || 'Đang kết nối...'}
+                        {partnerInfo?.partnerFullname || partnerInfo?.fullName || partnerInfo?.username || 'Đang kết nối...'}
                     </p>
                     <p className="text-[#666] text-[12px] font-body mt-0.5">
                         {callType === 'video' ? '🎥 Gọi video' : '📞 Gọi thoại'}

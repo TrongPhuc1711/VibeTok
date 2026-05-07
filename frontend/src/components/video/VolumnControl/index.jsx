@@ -12,7 +12,11 @@ const getStoredVolume = () => {
 };
  
 const saveVolume = (v) => {
-  try { localStorage.setItem(STORAGE_KEY, String(v)); } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, String(v));
+  } catch (_e) {
+    return;
+  }
 };
 
 export function useVideoVolume() {
