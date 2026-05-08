@@ -144,10 +144,6 @@ export const initSocket = (server) => {
         // Server chỉ làm nhiệm vụ RELAY (forward) — không xử lý media
         // ────────────────────────────────────────────────
 
-        /**
-         * Bước 1: Người gọi (A) emit call_offer
-         * payload: { toUserId, offer (RTCSessionDescription), callType: 'voice'|'video', callerInfo }
-         */
         socket.on('call_offer', ({ toUserId, offer, callType, callerInfo }) => {
             if (!socket.userId) {
                 console.warn('[Socket][Call] call_offer ignored: unauthenticated', { sid });
@@ -161,6 +157,7 @@ export const initSocket = (server) => {
                 toUserId: targetId,
                 callType: callType || 'voice',
                 targetOnline,
+                socketsCount: targetSockets?.size || 0
             });
 
             if (!targetOnline) {
@@ -171,98 +168,77 @@ export const initSocket = (server) => {
                 return;
             }
 
+            // Emit to both room and specific sockets to guarantee delivery
             io.to(`user_${targetId}`).emit('call_incoming', {
                 fromUserId: socket.userId,
                 offer,
                 callType:   callType || 'voice',
                 callerInfo,
             });
+            
+            targetSockets.forEach(targetSid => {
+                io.to(targetSid).emit('call_incoming', {
+                    fromUserId: socket.userId,
+                    offer,
+                    callType:   callType || 'voice',
+                    callerInfo,
+                });
+            });
         });
 
         /**
          * Bước 2: Người nhận (B) chấp nhận → emit call_answer
-         * payload: { toUserId, answer (RTCSessionDescription) }
          */
         socket.on('call_answer', ({ toUserId, answer }) => {
-            if (!socket.userId) {
-                console.warn('[Socket][Call] call_answer ignored: unauthenticated', { sid });
-                return;
-            }
+            if (!socket.userId) return;
             const targetId = String(toUserId);
-            console.log('[Socket][Call] call_answer', { fromUserId: String(socket.userId), toUserId: targetId });
-            io.to(`user_${targetId}`).emit('call_answered', {
-                fromUserId: socket.userId,
-                answer,
-            });
+            io.to(`user_${targetId}`).emit('call_answered', { fromUserId: socket.userId, answer });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_answered', { fromUserId: socket.userId, answer }));
         });
 
         /**
-         * Bước 3: Trao đổi ICE candidates (cả 2 chiều)
-         * payload: { toUserId, candidate (RTCIceCandidate) }
+         * Bước 3: Trao đổi ICE candidates
          */
         socket.on('call_ice_candidate', ({ toUserId, candidate }) => {
-            if (!socket.userId) {
-                console.warn('[Socket][Call] call_ice_candidate ignored: unauthenticated', { sid });
-                return;
-            }
+            if (!socket.userId) return;
             const targetId = String(toUserId);
-            console.log('[Socket][Call] call_ice_candidate', {
-                fromUserId: String(socket.userId),
-                toUserId: targetId,
-                hasCandidate: !!candidate,
-            });
-            io.to(`user_${targetId}`).emit('call_ice_candidate', {
-                fromUserId: socket.userId,
-                candidate,
-            });
+            io.to(`user_${targetId}`).emit('call_ice_candidate', { fromUserId: socket.userId, candidate });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_ice_candidate', { fromUserId: socket.userId, candidate }));
         });
 
         /**
          * B từ chối cuộc gọi
-         * payload: { toUserId }
          */
         socket.on('call_reject', ({ toUserId }) => {
-            if (!socket.userId) {
-                console.warn('[Socket][Call] call_reject ignored: unauthenticated', { sid });
-                return;
-            }
+            if (!socket.userId) return;
             const targetId = String(toUserId);
-            console.log('[Socket][Call] call_reject', { fromUserId: String(socket.userId), toUserId: targetId });
-            io.to(`user_${targetId}`).emit('call_rejected', {
-                fromUserId: socket.userId,
-            });
+            io.to(`user_${targetId}`).emit('call_rejected', { fromUserId: socket.userId });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_rejected', { fromUserId: socket.userId }));
         });
 
         /**
-         * Một trong hai kết thúc cuộc gọi
-         * payload: { toUserId }
+         * Kết thúc cuộc gọi
          */
         socket.on('call_end', ({ toUserId }) => {
-            if (!socket.userId) {
-                console.warn('[Socket][Call] call_end ignored: unauthenticated', { sid });
-                return;
-            }
+            if (!socket.userId) return;
             const targetId = String(toUserId);
-            console.log('[Socket][Call] call_end', { fromUserId: String(socket.userId), toUserId: targetId });
-            io.to(`user_${targetId}`).emit('call_ended', {
-                fromUserId: socket.userId,
-            });
+            io.to(`user_${targetId}`).emit('call_ended', { fromUserId: socket.userId });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_ended', { fromUserId: socket.userId }));
         });
 
         /**
-         * Thông báo đang đổ chuông (A notify B đang ringing phía A)
-         * payload: { toUserId }
+         * Thông báo đang đổ chuông
          */
         socket.on('call_ringing', ({ toUserId }) => {
-            if (!socket.userId) {
-                console.warn('[Socket][Call] call_ringing ignored: unauthenticated', { sid });
-                return;
-            }
+            if (!socket.userId) return;
             const targetId = String(toUserId);
-            console.log('[Socket][Call] call_ringing', { fromUserId: String(socket.userId), toUserId: targetId });
-            io.to(`user_${targetId}`).emit('call_ringing', {
-                fromUserId: socket.userId,
-            });
+            io.to(`user_${targetId}`).emit('call_ringing', { fromUserId: socket.userId });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_ringing', { fromUserId: socket.userId }));
         });
 
         // ── Disconnect ──

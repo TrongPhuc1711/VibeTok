@@ -8,7 +8,7 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
     || import.meta.env.VITE_API_URL
     || 'http://localhost:5000';
 
-// ── Singleton socket ──
+// Singleton socket
 let _socket = null;
 let _socketToken = null;
 
@@ -56,7 +56,7 @@ export const resetSocket = () => {
     }
 };
 
-// ── useInbox ──
+//useInbox
 export function useInbox() {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
