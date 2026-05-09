@@ -84,6 +84,13 @@ export function useCall() {
         }, 1000);
         const onAnswered = async ({ answer }) => {
             if (!mountedRef.current || !pcRef.current) return;
+            
+            // Prevent DOMException: Called in wrong state: stable
+            if (pcRef.current.signalingState !== 'have-local-offer') {
+                console.warn('[Call] Ignoring duplicate answer, state is:', pcRef.current.signalingState);
+                return;
+            }
+
             try {
                 console.log('[Call][Socket] call_answered', { hasAnswer: !!answer });
                 await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
