@@ -1,76 +1,73 @@
 import multer from 'multer';
 import cloudinary from '../config/cloudinary.js';
 
-// ====================================================
-// Dùng memoryStorage thay vì multer-storage-cloudinary
-// vì multer-storage-cloudinary v4 yêu cầu cloudinary v1
-// nhưng project dùng cloudinary v2 SDK → gây lỗi 500.
-// ====================================================
-
 const memStorage = multer.memoryStorage();
 
-// Helper: upload buffer lên Cloudinary trả về result
-function uploadToCloudinary(buffer, options = {}) {
+
+async function uploadToCloudinary(fileBuffer, mimetype, options = {}) {
+    const b64 = fileBuffer.toString('base64');
+    const dataUri = `data:${mimetype};base64,${b64}`;
+    return cloudinary.uploader.upload(dataUri, options);
+}
+
+// Promisify multer middleware để dùng await thay vì callback
+function runMulter(multerMw, req, res) {
     return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
+        multerMw(req, res, (err) => {
+            if (err) reject(err);
+            else resolve();
         });
-        stream.end(buffer);
     });
 }
 
-// Middleware wrapper: chạy multer → upload từng file lên Cloudinary
-// và gán lại req.files với path (secure_url) giống như multer-storage-cloudinary
-function wrapMulterAndUpload(multerMiddleware, getCloudinaryParams) {
+// Middleware wrapper: parse form → upload Cloudinary → gán path
+function wrapMulterAndUpload(multerMw, getCloudinaryParams) {
     return async (req, res, next) => {
-        // Bước 1: parse multipart bằng multer (lưu vào memory)
-        multerMiddleware(req, res, async (multerErr) => {
-            if (multerErr) {
-                console.error('[Upload MW] Multer error:', multerErr);
-                return res.status(400).json({ message: multerErr.message || 'Lỗi upload file' });
+        try {
+            // Bước 1: parse multipart form
+            await runMulter(multerMw, req, res);
+
+            // Bước 2: upload từng file lên Cloudinary
+            if (req.files && Object.keys(req.files).length > 0) {
+                console.log('[Upload MW] Fields:', Object.keys(req.files));
+                for (const fieldName of Object.keys(req.files)) {
+                    const files = req.files[fieldName];
+                    console.log(`[Upload MW] "${fieldName}": ${files.length} file(s)`);
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        console.log(`[Upload MW] Uploading ${fieldName}[${i}]: ${file.originalname} (${file.mimetype}, ${file.size}B)`);
+                        const params = await getCloudinaryParams(req, file);
+                        const result = await uploadToCloudinary(file.buffer, file.mimetype, params);
+                        file.path = result.secure_url;
+                        file.filename = result.public_id;
+                        file.cloudinary = result;
+                        console.log(`[Upload MW] ✓ ${fieldName}[${i}]: ${result.secure_url}`);
+                    }
+                }
+            } else if (req.file) {
+                console.log(`[Upload MW] Single: ${req.file.originalname} (${req.file.mimetype})`);
+                const params = await getCloudinaryParams(req, req.file);
+                const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, params);
+                req.file.path = result.secure_url;
+                req.file.filename = result.public_id;
+                req.file.cloudinary = result;
+                console.log(`[Upload MW] ✓ ${result.secure_url}`);
+            } else {
+                console.log('[Upload MW] No files received');
             }
 
-            try {
-                // Bước 2: upload từng file lên Cloudinary
-                if (req.files && Object.keys(req.files).length > 0) {
-                    console.log('[Upload MW] Uploading fields:', Object.keys(req.files));
-                    for (const fieldName of Object.keys(req.files)) {
-                        const files = req.files[fieldName];
-                        console.log(`[Upload MW] Field "${fieldName}": ${files.length} file(s)`);
-                        for (let i = 0; i < files.length; i++) {
-                            const file = files[i];
-                            console.log(`[Upload MW] Uploading ${fieldName}[${i}]: ${file.originalname} (${file.mimetype}, ${file.size} bytes)`);
-                            const params = await getCloudinaryParams(req, file);
-                            const result = await uploadToCloudinary(file.buffer, params);
-                            // Gán path giống format cũ (multer-storage-cloudinary)
-                            file.path = result.secure_url;
-                            file.filename = result.public_id;
-                            file.cloudinary = result;
-                            console.log(`[Upload MW] Done ${fieldName}[${i}]: ${result.secure_url}`);
-                        }
-                    }
-                } else if (req.file) {
-                    console.log(`[Upload MW] Single file: ${req.file.originalname} (${req.file.mimetype})`);
-                    const params = await getCloudinaryParams(req, req.file);
-                    const result = await uploadToCloudinary(req.file.buffer, params);
-                    req.file.path = result.secure_url;
-                    req.file.filename = result.public_id;
-                    req.file.cloudinary = result;
-                    console.log(`[Upload MW] Done: ${result.secure_url}`);
-                } else {
-                    console.log('[Upload MW] No files received from multer');
-                }
-
-                next();
-            } catch (uploadErr) {
-                console.error('[Upload MW] Cloudinary upload error:', uploadErr);
-                return res.status(500).json({
-                    message: 'Lỗi tải file lên cloud',
-                    error: uploadErr.message,
+            next();
+        } catch (err) {
+            console.error('[Upload MW] ERROR:', err.message || err);
+            // Trả JSON thay vì để Express trả HTML
+            if (!res.headersSent) {
+                const status = err.storageErrors ? 400 : 500;
+                return res.status(status).json({
+                    message: err.message || 'Lỗi upload file',
+                    error: err.message,
                 });
             }
-        });
+        }
     };
 }
 
@@ -83,22 +80,18 @@ const getContentParams = async (_req, file) => {
         return {
             folder: 'vibetok/slideshows',
             resource_type: 'image',
-            allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
             transformation: [{ quality: 'auto' }],
         };
     }
     return {
         folder: 'vibetok/videos',
         resource_type: 'video',
-        allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
-        transformation: [{ quality: 'auto' }],
     };
 };
 
 const getAvatarParams = async () => ({
     folder: 'vibetok/avatars',
     resource_type: 'image',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
     transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
 });
 
@@ -107,14 +100,12 @@ const getMusicParams = async (_req, file) => {
         return {
             folder: 'vibetok/music-audio',
             resource_type: 'video', // Audio xử lý như video trong Cloudinary
-            allowed_formats: ['mp3', 'wav', 'm4a', 'aac'],
         };
     }
     if (file.fieldname === 'cover') {
         return {
             folder: 'vibetok/music-covers',
             resource_type: 'image',
-            allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
             transformation: [{ width: 500, height: 500, crop: 'fill' }],
         };
     }
@@ -131,7 +122,7 @@ const fileSizeLimits = {
 };
 
 // ==================
-// Exported Middlewares
+// Multer instances
 // ==================
 
 const contentMulter = multer({
@@ -154,6 +145,10 @@ const musicMulter = multer({
     { name: 'audio', maxCount: 1 },
     { name: 'cover', maxCount: 1 },
 ]);
+
+// ==================
+// Exports
+// ==================
 
 export const uploadContent = wrapMulterAndUpload(contentMulter, getContentParams);
 export const uploadAvatar = wrapMulterAndUpload(avatarMulter, getAvatarParams);
