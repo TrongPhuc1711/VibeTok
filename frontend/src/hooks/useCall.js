@@ -33,6 +33,7 @@ export function useCall() {
     const remoteStreamRef = useRef(null);  // MediaStream (remote)
     const localVideoElementRef = useRef(null);   // <video> element internal
     const remoteVideoElementRef = useRef(null);  // <video> element internal
+    const iceCandidateQueueRef = useRef([]);
 
     const localVideoRef = useCallback((node) => {
         localVideoElementRef.current = node;
@@ -86,15 +87,28 @@ export function useCall() {
             try {
                 console.log('[Call][Socket] call_answered', { hasAnswer: !!answer });
                 await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+                
+                // Flush queue
+                while (iceCandidateQueueRef.current.length > 0) {
+                    const c = iceCandidateQueueRef.current.shift();
+                    await pcRef.current.addIceCandidate(new RTCIceCandidate(c));
+                }
             } catch (e) {
                 console.error('[Call] setRemoteDescription error:', e);
             }
         };
 
         const onIceCandidate = async ({ candidate }) => {
-            if (!mountedRef.current || !pcRef.current || !candidate) return;
+            if (!mountedRef.current || !candidate) return;
+            console.log('[Call][Socket] call_ice_candidate received', { hasCandidate: !!candidate });
+            
+            if (!pcRef.current || !pcRef.current.remoteDescription) {
+                console.log('[Call][Socket] queuing ice candidate');
+                iceCandidateQueueRef.current.push(candidate);
+                return;
+            }
+
             try {
-                console.log('[Call][Socket] call_ice_candidate', { hasCandidate: !!candidate });
                 await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
             } catch (e) {
                 console.error('[Call] addIceCandidate error:', e);
@@ -252,6 +266,7 @@ export function useCall() {
         if (remoteVideoElementRef.current) remoteVideoElementRef.current.srcObject = null;
         setIsMuted(false);
         setIsCameraOff(false);
+        iceCandidateQueueRef.current = [];
     }, []);
 
     // ── Actions ──
@@ -326,6 +341,13 @@ export function useCall() {
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            
+            // Flush queue
+            while (iceCandidateQueueRef.current.length > 0) {
+                const c = iceCandidateQueueRef.current.shift();
+                await pc.addIceCandidate(new RTCIceCandidate(c));
+            }
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
