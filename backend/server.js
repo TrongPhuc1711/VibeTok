@@ -76,5 +76,15 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 
+// Global error handler — Express 5 cần handler này để trả JSON thay vì HTML
+app.use((err, req, res, _next) => {
+    console.error('[Global Error]', err.stack || err);
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({
+        message: err.message || 'Internal Server Error',
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+    });
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server: http://localhost:${PORT}`));

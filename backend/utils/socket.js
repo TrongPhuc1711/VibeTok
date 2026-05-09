@@ -230,8 +230,8 @@ export const initSocket = (server) => {
             if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_ended', { fromUserId: socket.userId }));
         });
 
-        /**
-         * Thông báo đang đổ chuông
+        /*
+         Thông báo đang đổ chuông
          */
         socket.on('call_ringing', ({ toUserId }) => {
             if (!socket.userId) return;
@@ -241,7 +241,7 @@ export const initSocket = (server) => {
             if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_ringing', { fromUserId: socket.userId }));
         });
 
-        // ── Disconnect ──
+        //Disconnect
         socket.on('disconnect', () => {
             console.log('[Socket] disconnect', { sid, authedUserId, trackedUserId: socket._vibetokUserId });
             // Online tracking: đánh dấu offline
