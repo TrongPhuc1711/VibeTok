@@ -33,10 +33,15 @@ const getSocket = () => {
             console.log('[Socket] Connected:', _socket.id);
             const freshMe = getStoredUser();
             if (freshMe?.id) {
-                console.log('[Socket] join_user_room (connect)', { userId: freshMe.id, sid: _socket.id });
-                _socket.emit('join_user_room', freshMe.id);
-            } else {
-                console.log('[Socket] connect but no stored user, skip join_user_room');
+                console.log('[Socket] join_user_room (connect)', { userId: freshMe.id });
+                _socket.emit('join_user_room', String(freshMe.id));
+            }
+        });
+        _socket.on('reconnect', () => {
+            const freshMe = getStoredUser();
+            if (freshMe?.id) {
+                console.log('[Socket] join_user_room (reconnect)');
+                _socket.emit('join_user_room', String(freshMe.id));
             }
         });
         _socket.on('disconnect', (reason) => console.log('[Socket] Disconnected:', reason));

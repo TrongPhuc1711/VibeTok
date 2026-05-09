@@ -61,7 +61,7 @@ export function useCall() {
 
         const ensureJoin = () => {
             try {
-                console.log('[Call][Socket] ensure join_user_room', { myId, sid: socket.id, connected: socket.connected });
+                console.log('[Call][Socket] ensure join_user_room', { myId, connected: socket.connected });
                 socket.emit('join_user_room', myId);
             } catch (e) {
                 console.warn('[Call][Socket] ensureJoin failed', e);
@@ -71,13 +71,16 @@ export function useCall() {
         // Join immediately (if already connected) and also on every reconnect.
         if (socket.connected) ensureJoin();
         socket.on('connect', ensureJoin);
+        socket.on('reconnect', ensureJoin);
 
         const onIncoming = ({ fromUserId, offer, callType: ct, callerInfo }) => {
             if (!mountedRef.current) return;
             console.log('[Call][Socket] call_incoming', { fromUserId, callType: ct, hasOffer: !!offer });
             setIncomingCall({ fromUserId, offer, callType: ct || 'voice', callerInfo });
         };
-
+        const retryTimer = setTimeout(() => {
+            if (socket.connected) ensureJoin();
+        }, 1000);
         const onAnswered = async ({ answer }) => {
             if (!mountedRef.current || !pcRef.current) return;
             try {
@@ -157,6 +160,7 @@ export function useCall() {
         return () => {
             mountedRef.current = false;
             socket.off('connect', ensureJoin);
+            socket.off('reconnect', ensureJoin);  
             socket.off('call_incoming', onIncoming);
             socket.off('call_answered', onAnswered);
             socket.off('call_ice_candidate', onIceCandidate);
@@ -164,6 +168,7 @@ export function useCall() {
             socket.off('call_rejected', onRejected);
             socket.off('call_ended', onEnded);
             socket.off('call_ringing', onRinging);
+            clearTimeout(retryTimer);
         };
     }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

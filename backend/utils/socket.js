@@ -100,10 +100,7 @@ export const initSocket = (server) => {
             markUserOnline(requestedId, socket.id);
             console.log('[Socket] join_user_room', { sid, requestedId, authedUserId });
         });
-
-        // Auto-join personal room for authenticated sockets.
-        // This prevents "no incoming events" when client forgets to emit join_user_room
-        // (e.g. user not on Messages page, or stale user in connect handler).
+        
         if (authedUserId) {
             socket.join(`user_${authedUserId}`);
             socket._vibetokUserId = authedUserId;
@@ -139,28 +136,39 @@ export const initSocket = (server) => {
             io.to(`user_${toUserId}`).emit('partner_stopped_typing', { fromUserId });
         });
 
-        // ────────────────────────────────────────────────
-        // WebRTC Call Signaling
-        // Server chỉ làm nhiệm vụ RELAY (forward) — không xử lý media
-        // ────────────────────────────────────────────────
-
-        socket.on('call_offer', ({ toUserId, offer, callType, callerInfo }) => {
+        socket.on('call_offer', ({ toUserId, offer, callType: ct, callerInfo }) => {
             if (!socket.userId) {
-                console.warn('[Socket][Call] call_offer ignored: unauthenticated', { sid });
+                console.warn('[Call][Socket] call_offer ignored: unauthenticated');
                 return;
             }
             const targetId = String(toUserId);
             const targetSockets = onlineUsers.get(targetId);
             const targetOnline = targetSockets ? targetSockets.size > 0 : false;
-            console.log('[Socket][Call] call_offer', {
-                fromUserId: String(socket.userId),
-                toUserId: targetId,
-                callType: callType || 'voice',
+
+            console.log('[Call] call_offer debug', {
+                from: socket.userId,
+                to: targetId,
                 targetOnline,
-                socketsCount: targetSockets?.size || 0
+                onlineUsersKeys: [...onlineUsers.keys()],  // THÊM để debug
             });
 
             if (!targetOnline) {
+                // THÊM: thử emit trực tiếp vào room thay vì báo offline ngay
+                // Có thể user đang online nhưng chưa được track
+                const roomName = `user_${targetId}`;
+                const roomSockets = io.sockets.adapter.rooms.get(roomName);
+                
+                if (roomSockets && roomSockets.size > 0) {
+                    // User có trong room nhưng chưa trong onlineUsers map → emit vẫn được
+                    io.to(roomName).emit('call_incoming', {
+                        fromUserId: socket.userId,
+                        offer,
+                        callType: ct || 'voice',
+                        callerInfo,
+                    });
+                    return;
+                }
+
                 socket.emit('call_user_offline', {
                     toUserId: targetId,
                     lastSeen: lastSeenMap.get(targetId) || null,
@@ -168,11 +176,11 @@ export const initSocket = (server) => {
                 return;
             }
 
-            // Emit to both room and specific sockets to guarantee delivery
+            // Emit cả 2 cách để chắc chắn
             io.to(`user_${targetId}`).emit('call_incoming', {
                 fromUserId: socket.userId,
                 offer,
-                callType:   callType || 'voice',
+                callType: ct || 'voice',
                 callerInfo,
             });
             
@@ -180,7 +188,7 @@ export const initSocket = (server) => {
                 io.to(targetSid).emit('call_incoming', {
                     fromUserId: socket.userId,
                     offer,
-                    callType:   callType || 'voice',
+                    callType: ct || 'voice',
                     callerInfo,
                 });
             });
