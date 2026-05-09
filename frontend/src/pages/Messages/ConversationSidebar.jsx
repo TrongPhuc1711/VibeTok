@@ -24,10 +24,7 @@ export function MsgAvatar({ user = {}, size = 'md', online = false }) {
             <div className={`${sz} rounded-full bg-gradient-to-br from-[#ff2d78] to-[#ff6b35] flex items-center justify-center font-bold text-white overflow-hidden`}>
                 {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : initials}
             </div>
-            {online && (
-                <span className={`absolute bottom-0 right-0 ${dotSz} bg-emerald-400 rounded-full border-[#111118]`}
-                    style={{ boxShadow: '0 0 4px rgba(52,211,153,0.5)' }} />
-            )}
+            {online}
         </div>
     );
 }

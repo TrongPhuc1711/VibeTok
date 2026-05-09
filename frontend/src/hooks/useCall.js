@@ -4,31 +4,23 @@ import { getSharedSocket } from './useMessages';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
 
-const ICE_SERVERS = [
-    {
-      urls: "stun:stun.relay.metered.ca:80",
-    },
-    {
-      urls: "turn:standard.relay.metered.ca:80",
-      username: "7885de66183220b02ba7750a",
-      credential: "wMJXg6EjPbsG2FLU",
-    },
-    {
-      urls: "turn:standard.relay.metered.ca:80?transport=tcp",
-      username: "7885de66183220b02ba7750a",
-      credential: "wMJXg6EjPbsG2FLU",
-    },
-    {
-      urls: "turn:standard.relay.metered.ca:443",
-      username: "7885de66183220b02ba7750a",
-      credential: "wMJXg6EjPbsG2FLU",
-    },
-    {
-      urls: "turns:standard.relay.metered.ca:443?transport=tcp",
-      username: "7885de66183220b02ba7750a",
-      credential: "wMJXg6EjPbsG2FLU",
-    },
-];
+// Dynamic ICE Servers
+let cachedIceServers = null;
+const getIceServers = async () => {
+    if (cachedIceServers) return cachedIceServers;
+    try {
+        const response = await fetch("https://vibetok.metered.live/api/v1/turn/credentials?apiKey=9ce594d0a3fc0100ff7cf5a05af3219f01f4");
+        const iceServers = await response.json();
+        if (iceServers && iceServers.length > 0) {
+            cachedIceServers = iceServers;
+            return iceServers;
+        }
+    } catch (e) {
+        console.error("[Call] Failed to fetch TURN credentials", e);
+    }
+    // Fallback
+    return [{ urls: 'stun:stun.l.google.com:19302' }];
+};
 
 export function useCall() {
     const { user: me } = useAuthContext();
@@ -215,8 +207,9 @@ export function useCall() {
 
     // ── Helpers ──
 
-    const createPeerConnection = useCallback((targetId, onTrack) => {
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const createPeerConnection = useCallback(async (targetId, onTrack) => {
+        const iceServers = await getIceServers();
+        const pc = new RTCPeerConnection({ iceServers });
         console.log('[Call][WebRTC] createPeerConnection', { targetId: String(targetId) });
 
         pc.onicecandidate = ({ candidate }) => {
@@ -315,7 +308,7 @@ export function useCall() {
 
         try {
             const stream = await getMedia(type);
-            const pc = createPeerConnection(targetId);
+            const pc = await createPeerConnection(targetId);
             pcRef.current = pc;
 
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -362,7 +355,7 @@ export function useCall() {
 
         try {
             const stream = await getMedia(ct);
-            const pc = createPeerConnection(fromUserId);
+            const pc = await createPeerConnection(fromUserId);
             pcRef.current = pc;
 
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
