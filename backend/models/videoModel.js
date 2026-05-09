@@ -164,7 +164,7 @@ export const VideoModel = {
                 duration || 0, privacy || 'public', allowDuet ? 1 : 0, allowStitch ? 1 : 0,
                 location || null, scheduleAt || null, isDraft ? 1 : 0]
         );
-        return result.insertId;
+        return Number(result.insertId);
     },
 
     // Owner soft-delete
