@@ -71,39 +71,47 @@ export default function VideoCard({
         };
     }, [video?.music?.audioUrl]);
 
+    const isSlideshow = video?.videoUrl?.startsWith('["') && video?.videoUrl?.endsWith('"]');
+
     // Auto play/pause based on isActive
     useEffect(() => {
         const v = videoRef.current;
         const a = audioRef.current;
-        if (!v) return;
-
+        
         if (isActive) {
             intendedPlayRef.current = true;
             applyVolumes();
-            const p = v.play();
-            playPromiseRef.current = p;
             
-            if (a) {
-                a.currentTime = v.currentTime;
-                a.play().catch(() => {});
-            }
-
-            if (p) {
-                p.then(() => { if (intendedPlayRef.current) setPlaying(true); playPromiseRef.current = null; })
-                    .catch((err) => { if (err.name !== 'AbortError') console.warn('[VideoCard] play():', err.name); setPlaying(false); playPromiseRef.current = null; });
+            if (v) {
+                const p = v.play();
+                playPromiseRef.current = p;
+                if (a) {
+                    a.currentTime = v.currentTime;
+                    a.play().catch(() => {});
+                }
+                if (p) {
+                    p.then(() => { if (intendedPlayRef.current) setPlaying(true); playPromiseRef.current = null; })
+                        .catch((err) => { if (err.name !== 'AbortError') console.warn('[VideoCard] play():', err.name); setPlaying(false); playPromiseRef.current = null; });
+                }
+            } else if (isSlideshow) {
+                // For slideshows, we don't have videoRef, but we should play audio and set playing=true
+                setPlaying(true);
+                if (a) {
+                    a.play().catch(() => {});
+                }
             }
         } else {
             intendedPlayRef.current = false;
             applyVolumes(); // Ensure they are muted quickly
             const doPause = () => { 
-                v.pause(); v.currentTime = 0; 
+                if (v) { v.pause(); v.currentTime = 0; }
                 setPlaying(false); setProgress(0); 
                 if (a) { a.pause(); a.currentTime = 0; }
             };
             if (playPromiseRef.current) playPromiseRef.current.then(doPause).catch(doPause);
             else doPause();
         }
-    }, [isActive, applyVolumes]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isActive, applyVolumes, isSlideshow]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -134,6 +142,21 @@ export default function VideoCard({
     const togglePlay = useCallback(() => {
         const v = videoRef.current;
         const a = audioRef.current;
+        
+        if (isSlideshow) {
+            if (playing) {
+                intendedPlayRef.current = false;
+                if (a) a.pause();
+                setPlaying(false);
+            } else {
+                intendedPlayRef.current = true;
+                applyVolumes();
+                if (a) a.play().catch(() => {});
+                setPlaying(true);
+            }
+            return;
+        }
+
         if (!v) return;
         if (v.paused) {
             intendedPlayRef.current = true;
@@ -149,7 +172,7 @@ export default function VideoCard({
             if (a) a.pause();
             setPlaying(false);
         }
-    }, [applyVolumes]);
+    }, [applyVolumes, playing, isSlideshow]);
 
     const seekToRatio = useCallback((ratio) => {
         const v = videoRef.current;
@@ -193,7 +216,7 @@ export default function VideoCard({
 
     const currentSec = duration ? (progress / 100) * duration : 0;
 
-    const isSlideshow = video?.videoUrl?.startsWith('["') && video?.videoUrl?.endsWith('"]');
+
     const imagesArray = isSlideshow ? JSON.parse(video.videoUrl).map((url, i) => ({ id: String(i), url })) : [];
 
     return (
@@ -226,7 +249,7 @@ export default function VideoCard({
             )}
 
             {/* Pause overlay */}
-            {video?.videoUrl && !playing && isActive && (
+            {!isSlideshow && video?.videoUrl && !playing && isActive && (
                 <div
                     onClick={togglePlay}
                     className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
