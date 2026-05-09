@@ -27,36 +27,44 @@ function wrapMulterAndUpload(multerMiddleware, getCloudinaryParams) {
         // Bước 1: parse multipart bằng multer (lưu vào memory)
         multerMiddleware(req, res, async (multerErr) => {
             if (multerErr) {
-                console.error('[Upload] Multer error:', multerErr);
+                console.error('[Upload MW] Multer error:', multerErr);
                 return res.status(400).json({ message: multerErr.message || 'Lỗi upload file' });
             }
 
             try {
                 // Bước 2: upload từng file lên Cloudinary
-                if (req.files) {
+                if (req.files && Object.keys(req.files).length > 0) {
+                    console.log('[Upload MW] Uploading fields:', Object.keys(req.files));
                     for (const fieldName of Object.keys(req.files)) {
                         const files = req.files[fieldName];
+                        console.log(`[Upload MW] Field "${fieldName}": ${files.length} file(s)`);
                         for (let i = 0; i < files.length; i++) {
                             const file = files[i];
+                            console.log(`[Upload MW] Uploading ${fieldName}[${i}]: ${file.originalname} (${file.mimetype}, ${file.size} bytes)`);
                             const params = await getCloudinaryParams(req, file);
                             const result = await uploadToCloudinary(file.buffer, params);
                             // Gán path giống format cũ (multer-storage-cloudinary)
                             file.path = result.secure_url;
                             file.filename = result.public_id;
                             file.cloudinary = result;
+                            console.log(`[Upload MW] Done ${fieldName}[${i}]: ${result.secure_url}`);
                         }
                     }
                 } else if (req.file) {
+                    console.log(`[Upload MW] Single file: ${req.file.originalname} (${req.file.mimetype})`);
                     const params = await getCloudinaryParams(req, req.file);
                     const result = await uploadToCloudinary(req.file.buffer, params);
                     req.file.path = result.secure_url;
                     req.file.filename = result.public_id;
                     req.file.cloudinary = result;
+                    console.log(`[Upload MW] Done: ${result.secure_url}`);
+                } else {
+                    console.log('[Upload MW] No files received from multer');
                 }
 
                 next();
             } catch (uploadErr) {
-                console.error('[Upload] Cloudinary upload error:', uploadErr);
+                console.error('[Upload MW] Cloudinary upload error:', uploadErr);
                 return res.status(500).json({
                     message: 'Lỗi tải file lên cloud',
                     error: uploadErr.message,

@@ -76,6 +76,7 @@ export function useUpload({ onSuccess } = {}) {
 
             await api.post('/videos/upload', data, {
                 headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: 5 * 60 * 1000, // 5 phút cho upload (nhiều ảnh qua Cloudinary cần thời gian)
                 onUploadProgress: (e) => {
                     const pct = Math.round((e.loaded * 100) / (e.total || 1));
                     setProgress(pct);
@@ -86,7 +87,17 @@ export function useUpload({ onSuccess } = {}) {
             onSuccess?.();
             return { success: true };
         } catch (err) {
-            const msg = err.response?.data?.message || err.message || 'Đăng video thất bại';
+            console.error('[useUpload] Upload failed:', err);
+            let msg = 'Đăng video thất bại';
+            if (err.response?.data?.message) {
+                msg = err.response.data.message;
+            } else if (err.code === 'ECONNABORTED') {
+                msg = 'Upload quá thời gian. Vui lòng thử lại với file nhỏ hơn.';
+            } else if (err.response?.status) {
+                msg = `Request failed with status code ${err.response.status}`;
+            } else if (err.message) {
+                msg = err.message;
+            }
             setErrors(p => ({ ...p, submit: msg }));
             return { success: false, errors: { submit: msg } };
         } finally {

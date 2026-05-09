@@ -73,17 +73,29 @@ export const getVideosByUser = async (req, res) => {
 // POST /api/videos/upload
 export const uploadVideo = async (req, res) => {
     try {
-        if (!req.files) {
+        console.log('[Upload] === START ===');
+        console.log('[Upload] req.files keys:', req.files ? Object.keys(req.files) : 'null');
+        console.log('[Upload] req.file:', req.file ? 'exists' : 'null');
+
+        // req.files có thể là {} (empty object) khi multer fields() không nhận file
+        if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).json({ message: 'Không nhận được file. Vui lòng thử lại.' });
         }
         const videoFile = req.files.video?.[0];
         const imageFiles = req.files.images;
+
+        console.log('[Upload] videoFile:', videoFile ? { path: videoFile.path, mimetype: videoFile.mimetype } : 'null');
+        console.log('[Upload] imageFiles count:', imageFiles?.length || 0);
+        if (imageFiles?.length > 0) {
+            console.log('[Upload] imageFiles paths:', imageFiles.map(f => f.path));
+        }
 
         if (!videoFile && (!imageFiles || imageFiles.length === 0)) {
             return res.status(400).json({ message: 'Vui lòng chọn file video hoặc ảnh' });
         }
 
         const isSlideshow = !videoFile && imageFiles?.length > 0;
+        console.log('[Upload] isSlideshow:', isSlideshow);
 
         let videoUrl, thumbnail, duration;
 
@@ -101,6 +113,9 @@ export const uploadVideo = async (req, res) => {
             duration = videoFile.duration || 0;
         }
 
+        console.log('[Upload] videoUrl length:', videoUrl.length);
+        console.log('[Upload] thumbnail:', thumbnail);
+
         const {
             caption = '',
             privacy = 'public',
@@ -117,6 +132,7 @@ export const uploadVideo = async (req, res) => {
         const validPrivacy = ['public', 'friends', 'private'];
         const safePrivacy = validPrivacy.includes(privacy) ? privacy : 'public';
 
+        console.log('[Upload] Creating video in DB...');
         const videoId = await VideoModel.create({
             userId: req.user.id,
             musicId: musicId || null,
@@ -132,6 +148,7 @@ export const uploadVideo = async (req, res) => {
             location: location.slice(0, 100),
             isDraft: isDraft === 'true',
         });
+        console.log('[Upload] Created videoId:', videoId, typeof videoId);
 
         // Attach hashtags
         const tags = (caption.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) || []);
@@ -142,9 +159,11 @@ export const uploadVideo = async (req, res) => {
         await UserModel.incrementVideoCount(req.user.id);
 
         const video = await VideoModel.findById(videoId);
+        console.log('[Upload] findById result:', video ? 'found' : 'NOT FOUND');
+        console.log('[Upload] === END ===');
         res.status(201).json({ message: 'Đăng video thành công!', video });
     } catch (e) {
-        console.error('uploadVideo error:', e);
+        console.error('[Upload] ERROR:', e);
         res.status(500).json({ message: 'Lỗi đăng video', error: e.message });
     }
 };
