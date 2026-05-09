@@ -64,7 +64,7 @@ function ChatSearchBar({ username, query, setQuery, onResults, onClose }) {
 
     return (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-[#0d0d18] border-b border-[#1a1a2a]">
-            <SearchSmIcon size={13} color="#555" />
+            <SearchSmIcon size={13} color="#fff" />
             <input
                 autoFocus
                 type="text"
@@ -199,7 +199,7 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                     <BackChevronIcon size={16} />
                 </button>
 
-                <MsgAvatar user={partnerInfo || { partnerUsername }} size="md" online={partnerOnline} />
+                <MsgAvatar user={partnerInfo || { partnerUsername }} size="md"  />
 
                 <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-[14px] font-body m-0 leading-tight">

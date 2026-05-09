@@ -4,10 +4,30 @@ import { getSharedSocket } from './useMessages';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
 
-// Google public STUN server (free, works for most networks)
 const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
+    {
+      urls: "stun:stun.relay.metered.ca:80",
+    },
+    {
+      urls: "turn:standard.relay.metered.ca:80",
+      username: "7885de66183220b02ba7750a",
+      credential: "wMJXg6EjPbsG2FLU",
+    },
+    {
+      urls: "turn:standard.relay.metered.ca:80?transport=tcp",
+      username: "7885de66183220b02ba7750a",
+      credential: "wMJXg6EjPbsG2FLU",
+    },
+    {
+      urls: "turn:standard.relay.metered.ca:443",
+      username: "7885de66183220b02ba7750a",
+      credential: "wMJXg6EjPbsG2FLU",
+    },
+    {
+      urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+      username: "7885de66183220b02ba7750a",
+      credential: "wMJXg6EjPbsG2FLU",
+    },
 ];
 
 export function useCall() {

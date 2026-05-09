@@ -53,9 +53,7 @@ function ConversationItem({ conv, active, onClick, myId, isOnline, lastSeenText 
                         <span className={`text-[13px] text-white font-body truncate ${isUnread ? 'font-semibold' : 'font-medium'}`}>
                             {conv.partnerFullname || conv.partnerUsername}
                         </span>
-                        {isOnline && (
-                            <span className="shrink-0 text-[9px] text-emerald-400 font-body font-medium">●</span>
-                        )}
+                        {isOnline}
                     </div>
                     <span className="text-[10px] text-[#888] font-body shrink-0 ml-2">
                         {conv.lastTime ? formatTimeAgo(conv.lastTime) : ''}
@@ -115,7 +113,7 @@ export default function ConversationSidebar({
             <div className="px-5 py-4 border-b border-[#1a1a2a] shrink-0">
                 <h2 className="text-white font-bold text-[17px] font-display mb-3">Tin nhắn</h2>
                 <div className="flex items-center gap-2 bg-[#1a1a2e] rounded-xl px-3.5 py-2.5 border border-[#1e1e2e] focus-within:border-[#ff2d78]/30 transition-colors">
-                    <SearchSmIcon size={13} color="#444" />
+                    <SearchSmIcon size={13} color="#fff" />
                     <input
                         type="text"
                         value={searchQuery}

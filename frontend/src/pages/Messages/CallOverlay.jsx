@@ -68,18 +68,18 @@ export default function CallOverlay({
             {/* ── Video streams (video call only) ── */}
             {callType === 'video' && (
                 <>
-                    {/* Remote - full background */}
+                    {/* Remote - full background on mobile, contained on web */}
                     <video
                         ref={remoteVideoRef}
                         autoPlay playsInline
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover md:object-contain"
                         style={{ filter: callState !== 'connected' ? 'blur(20px) brightness(0.3)' : 'none', transition: 'filter 0.5s' }}
                     />
                     {/* Local - picture-in-picture */}
                     <video
                         ref={localVideoRef}
                         autoPlay playsInline muted
-                        className={`absolute bottom-28 right-4 w-28 h-44 object-cover rounded-2xl border-2 border-white/10 shadow-2xl z-10 transition-opacity
+                        className={`absolute bottom-28 right-4 md:bottom-8 md:right-8 w-28 h-44 md:w-48 md:h-72 object-cover rounded-2xl border-2 border-white/10 shadow-2xl z-10 transition-opacity
                             ${isCameraOff ? 'opacity-0' : 'opacity-100'}`}
                     />
                 </>
