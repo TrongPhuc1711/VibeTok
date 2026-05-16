@@ -22,7 +22,7 @@ export default function NotFoundPage() {
                 </div>
 
                 <div className="-mt-8">
-                    <h1 className="font-display font-bold text-[28px] text-white mb-2">
+                    <h1 className="font-display font-bold text-[28px] mb-2" style={{ color: 'var(--vt-text-bright)' }}>
                         Trang không tồn tại
                     </h1>
                     <p className="text-text-faint text-sm max-w-[320px] leading-relaxed">

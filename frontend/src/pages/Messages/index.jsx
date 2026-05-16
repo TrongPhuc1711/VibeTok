@@ -6,17 +6,19 @@ import { getStoredUser } from '../../utils/helpers';
 import ConversationSidebar from './ConversationSidebar';
 import ChatWindow from './ChatWindow';
 import { ChatBubbleIcon } from '../../icons/MessageIcons';
+import { useTheme } from '../../contexts/ThemeContext';
 
 /* ── Empty State ── */
 function EmptyState() {
     return (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[#333]">
-            <div className="w-20 h-20 rounded-full bg-[#111120] border border-[#1e1e2e] flex items-center justify-center">
-                <ChatBubbleIcon size={32} color="#444" />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4" style={{ color: 'var(--vt-text-invisible)' }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)' }}>
+                <ChatBubbleIcon size={32} color="var(--vt-text-ghost)" />
             </div>
             <div className="text-center">
-                <p className="text-[#555] text-[14px] font-body font-semibold mb-1">Chọn một cuộc trò chuyện</p>
-                <p className="text-[#333] text-[12px] font-body">hoặc bắt đầu chat từ trang hồ sơ của người dùng</p>
+                <p className="text-[14px] font-body font-semibold mb-1" style={{ color: 'var(--vt-text-disabled)' }}>Chọn một cuộc trò chuyện</p>
+                <p className="text-[12px] font-body" style={{ color: 'var(--vt-text-invisible)' }}>hoặc bắt đầu chat từ trang hồ sơ của người dùng</p>
             </div>
         </div>
     );
@@ -24,6 +26,7 @@ function EmptyState() {
 
 /* ── Main MessagesPage ── */
 export default function MessagesPage() {
+    const { isDark } = useTheme();
     const [searchParams, setSearchParams] = useSearchParams();
     const me = getStoredUser();
     const { conversations, loading, refresh } = useInbox();
@@ -73,8 +76,12 @@ export default function MessagesPage() {
             <div className="flex h-full overflow-hidden">
 
                 {/* ── Sidebar: Danh sách conversations ── */}
-                <div className={`flex flex-col border-r border-[#1a1a2a] bg-[#0d0d18] transition-all shrink-0
-                    ${activeUsername ? 'w-0 md:w-[320px] overflow-hidden' : 'w-full md:w-[320px]'}`}>
+                <div className={`flex flex-col shrink-0 transition-all
+                    ${activeUsername ? 'w-0 md:w-[320px] overflow-hidden' : 'w-full md:w-[320px]'}`}
+                    style={{
+                        borderRight: `1px solid var(--vt-divider)`,
+                        background: isDark ? '#0d0d18' : '#fafafe',
+                    }}>
                     <ConversationSidebar
                         conversations={conversations}
                         loading={loading}
@@ -87,8 +94,9 @@ export default function MessagesPage() {
                 </div>
 
                 {/* ── Chat area ── */}
-                <div className={`flex-1 flex flex-col overflow-hidden bg-[#08080f]
-                    ${activeUsername ? 'flex' : 'hidden md:flex'}`}>
+                <div className={`flex-1 flex flex-col overflow-hidden
+                    ${activeUsername ? 'flex' : 'hidden md:flex'}`}
+                    style={{ background: isDark ? '#08080f' : '#f8f8fc' }}>
                     {activeUsername ? (
                         <ChatWindow
                             key={activeUsername}

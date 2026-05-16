@@ -78,10 +78,10 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
         <div
           className="w-full rounded-t-3xl overflow-hidden"
           style={{
-            background: '#111118',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--vt-divider)',
             borderBottom: 'none',
-            boxShadow: '0 -20px 60px rgba(0,0,0,0.7)',
+            boxShadow: 'var(--vt-shadow-xl)',
           }}
         >
           {/* Handle bar */}
@@ -110,10 +110,10 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
               </div>
 
               <div className="text-center">
-                <h3 className="text-white text-[18px] font-bold font-display mb-1">
+                <h3 className="text-[18px] font-bold font-display mb-1" style={{ color: 'var(--vt-text-bright)' }}>
                   {text}
                 </h3>
-                <p className="text-[#777] text-[13px] font-body leading-relaxed">
+                <p className="text-[13px] font-body leading-relaxed" style={{ color: 'var(--vt-text-hint)' }}>
                   Tham gia VibeTok để xem thêm nội dung thú vị<br />
                   và kết nối với các creator yêu thích
                 </p>
@@ -121,34 +121,37 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
             </div>
 
             {/* Divider */}
-            <div className="w-full h-px bg-white/6" />
+            <div className="w-full h-px" style={{ background: 'var(--vt-divider)' }} />
 
             {/* Auth options */}
             <div className="w-full flex flex-col gap-3">
               {/* Facebook */}
               <button
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl border border-white/8 bg-white/4 hover:bg-white/8 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors"
+                style={{ border: '1px solid var(--vt-divider)', background: 'var(--vt-hover)' }}
               >
                 <div className="w-6 h-6 flex items-center justify-center shrink-0">
                   <FacebookIcon />
                 </div>
-                <span className="text-white/80 text-[14px] font-body">Tiếp tục với Facebook</span>
+                <span className="text-[14px] font-body" style={{ color: 'var(--vt-text-body)' }}>Tiếp tục với Facebook</span>
               </button>
 
               {/* Google */}
               <button
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl border border-white/8 bg-white/4 hover:bg-white/8 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors"
+                style={{ border: '1px solid var(--vt-divider)', background: 'var(--vt-hover)' }}
               >
                 <div className="w-6 h-6 flex items-center justify-center shrink-0">
                   <GoogleIcon />
                 </div>
-                <span className="text-white/80 text-[14px] font-body">Tiếp tục với Google</span>
+                <span className="text-[14px] font-body" style={{ color: 'var(--vt-text-body)' }}>Tiếp tục với Google</span>
               </button>
 
               {/* Email */}
               <button
                 onClick={handleLogin}
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl border border-white/8 bg-white/4 hover:bg-white/8 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors"
+                style={{ border: '1px solid var(--vt-divider)', background: 'var(--vt-hover)' }}
               >
                 <div className="w-6 h-6 flex items-center justify-center shrink-0">
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.3">
@@ -156,20 +159,20 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
                     <path d="M1.5 4.5L9 10.5l7.5-6" />
                   </svg>
                 </div>
-                <span className="text-white/80 text-[14px] font-body">Đăng nhập với Email</span>
+                <span className="text-[14px] font-body" style={{ color: 'var(--vt-text-body)' }}>Đăng nhập với Email</span>
               </button>
             </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3 w-full">
-              <div className="flex-1 h-px bg-white/8" />
-              <span className="text-[#555] text-[11px] font-body">hoặc</span>
-              <div className="flex-1 h-px bg-white/8" />
+              <div className="flex-1 h-px" style={{ background: 'var(--vt-divider)' }} />
+              <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-disabled)' }}>hoặc</span>
+              <div className="flex-1 h-px" style={{ background: 'var(--vt-divider)' }} />
             </div>
 
             {/* Register CTA */}
             <div className="text-center">
-              <span className="text-[#888] text-[13px] font-body">Chưa có tài khoản? </span>
+              <span className="text-[13px] font-body" style={{ color: 'var(--vt-text-hint)' }}>Chưa có tài khoản? </span>
               <button
                 onClick={handleRegister}
                 className="text-primary text-[13px] font-semibold font-body bg-transparent border-none cursor-pointer hover:underline"
@@ -179,11 +182,11 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
             </div>
 
             {/* Terms */}
-            <p className="text-center text-[#333] text-[11px] font-body leading-relaxed">
+            <p className="text-center text-[11px] font-body leading-relaxed" style={{ color: 'var(--vt-text-invisible)' }}>
               Bằng cách tiếp tục, bạn đồng ý với{' '}
-              <span className="text-[#555] hover:underline cursor-pointer">Điều khoản dịch vụ</span>
+              <span className="hover:underline cursor-pointer" style={{ color: 'var(--vt-text-disabled)' }}>Điều khoản dịch vụ</span>
               {' '}và{' '}
-              <span className="text-[#555] hover:underline cursor-pointer">Chính sách quyền riêng tư</span>
+              <span className="hover:underline cursor-pointer" style={{ color: 'var(--vt-text-disabled)' }}>Chính sách quyền riêng tư</span>
               {' '}của VibeTok
             </p>
           </div>

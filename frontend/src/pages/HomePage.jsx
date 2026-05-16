@@ -7,6 +7,7 @@ import CommentPanel from '../components/video/CommentPannel/CommentPanel';
 import { MobileFeed } from '../components/mobile';
 import { BounceDots } from '../components/ui/Spinner';
 import { useVideoFeed } from '../hooks/useVideoFeed';
+import { useTheme } from '../contexts/ThemeContext';
 
 import { ArrowUpIcon, ArrowDownIcon } from '../icons/NavIcons';
 
@@ -66,6 +67,7 @@ function useVideoContainerSize(aspectRatio, showComments) {
 
 // ── Main component ──
 export default function HomePage({ feedType = 'forYou' }) {
+    const { isDark } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
     // Lấy startVideoId từ location state (khi user mở link chia sẻ /video/:id)
@@ -156,7 +158,7 @@ export default function HomePage({ feedType = 'forYou' }) {
         };
     }, [go, isMobile]);
 
-    // Desktop: keyboard navigation
+    // Desktop
     const handleKeyDown = useCallback((e) => {
         const tag = e.target?.tagName?.toLowerCase();
         if (tag === 'input' || tag === 'textarea') return;
@@ -198,7 +200,7 @@ export default function HomePage({ feedType = 'forYou' }) {
                         </div>
                     ) : current ? (
                         <>
-                            <div className="flex-1 relative flex items-center justify-center">
+                            <div className="flex-1 relative flex items-center justify-center z-10">
                                 <div className="flex items-end relative" style={{ gap: 16 }}>
                                     {/* Video player */}
                                     <div
@@ -249,7 +251,11 @@ export default function HomePage({ feedType = 'forYou' }) {
                             {/* Comment panel */}
                             {showComments && (
                                 <div
-                                    className="w-[420px] h-full bg-[#121212] border-l border-white/10 shrink-0 shadow-2xl z-40"
+                                    className="w-[420px] h-full shrink-0 shadow-2xl z-40"
+                                    style={{
+                                        background: isDark ? '#121212' : '#ffffff',
+                                        borderLeft: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                                    }}
                                     onWheel={(e) => e.stopPropagation()}
                                 >
                                     <CommentPanel
@@ -261,7 +267,7 @@ export default function HomePage({ feedType = 'forYou' }) {
                             )}
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-3 font-body text-white/25">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 font-body" style={{ color: 'var(--vt-text-ghost)' }}>
 
                             <p style={{ fontSize: 14 }}>{emptyMessage}</p>
                         </div>

@@ -19,7 +19,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
   const ref = useRef(null);
   const { showInfo } = useToast();
   const { isDark, toggleTheme } = useTheme();
-  // ✅ FIX: Lấy user từ AuthContext thay vì getStoredUser() tĩnh
   const { user, logout: contextLogout } = useAuthContext();
 
   useEffect(() => {
@@ -40,7 +39,6 @@ export default function UserDropdown({ placement = 'topbar' }) {
     setOpen(false);
     showInfo('Đã đăng xuất tài khoản');
     await logout();
-    // ✅ FIX: Cập nhật AuthContext để sidebar re-render về trạng thái chưa login
     contextLogout();
     window.location.href = '/';
     setTimeout(() => navigate(ROUTES.HOME), 600);

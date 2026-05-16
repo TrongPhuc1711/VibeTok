@@ -37,6 +37,17 @@ export const CallProvider = ({ children }) => {
                     onEnd={call.endCall}
                     onToggleMute={call.toggleMute}
                     onToggleCamera={call.toggleCamera}
+                    /* Screen sharing */
+                    isScreenSharing={call.isScreenSharing}
+                    onToggleScreenShare={call.toggleScreenShare}
+                    /* Watch Together */
+                    watchTogether={call.watchTogether}
+                    onStartWatchTogether={call.startWatchTogether}
+                    onSyncWatchTogether={call.syncWatchTogether}
+                    onEndWatchTogether={call.endWatchTogether}
+                    watchVideoRef={call.setWatchVideoRef}
+                    /* Face Filters */
+                    faceFilter={call.faceFilter}
                 />
             )}
         </CallContext.Provider>

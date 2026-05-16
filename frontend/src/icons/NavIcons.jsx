@@ -1,5 +1,5 @@
 
-const c = (active) => (active ? '#ff2d78' : '#666');
+const c = (active) => (active ? '#ff2d78' : 'var(--vt-text-bright)');
 
 export function HomeIcon({ active }) {
   return (
@@ -59,7 +59,7 @@ export function UserIcon({ active }) {
   );
 }
 
-export function SearchIcon({ color = '#555', size = 14 }) {
+export function SearchIcon({ color = 'var(--vt-text-bright)', size = 14 }) {
   return (
     <svg
       width={size} height={size}
@@ -89,7 +89,7 @@ export function ChevronIcon({ open = false, size = 12 }) {
     <svg
       width={size} height={size}
       viewBox="0 0 12 12" fill="none"
-      stroke="#555" strokeWidth="1.3" strokeLinecap="round"
+      stroke="var(--vt-text-bright)" strokeWidth="1.3" strokeLinecap="round"
       className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
     >
       <path d="M2 4.5L6 8L10 4.5" />
@@ -129,7 +129,7 @@ export function BellIcon({ active }) {
 }
 
 export function MessageIcon({ active }) {
-    const color = active ? '#ff2d78' : '#666';
+    const color = active ? '#ff2d78' : 'var(--vt-text-bright)';
     return (
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={color} strokeWidth="1.2">
             <path d="M12.5 9a1 1 0 01-1 1H4L1.5 12.5V2.5a1 1 0 011-1h9a1 1 0 011 1V9z" />

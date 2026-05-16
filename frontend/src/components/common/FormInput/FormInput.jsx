@@ -44,9 +44,10 @@ export default function FormInput({
                     onChange={e => onChange?.(e.target.value)}
                     onFocus={() => setFocused(true)}
                     onBlur={e => { setFocused(false); onBlur?.(e.target.value); }}
-                    className={`flex-1 bg-transparent border-none outline-none text-white text-sm font-body
+                    className={`flex-1 bg-transparent border-none outline-none text-sm font-body
             placeholder:text-text-faint disabled:cursor-not-allowed
             ${icon ? 'py-4 pr-4 pl-2' : 'px-4 py-4'}`}
+                    style={{ color: 'var(--vt-text-bright)' }}
                 />
 
                 {type === 'password' && (

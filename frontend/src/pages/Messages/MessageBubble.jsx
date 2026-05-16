@@ -29,11 +29,11 @@ function ContextMenu({ x, y, isMine, recalled, onRecall, onCopy, onReact, onClos
     return (
         <div
             ref={ref}
-            className="fixed z-50 bg-[#1a1a2e] border border-[#252540] rounded-2xl shadow-2xl overflow-hidden min-w-[180px]"
-            style={{ left, top }}
+            className="fixed z-50 rounded-2xl shadow-2xl overflow-hidden min-w-[180px]"
+            style={{ left, top, background: 'var(--color-surface)', border: '1px solid var(--color-border2)' }}
         >
             {/* Quick reactions */}
-            <div className="flex items-center gap-1 px-3 py-2.5 border-b border-[#252535]">
+            <div className="flex items-center gap-1 px-3 py-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                 {QUICK_REACTIONS.map(emoji => (
                     <button key={emoji}
                         onClick={() => { onReact(emoji); onClose(); }}
@@ -47,8 +47,9 @@ function ContextMenu({ x, y, isMine, recalled, onRecall, onCopy, onReact, onClos
             {/* Actions */}
             {!recalled && (
                 <button onClick={() => { onCopy(); onClose(); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#ccc] hover:bg-white/5 bg-transparent border-none cursor-pointer text-left transition-colors">
-                    <CopyIcon size={14} color="#888" />
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] hover:bg-white/5 bg-transparent border-none cursor-pointer text-left transition-colors"
+                    style={{ color: 'var(--vt-text-caption)' }}>
+                    <CopyIcon size={14} color="var(--vt-text-hint)" />
                     Sao chép
                 </button>
             )}
@@ -85,8 +86,12 @@ function ReactionsBar({ reactions, myId, onReact, onUnreact }) {
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border transition-all cursor-pointer
                         ${myReaction?.emoji === emoji
                             ? 'bg-[#ff2d78]/20 border-[#ff2d78]/50 text-white'
-                            : 'bg-[#1a1a2e] border-[#252535] text-[#aaa] hover:border-[#ff2d78]/40'
+                            : 'border-[var(--color-border)] hover:border-[#ff2d78]/40'
                         }`}
+                    style={{
+                        background: myReaction?.emoji === emoji ? undefined : 'var(--vt-input)',
+                        color: myReaction?.emoji === emoji ? undefined : 'var(--vt-text-caption)',
+                    }}
                     title={list.map(r => r.username).join(', ')}
                 >
                     <span>{emoji}</span>
@@ -155,7 +160,7 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
     return (
         <div className="flex flex-col w-full">
             <div className="p-3 flex flex-col gap-2">
-                <span className="text-white font-semibold text-[14px] leading-tight">{title}</span>
+                <span className="font-semibold text-[14px] leading-tight" style={{ color: 'var(--vt-text-bright)' }}>{title}</span>
                 <div className="flex items-center gap-2">
                     <div className="relative w-4 h-4 shrink-0 flex items-center justify-center">
                         {isVideo ? (
@@ -170,10 +175,10 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
                             <CallOutgoingArrowIcon className="absolute -top-0.5 -right-1" size={10} color="#888" />
                         )}
                     </div>
-                    <span className="text-[#999] text-[13px] font-normal tracking-wide">{durationStr}</span>
+                    <span className="text-[13px] font-normal tracking-wide" style={{ color: 'var(--vt-text-caption)' }}>{durationStr}</span>
                 </div>
             </div>
-            <div className="h-[1px] bg-[#2a2c33] w-11/12 mx-auto" />
+            <div className="h-[1px] w-11/12 mx-auto" style={{ background: 'var(--vt-divider)' }} />
             <button 
                 onClick={(e) => { e.stopPropagation(); onCallClick && onCallClick(isVideo ? 'video' : 'voice'); }}
                 className="py-2 text-center text-[#3b82f6] font-medium text-[14px] hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent w-full"
@@ -204,17 +209,23 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
     let bubbleClass = `rounded-2xl text-[14px] font-body leading-relaxed break-words cursor-default transition-opacity `;
     
     if (isCallMsg) {
-        bubbleClass += `bg-[#22242a] border border-[#2a2c33] p-0 w-[200px] shadow-sm `;
+        bubbleClass += `p-0 w-[200px] shadow-sm `;
+        bubbleClass += `border `;
         bubbleClass += isMine ? 'rounded-br-sm ' : 'rounded-bl-sm ';
     } else {
         bubbleClass += `px-4 py-2.5 select-text `;
         bubbleClass += isMine
             ? 'bg-gradient-to-br from-[#ff2d78] to-[#e0266b] text-white rounded-br-sm '
-            : 'bg-[#1e1e2e] text-[#eee] rounded-bl-sm ';
+            : 'rounded-bl-sm ';
     }
 
     bubbleClass += msg.pending ? 'opacity-60 ' : 'opacity-100 ';
     bubbleClass += msg.recalled ? 'opacity-50 ' : '';
+
+    // Theme-aware bubble styles
+    const bubbleStyle = isCallMsg
+        ? { background: 'var(--vt-msg-call)', borderColor: 'var(--vt-msg-call-border)' }
+        : (!isMine ? { background: 'var(--vt-msg-theirs)', color: 'var(--vt-text-body)' } : {});
 
     return (
         <>
@@ -234,6 +245,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
                     <div
                         onClick={() => setShowTime(s => !s)}
                         className={bubbleClass}
+                        style={bubbleStyle}
                     >
                         {msg.recalled ? (
                             <span className="flex items-center gap-1.5 italic text-[13px] opacity-70">
@@ -258,7 +270,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
                     {/* Timestamp + read status */}
                     {(showAvatar || showTime) && (
                         <div className={`flex items-center gap-1 px-1 mt-0.5 ${isMine ? 'flex-row-reverse' : ''}`}>
-                            <span className="text-[10px] text-[#444] font-body">
+                            <span className="text-[10px] font-body" style={{ color: 'var(--vt-text-ghost)' }}>
                                 {formatTimeAgo(msg.createdAt)}
                             </span>
                             {isMine && !msg.pending && (

@@ -65,7 +65,7 @@ function ContentSuggestion({ video, onClick }) {
       onClick={() => onClick(video)}
       className="flex items-center gap-3 w-full px-4 py-2.5 bg-transparent border-none cursor-pointer transition-colors hover:bg-white/5 text-left group"
     >
-      <div className="w-9 h-9 rounded-lg overflow-hidden bg-[#1a1a26] shrink-0 flex items-center justify-center">
+      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: 'var(--vt-skeleton)' }}>
         {video.thumbnail ? (
           <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -75,10 +75,10 @@ function ContentSuggestion({ video, onClick }) {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[#ccc] text-[13px] font-body m-0 truncate group-hover:text-white transition-colors">
+        <p className="text-[13px] font-body m-0 truncate group-hover:text-white transition-colors" style={{ color: 'var(--vt-text-caption)' }}>
           {video.caption || 'Video'}
         </p>
-        <p className="text-[#444] text-[11px] font-body m-0 truncate">
+        <p className="text-[11px] font-body m-0 truncate" style={{ color: 'var(--vt-text-ghost)' }}>
           {video.user?.username && `@${video.user.username}`}
           {video.likes > 0 && ` · ${formatCount(video.likes)} likes`}
         </p>
@@ -97,7 +97,7 @@ function KeywordSuggestion({ text, onClick }) {
       <div className="w-9 h-9 rounded-full flex items-center justify-center bg-transparent shrink-0">
         <TrendingIcon />
       </div>
-      <span className="text-[#ccc] text-[13px] font-body group-hover:text-white transition-colors truncate">
+      <span className="text-[13px] font-body group-hover:text-white transition-colors truncate" style={{ color: 'var(--vt-text-caption)' }}>
         {text}
       </span>
     </button>
@@ -108,10 +108,10 @@ function KeywordSuggestion({ text, onClick }) {
 function SuggestionSkeleton() {
   return (
     <div className="px-4 py-2.5 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-full bg-[#1a1a26] animate-pulse shrink-0" />
+      <div className="w-9 h-9 rounded-full animate-pulse shrink-0" style={{ background: 'var(--vt-skeleton)' }} />
       <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-28 rounded bg-[#1a1a26] animate-pulse" />
-        <div className="h-2.5 w-20 rounded bg-[#1a1a26] animate-pulse" />
+        <div className="h-3 w-28 rounded animate-pulse" style={{ background: 'var(--vt-skeleton)' }} />
+        <div className="h-2.5 w-20 rounded animate-pulse" style={{ background: 'var(--vt-skeleton)' }} />
       </div>
     </div>
   );
@@ -194,7 +194,7 @@ export default function SearchPanel({ onClose }) {
     >
       {/* ── Header ── */}
       <div className="flex items-center gap-3 px-4 py-[14px] border-b border-border shrink-0">
-        <span className="text-white text-[17px] font-bold font-body flex-1">Tìm kiếm</span>
+        <span className="text-[17px] font-bold font-body flex-1" style={{ color: 'var(--vt-text-bright)' }}>Tìm kiếm</span>
         <button
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center bg-transparent border-none cursor-pointer rounded-full hover:bg-white/10 transition-colors"
@@ -206,8 +206,8 @@ export default function SearchPanel({ onClose }) {
       {/* ── Search Input ── */}
       <form onSubmit={handleSubmit} className="px-3 py-2.5 shrink-0">
         <div className={`flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 transition-colors border ${
-          hasQuery ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-elevated border-transparent'
-        }`}>
+          hasQuery ? 'border-[#ff2d78]/30' : 'border-transparent'
+        }`} style={{ background: hasQuery ? 'var(--vt-input)' : 'var(--color-elevated)' }}>
           <SearchIcon color={hasQuery ? '#ff2d78' : '#555'} />
           <input
             ref={inputRef}
@@ -215,13 +215,15 @@ export default function SearchPanel({ onClose }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm tài khoản và video..."
-            className="bg-transparent border-none outline-none text-white text-sm font-body w-full placeholder:text-text-faint"
+            className="bg-transparent border-none outline-none text-sm font-body w-full placeholder:text-text-faint"
+            style={{ color: 'var(--vt-text-bright)' }}
           />
           {hasQuery && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="shrink-0 w-5 h-5 rounded-full bg-[#333] flex items-center justify-center border-none cursor-pointer hover:bg-[#444] transition-colors"
+              className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer transition-colors"
+              style={{ background: 'var(--color-border2)' }}
             >
               <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#999" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M1 1L7 7M7 1L1 7" />
@@ -311,18 +313,18 @@ export default function SearchPanel({ onClose }) {
 
         {/* No results */}
         {!loading && hasQuery && !hasResults && (
-          <div className="flex flex-col items-center justify-center py-16 gap-2.5 text-[#444]">
+          <div className="flex flex-col items-center justify-center py-16 gap-2.5" style={{ color: 'var(--vt-text-ghost)' }}>
             <p className="text-[13px] font-body text-center px-6">
-              Không tìm thấy kết quả cho "<span className="text-white">{query}</span>"
+              Không tìm thấy kết quả cho "<span style={{ color: 'var(--vt-text-bright)' }}>{query}</span>"
             </p>
-            <p className="text-[11px] font-body text-[#333]">Thử từ khóa khác</p>
+            <p className="text-[11px] font-body" style={{ color: 'var(--vt-text-invisible)' }}>Thử từ khóa khác</p>
           </div>
         )}
 
         {/* Empty state — no query yet */}
         {!hasQuery && (
           <div className="px-4 pt-2">
-            <p className="text-[#444] text-[12px] font-body text-center py-10">
+            <p className="text-[12px] font-body text-center py-10" style={{ color: 'var(--vt-text-ghost)' }}>
               Nhập từ khóa để tìm kiếm tài khoản, video...
             </p>
           </div>

@@ -83,7 +83,7 @@ export default function NotificationPagePanel({ onClose }) {
       >
         {/* Header */}
         <div className="px-6 py-[18px] border-b border-border shrink-0">
-          <h2 className="font-display font-bold text-[22px] text-white m-0 leading-none">
+          <h2 className="font-display font-bold text-[22px] m-0 leading-none" style={{ color: 'var(--vt-text-bright)' }}>
             Thông báo
           </h2>
         </div>
@@ -95,11 +95,12 @@ export default function NotificationPagePanel({ onClose }) {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 py-3.5 text-[13px] font-body font-medium border-none bg-transparent cursor-pointer transition-all relative
-                ${activeTab === tab.key ? 'text-white' : 'text-text-faint hover:text-text-secondary'}`}
+                ${activeTab === tab.key ? '' : 'text-text-faint hover:text-text-secondary'}`}
+              style={activeTab === tab.key ? { color: 'var(--vt-text-bright)' } : {}}
             >
               {tab.label}
               {activeTab === tab.key && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t" />
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t" style={{ background: 'var(--vt-text-bright)' }} />
               )}
             </button>
           ))}
@@ -112,9 +113,10 @@ export default function NotificationPagePanel({ onClose }) {
               key={chip.key}
               onClick={() => setActiveChip(activeChip === chip.key ? null : chip.key)}
               className={`text-[12px] font-body px-3.5 py-1.5 rounded-full border transition-all cursor-pointer whitespace-nowrap
-                ${activeChip === chip.key
-                  ? 'bg-white text-[#111] border-white font-semibold'
+                ${activeTab === chip.key
+                  ? 'font-semibold'
                   : 'bg-transparent border-[#2a2a3e] text-text-secondary hover:border-[#3a3a4e]'}`}
+              style={activeChip === chip.key ? { background: 'var(--vt-text-bright)', color: 'var(--vt-text-body)', borderColor: 'var(--vt-text-bright)' } : {}}
             >
               {chip.label}
             </button>
@@ -182,8 +184,11 @@ function NotifItem({ notif, onClick }) {
     <div
       onClick={() => onClick(notif)}
       className={`flex items-center gap-3 px-5 py-3.5 transition-colors
-        ${hasVideo ? 'cursor-pointer hover:bg-white/[0.04]' : 'cursor-default'}
+        ${hasVideo ? 'cursor-pointer' : 'cursor-default'}
         ${!notif.read ? 'bg-primary/[0.03]' : ''}`}
+      style={{ ':hover': hasVideo ? { background: 'var(--vt-hover)' } : {} }}
+      onMouseEnter={(e) => { if (hasVideo) e.currentTarget.style.background = 'var(--vt-hover)'; }}
+      onMouseLeave={(e) => { if (hasVideo) e.currentTarget.style.background = 'transparent'; }}
     >
       {/* Avatar + badge */}
       <div className="relative shrink-0">
@@ -206,7 +211,7 @@ function NotifItem({ notif, onClick }) {
       {/* Text */}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-body leading-snug m-0">
-          <span className="text-white font-semibold">{name}</span>
+          <span className="font-semibold" style={{ color: 'var(--vt-text-bright)' }}>{name}</span>
           <span className="text-text-secondary"> {cfg.text}</span>
         </p>
         {notif.meta?.comment && (
@@ -254,10 +259,10 @@ function LoadingSkeleton() {
     <div className="px-5 py-4 flex flex-col gap-4">
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="flex items-center gap-3 animate-pulse">
-          <div className="w-12 h-12 rounded-full bg-border2 shrink-0" />
+          <div className="w-12 h-12 rounded-full shrink-0" style={{ background: 'var(--vt-skeleton)' }} />
           <div className="flex-1 flex flex-col gap-2">
-            <div className="h-3 rounded-full bg-border2 w-3/4" />
-            <div className="h-2.5 rounded-full bg-border2/60 w-1/2" />
+            <div className="h-3 rounded-full w-3/4" style={{ background: 'var(--vt-skeleton)' }} />
+            <div className="h-2.5 rounded-full w-1/2" style={{ background: 'var(--vt-skeleton-shine)' }} />
           </div>
         </div>
       ))}

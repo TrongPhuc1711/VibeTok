@@ -249,6 +249,33 @@ export const initSocket = (server) => {
             if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('call_ringing', { fromUserId: socket.userId }));
         });
 
+        /**
+         * Watch Together — Xem video cùng nhau trong cuộc gọi
+         */
+        socket.on('watch_together_start', ({ toUserId, videoUrl }) => {
+            if (!socket.userId) return;
+            const targetId = String(toUserId);
+            io.to(`user_${targetId}`).emit('watch_together_start', { fromUserId: socket.userId, videoUrl });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_start', { fromUserId: socket.userId, videoUrl }));
+        });
+
+        socket.on('watch_together_sync', ({ toUserId, action, currentTime, videoUrl }) => {
+            if (!socket.userId) return;
+            const targetId = String(toUserId);
+            io.to(`user_${targetId}`).emit('watch_together_sync', { fromUserId: socket.userId, action, currentTime, videoUrl });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_sync', { fromUserId: socket.userId, action, currentTime, videoUrl }));
+        });
+
+        socket.on('watch_together_end', ({ toUserId }) => {
+            if (!socket.userId) return;
+            const targetId = String(toUserId);
+            io.to(`user_${targetId}`).emit('watch_together_end', { fromUserId: socket.userId });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_end', { fromUserId: socket.userId }));
+        });
+
         //Disconnect
         socket.on('disconnect', () => {
             console.log('[Socket] disconnect', { sid, authedUserId, trackedUserId: socket._vibetokUserId });

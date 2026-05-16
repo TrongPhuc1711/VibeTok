@@ -5,9 +5,11 @@ import SearchPanel from '../Sidebar/SearchPanel';
 import NotificationPagePanel from '../../notification/NotificationPagePanel';
 import BottomNav from '../BottomNav/BottomNav';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function PageLayout({ children, rightPanel, noPadding = false }) {
   const { user, isAuthenticated } = useAuthContext();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const isAdmin = isAuthenticated && user?.vai_tro === 'admin';
   const [notifOpen, setNotifOpen] = useState(false);
@@ -30,7 +32,7 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
   const isCollapsed = notifOpen || searchOpen;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-base">
+    <div className="flex h-screen overflow-hidden bg-base theme-transition">
       {/* Desktop sidebar */}
       <div className="hidden md:block md:shrink-0">
         <Sidebar
@@ -64,13 +66,23 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
       >
         {/* Mobile notification full-screen overlay */}
         {notifOpen && (
-          <div className="md:hidden fixed inset-0 z-[60] flex flex-col" style={{ background: '#0a0a0f' }}>
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1a1a2a] shrink-0">
+          <div
+            className="md:hidden fixed inset-0 z-[60] flex flex-col"
+            style={{ background: isDark ? '#0a0a0f' : '#f5f5fa' }}
+          >
+            <div
+              className="flex items-center gap-3 px-4 py-3 shrink-0"
+              style={{ borderBottom: `1px solid var(--vt-divider)` }}
+            >
               <button onClick={() => setNotifOpen(false)}
-                className="bg-transparent border-none text-white text-xl cursor-pointer w-8 h-8 flex items-center justify-center">
+                className="bg-transparent border-none text-xl cursor-pointer w-8 h-8 flex items-center justify-center"
+                style={{ color: 'var(--vt-text-bright)' }}>
                 ←
               </button>
-              <span className="text-white font-semibold text-[17px] font-body">Thông báo</span>
+              <span
+                className="font-semibold text-[17px] font-body"
+                style={{ color: 'var(--vt-text-bright)' }}
+              >Thông báo</span>
             </div>
             <div className="flex-1 overflow-auto pb-16">
               <NotificationPagePanel onClose={() => setNotifOpen(false)} />
@@ -80,7 +92,10 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
 
         {/* Mobile search full-screen overlay */}
         {searchOpen && (
-          <div className="md:hidden fixed inset-0 z-[60] flex flex-col" style={{ background: '#0a0a0f' }}>
+          <div
+            className="md:hidden fixed inset-0 z-[60] flex flex-col"
+            style={{ background: isDark ? '#0a0a0f' : '#f5f5fa' }}
+          >
             <SearchPanel onClose={handleSearchClose} />
           </div>
         )}
@@ -93,7 +108,7 @@ export default function PageLayout({ children, rightPanel, noPadding = false }) 
 
       {/* ── Desktop right panel ── */}
       {!notifOpen && !searchOpen && rightPanel && (
-        <aside className="hidden lg:block w-[280px] border-l border-border overflow-auto shrink-0">
+        <aside className="hidden lg:block w-[280px] border-l border-border overflow-auto shrink-0 theme-transition">
           {rightPanel}
         </aside>
       )}

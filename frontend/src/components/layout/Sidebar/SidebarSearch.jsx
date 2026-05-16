@@ -6,10 +6,13 @@ export default function SidebarSearch({ onSearchClick }) {
     <div className="px-3 py-2.5">
       <button
         onClick={onSearchClick}
-        className="flex items-center gap-2.5 bg-elevated rounded-lg px-3.5 py-2.5 w-full border-none cursor-pointer transition-colors hover:bg-white/10"
+        className="flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 w-full border-none cursor-pointer transition-colors bg-transparent"
+        style={{ background: 'var(--vt-input)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--vt-hover)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--vt-input)'; }}
       >
-        <SearchIcon />
-        <span className="text-text-faint text-sm font-body">Tìm kiếm...</span>
+        <SearchIcon color="var(--vt-text-caption)" />
+        <span className="text-sm font-body" style={{ color: 'var(--vt-text-caption)' }}>Tìm kiếm...</span>
       </button>
     </div>
   );

@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { getSharedSocket } from './useMessages';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
+import { useFaceFilter } from './useFaceFilter';
 
 // Dynamic ICE Servers
 let cachedIceServers = null;
@@ -35,6 +36,18 @@ export function useCall() {
     const [callDuration, setCallDuration] = useState(0);
     const [incomingCall, setIncomingCall] = useState(null);
     // { fromUserId, callerInfo, offer, callType }
+
+    // ── Screen sharing ──
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
+    const screenStreamRef = useRef(null);
+
+    // ── Watch Together ──
+    const [watchTogether, setWatchTogether] = useState(null);
+    // { videoUrl, isPlaying, currentTime }
+    const watchVideoRef = useRef(null);
+
+    // ── Face Filter ──
+    const faceFilter = useFaceFilter();
 
     const [currentPartnerId, setCurrentPartnerId] = useState(null);
     const [currentPartnerInfo, setCurrentPartnerInfo] = useState(null);
@@ -182,6 +195,29 @@ export function useCall() {
             setCallState('calling'); // người kia đang đổ chuông
         };
 
+        // ── Watch Together events ──
+        const onWatchStart = ({ videoUrl }) => {
+            if (!mountedRef.current) return;
+            console.log('[Call][Socket] watch_together_start', { videoUrl });
+            setWatchTogether({ videoUrl, isPlaying: false, currentTime: 0 });
+        };
+        const onWatchSync = ({ action, currentTime, videoUrl }) => {
+            if (!mountedRef.current) return;
+            console.log('[Call][Socket] watch_together_sync', { action, currentTime });
+            setWatchTogether(prev => {
+                const url = videoUrl || prev?.videoUrl;
+                if (action === 'play') return { videoUrl: url, isPlaying: true, currentTime };
+                if (action === 'pause') return { videoUrl: url, isPlaying: false, currentTime };
+                if (action === 'seek') return { ...prev, videoUrl: url, currentTime };
+                return prev;
+            });
+        };
+        const onWatchEnd = () => {
+            if (!mountedRef.current) return;
+            console.log('[Call][Socket] watch_together_end');
+            setWatchTogether(null);
+        };
+
         socket.on('call_incoming', onIncoming);
         socket.on('call_answered', onAnswered);
         socket.on('call_ice_candidate', onIceCandidate);
@@ -189,6 +225,9 @@ export function useCall() {
         socket.on('call_rejected', onRejected);
         socket.on('call_ended', onEnded);
         socket.on('call_ringing', onRinging);
+        socket.on('watch_together_start', onWatchStart);
+        socket.on('watch_together_sync', onWatchSync);
+        socket.on('watch_together_end', onWatchEnd);
 
         return () => {
             mountedRef.current = false;
@@ -201,6 +240,9 @@ export function useCall() {
             socket.off('call_rejected', onRejected);
             socket.off('call_ended', onEnded);
             socket.off('call_ringing', onRinging);
+            socket.off('watch_together_start', onWatchStart);
+            socket.off('watch_together_sync', onWatchSync);
+            socket.off('watch_together_end', onWatchEnd);
             clearTimeout(retryTimer);
         };
     }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -277,6 +319,10 @@ export function useCall() {
             localStreamRef.current.getTracks().forEach(t => t.stop());
             localStreamRef.current = null;
         }
+        if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(t => t.stop());
+            screenStreamRef.current = null;
+        }
         remoteStreamRef.current = null;
         if (pcRef.current) {
             pcRef.current.close();
@@ -286,8 +332,14 @@ export function useCall() {
         if (remoteVideoElementRef.current) remoteVideoElementRef.current.srcObject = null;
         setIsMuted(false);
         setIsCameraOff(false);
+        setIsScreenSharing(false);
+        setWatchTogether(null);
+        faceFilter.stopProcessing();
+        faceFilter.setActiveFilter('none');
+        faceFilter.setActiveSticker('none');
+        faceFilter.setFilterPanelOpen(false);
         iceCandidateQueueRef.current = [];
-    }, []);
+    }, [faceFilter]);
 
     // ── Actions ──
 
@@ -427,6 +479,100 @@ export function useCall() {
         setIsCameraOff(c => !c);
     }, []);
 
+    // ── Screen Sharing ──
+    const toggleScreenShare = useCallback(async () => {
+        if (!pcRef.current || callState !== 'connected') return;
+
+        if (isScreenSharing) {
+            // Switch back to camera
+            try {
+                if (screenStreamRef.current) {
+                    screenStreamRef.current.getTracks().forEach(t => t.stop());
+                    screenStreamRef.current = null;
+                }
+                const cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                });
+                const cameraTrack = cameraStream.getVideoTracks()[0];
+                const sender = pcRef.current.getSenders().find(s => s.track?.kind === 'video');
+                if (sender) await sender.replaceTrack(cameraTrack);
+                // Update local stream
+                const oldVideoTracks = localStreamRef.current?.getVideoTracks() || [];
+                oldVideoTracks.forEach(t => { t.stop(); localStreamRef.current?.removeTrack(t); });
+                localStreamRef.current?.addTrack(cameraTrack);
+                if (localVideoElementRef.current) localVideoElementRef.current.srcObject = localStreamRef.current;
+                setIsScreenSharing(false);
+            } catch (e) {
+                console.error('[Call] Stop screen share error:', e);
+            }
+        } else {
+            // Start screen sharing
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: 'always' },
+                    audio: true,
+                });
+                screenStreamRef.current = screenStream;
+                const screenTrack = screenStream.getVideoTracks()[0];
+                const sender = pcRef.current.getSenders().find(s => s.track?.kind === 'video');
+                if (sender) await sender.replaceTrack(screenTrack);
+                if (localVideoElementRef.current) localVideoElementRef.current.srcObject = screenStream;
+                setIsScreenSharing(true);
+
+                // Handle user stopping share via browser UI
+                screenTrack.onended = () => {
+                    toggleScreenShare();
+                };
+            } catch (e) {
+                console.error('[Call] Start screen share error:', e);
+                if (e.name !== 'NotAllowedError') {
+                    toast?.showError('Lỗi chia sẻ màn hình', 'Không thể chia sẻ màn hình.');
+                }
+            }
+        }
+    }, [callState, isScreenSharing, toast]);
+
+    // ── Watch Together ──
+    const startWatchTogether = useCallback((videoUrl) => {
+        if (!currentPartnerId || callState !== 'connected') return;
+        console.log('[Call] startWatchTogether', { videoUrl });
+        setWatchTogether({ videoUrl, isPlaying: false, currentTime: 0 });
+        getSharedSocket().emit('watch_together_start', {
+            toUserId: currentPartnerId,
+            videoUrl,
+        });
+    }, [currentPartnerId, callState]);
+
+    const syncWatchTogether = useCallback((action, currentTime = 0) => {
+        if (!currentPartnerId || !watchTogether) return;
+        console.log('[Call] syncWatchTogether', { action, currentTime });
+        setWatchTogether(prev => {
+            if (action === 'play') return { ...prev, isPlaying: true, currentTime };
+            if (action === 'pause') return { ...prev, isPlaying: false, currentTime };
+            if (action === 'seek') return { ...prev, currentTime };
+            return prev;
+        });
+        getSharedSocket().emit('watch_together_sync', {
+            toUserId: currentPartnerId,
+            action,
+            currentTime,
+            videoUrl: watchTogether.videoUrl,
+        });
+    }, [currentPartnerId, watchTogether]);
+
+    const endWatchTogether = useCallback(() => {
+        if (!currentPartnerId) return;
+        console.log('[Call] endWatchTogether');
+        setWatchTogether(null);
+        getSharedSocket().emit('watch_together_end', {
+            toUserId: currentPartnerId,
+        });
+    }, [currentPartnerId]);
+
+    const setWatchVideoRef = useCallback((node) => {
+        watchVideoRef.current = node;
+    }, []);
+
     // Format duration MM:SS
     const formatDuration = (secs) => {
         const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -455,5 +601,16 @@ export function useCall() {
         endCall,
         toggleMute,
         toggleCamera,
+        // Screen sharing
+        isScreenSharing,
+        toggleScreenShare,
+        // Watch Together
+        watchTogether,
+        startWatchTogether,
+        syncWatchTogether,
+        endWatchTogether,
+        setWatchVideoRef,
+        // Face Filters
+        faceFilter,
     };
 }

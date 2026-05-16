@@ -330,3 +330,96 @@ export function CallOutgoingArrowIcon({ className = '', size = 10, color = '#888
     </svg>
   );
 }
+
+/* ─── Screen Share ─── */
+
+export function ScreenShareIcon({ size = 20, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+      <path d="M12 7v4M9 10l3 3 3-3" />
+    </svg>
+  );
+}
+
+export function ScreenShareOffIcon({ size = 20, color = '#ff2d78' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+      <path d="M2 2l20 20" />
+    </svg>
+  );
+}
+
+/* ─── Watch Together ─── */
+
+export function WatchTogetherIcon({ size = 20, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M10 9l5 3-5 3V9z" fill={color} stroke="none" />
+    </svg>
+  );
+}
+
+/* ─── Filter ─── */
+
+export function FilterIcon({ size = 20, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a10 10 0 0 1 0 20" fill={color} fillOpacity="0.2" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 8v-2M12 18v-2M16 12h2M6 12h-2" />
+    </svg>
+  );
+}
+
+/* ─── Sticker ─── */
+
+export function StickerIcon({ size = 20, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+      <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3" />
+      <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3" />
+    </svg>
+  );
+}
+
+/* ─── Play / Pause for Watch Together ─── */
+
+export function PlayIcon({ size = 16, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M8 5v14l11-7L8 5z" />
+    </svg>
+  );
+}
+
+export function PauseIcon({ size = 16, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <rect x="6" y="4" width="4" height="16" rx="1" />
+      <rect x="14" y="4" width="4" height="16" rx="1" />
+    </svg>
+  );
+}
+
+export function LinkIcon({ size = 16, color = '#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}

@@ -24,15 +24,15 @@ export default function SidebarFollowing() {
             <div>
                 <div className="px-5 pt-3 pb-1">
                     <div className="h-px bg-border" />
-                    <p className="text-[11px] text-text-subtle tracking-[0.5px] mt-2.5 mb-1 font-body">
+                    <p className="text-[11px] tracking-[0.5px] mt-2.5 mb-1 font-body" style={{ color: 'var(--vt-text-caption)' }}>
                         ĐANG THEO DÕI
                     </p>
                 </div>
                 {/* Skeleton */}
                 {[1, 2, 3].map(i => (
                     <div key={i} className="flex items-center gap-2.5 px-5 py-2 animate-pulse">
-                        <div className="w-[26px] h-[26px] rounded-full bg-border2 shrink-0" />
-                        <div className="h-2.5 w-24 rounded bg-border2" />
+                        <div className="w-[26px] h-[26px] rounded-full shrink-0" style={{ background: 'var(--vt-skeleton)' }} />
+                        <div className="h-2.5 w-24 rounded" style={{ background: 'var(--vt-skeleton)' }} />
                     </div>
                 ))}
             </div>
@@ -45,7 +45,7 @@ export default function SidebarFollowing() {
         <div>
             <div className="px-5 pt-3 pb-1">
                 <div className="h-px bg-border" />
-                <p className="text-[11px] text-text-subtle tracking-[0.5px] mt-2.5 mb-1 font-body">
+                <p className="text-[11px] tracking-[0.5px] mt-2.5 mb-1 font-body" style={{ color: 'var(--vt-text-caption)' }}>
                     ĐANG THEO DÕI
                 </p>
             </div>
@@ -54,7 +54,10 @@ export default function SidebarFollowing() {
                 <button
                     key={user.id}
                     onClick={() => navigate(`/profile/${user.username}`)}
-                    className="flex items-center gap-2.5 w-full px-5 py-2 border-none bg-transparent cursor-pointer hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-2.5 w-full px-5 py-2 border-none bg-transparent cursor-pointer transition-colors"
+                    style={{ ':hover': { background: 'var(--vt-hover)' } }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--vt-hover)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                     {/* Avatar */}
                     <div
@@ -72,7 +75,7 @@ export default function SidebarFollowing() {
                         )}
                     </div>
 
-                    <span className="font-body text-[13px] text-text-secondary flex-1 text-left truncate">
+                    <span className="font-body text-[13px] flex-1 text-left truncate" style={{ color: 'var(--vt-text-bright)' }}>
                         {user.fullName}
                     </span>
 

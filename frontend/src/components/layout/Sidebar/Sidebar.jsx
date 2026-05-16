@@ -38,8 +38,8 @@ function CollapsedSidebar({ onNotifClick, notifActive, onSearchClick, searchActi
 
   return (
     <aside
-      className="flex flex-col h-screen bg-base border-r border-border sticky top-0 shrink-0 transition-all duration-300"
-      style={{ width: 72 }}
+      className="flex flex-col h-screen border-r border-border sticky top-0 shrink-0 transition-all duration-300"
+      style={{ width: 72, background: 'var(--vt-sidebar-bg)' }}
     >
       <div
         className="flex items-center justify-center py-[18px] border-b border-border cursor-pointer"
@@ -53,9 +53,12 @@ function CollapsedSidebar({ onNotifClick, notifActive, onSearchClick, searchActi
         <button
           onClick={onSearchClick}
           className={`flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
-            ${searchActive ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
+            ${searchActive ? 'bg-primary/10' : 'bg-transparent'}`}
+          style={{ ':hover': { background: searchActive ? undefined : 'var(--vt-hover)' } }}
+          onMouseEnter={(e) => { if (!searchActive) e.currentTarget.style.background = 'var(--vt-hover)'; }}
+          onMouseLeave={(e) => { if (!searchActive) e.currentTarget.style.background = 'transparent'; }}
         >
-          <SearchIcon color={searchActive ? '#ff2d78' : '#666'} />
+          <SearchIcon color={searchActive ? '#ff2d78' : 'var(--vt-text-bright)'} />
         </button>
 
         {NAV_ITEMS.map(({ path, Icon }) => {
@@ -65,7 +68,10 @@ function CollapsedSidebar({ onNotifClick, notifActive, onSearchClick, searchActi
               key={path}
               onClick={() => navigate(path)}
               className={`flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
-                ${active ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
+                ${active ? 'bg-primary/10' : 'bg-transparent'}`}
+              style={{ ':hover': { background: active ? undefined : 'var(--vt-hover)' } }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--vt-hover)'; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}
             >
               <Icon active={active} />
             </button>
@@ -76,11 +82,14 @@ function CollapsedSidebar({ onNotifClick, notifActive, onSearchClick, searchActi
           <button
             onClick={onNotifClick}
             className={`relative flex items-center justify-center w-11 h-11 mx-auto my-1 rounded-xl border-none cursor-pointer transition-colors
-              ${notifActive ? 'bg-primary/10' : 'bg-transparent hover:bg-white/5'}`}
+              ${notifActive ? 'bg-primary/10' : 'bg-transparent'}`}
+            style={{ ':hover': { background: notifActive ? undefined : 'var(--vt-hover)' } }}
+            onMouseEnter={(e) => { if (!notifActive) e.currentTarget.style.background = 'var(--vt-hover)'; }}
+            onMouseLeave={(e) => { if (!notifActive) e.currentTarget.style.background = 'transparent'; }}
           >
             <BellIcon active={notifActive} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 bg-primary text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-[0_0_0_1.5px_#0a0a0f]">
+              <span className="absolute top-1.5 right-1.5 bg-primary text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold" style={{ boxShadow: 'var(--vt-badge-shadow)' }}>
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -121,7 +130,8 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
 
   return (
     <aside
-      className={`flex flex-col h-screen w-60 min-w-60 bg-base border-r border-border sticky top-0 shrink-0 transition-all duration-300 ${className}`}
+      className={`flex flex-col h-screen w-60 min-w-60 border-r border-border sticky top-0 shrink-0 transition-all duration-300 ${className}`}
+      style={{ background: 'var(--vt-sidebar-bg)' }}
     >
       <div
         className="px-5 py-[18px] border-b border-border cursor-pointer"
@@ -140,12 +150,12 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
         {/* Hiển thị nút login khi chưa đăng nhập */}
         {!isAuthenticated && (
           <div className="px-5 py-4 border-t border-border mt-1">
-            <p className="text-[14px] text-text-secondary leading-relaxed mb-4 font-body">
+            <p className="text-[14px] leading-relaxed mb-4 font-body" style={{ color: 'var(--vt-text-body)' }}>
               Đăng nhập để follow các tác giả, thích video và xem bình luận.
             </p>
             <button
               onClick={() => navigate(ROUTES.LOGIN)}
-              className="w-full h-12 bg-transparent border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors text-[15px]"
+              className="w-full h-12 bg-transparent border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 cursor-pointer transition-colors text-[15px]"
             >
               Đăng nhập
             </button>

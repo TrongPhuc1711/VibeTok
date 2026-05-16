@@ -205,25 +205,25 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
         className="fixed right-0 top-0 bottom-0 z-50 flex flex-col"
         style={{
           width: 420,
-          background: 'rgba(22, 22, 29, 0.98)',
+          background: 'var(--vt-comment-bg)',
           backdropFilter: 'blur(20px)',
-          borderLeft: '1px solid rgba(255,255,255,0.07)',
+          borderLeft: '1px solid var(--vt-comment-border)',
           transform: visible ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
-          boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
+          boxShadow: 'var(--vt-shadow-xl)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
         <div
           className="flex items-center justify-between px-5 py-4 shrink-0"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ borderBottom: '1px solid var(--vt-comment-border)' }}
         >
           <div className="flex items-baseline gap-2">
-            <span className="text-white text-[16px] font-bold font-body">Bình luận</span>
+            <span className="text-[16px] font-bold font-body" style={{ color: 'var(--vt-text-bright)' }}>Bình luận</span>
             <span
               className="text-[13px] font-body px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.08)', color: '#888' }}
+              style={{ background: 'var(--vt-hover)', color: 'var(--vt-text-hint)' }}
             >
               {formatCount(totalCount)}
             </span>
@@ -231,7 +231,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
           <button
             onClick={handleClose}
             className="w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer transition-all hover:scale-105"
-            style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa' }}
+            style={{ background: 'var(--vt-hover)', color: 'var(--vt-text-caption)' }}
           >
             <CloseIcon />
           </button>
@@ -245,7 +245,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
             </div>
           ) : comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <p className="text-[#555] text-[13px] font-body text-center">
+              <p className="text-[13px] font-body text-center" style={{ color: 'var(--vt-text-disabled)' }}>
                 Chưa có bình luận nào.<br />Hãy là người đầu tiên!
               </p>
             </div>
@@ -267,7 +267,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
         {/* ── Input bình luận ── */}
         <div
           className="px-4 py-4 shrink-0"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)', position: 'relative' }}
+          style={{ borderTop: '1px solid var(--vt-comment-border)', position: 'relative' }}
         >
           {/* Reply indicator */}
           {replyTo && (
@@ -322,7 +322,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
 
             <div
               className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+              style={{ background: 'var(--vt-hover)', border: '1px solid var(--vt-divider)' }}
             >
               {/* Avatar mini */}
               <div
@@ -343,7 +343,8 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
                   if (e.key === 'Enter' && !e.shiftKey && !mentionVisible) handleSubmit();
                 }}
                 placeholder={replyTo ? `Trả lời @${replyTo.username}...` : 'Thêm bình luận...'}
-                className="flex-1 bg-transparent border-none outline-none text-white text-[14px] font-body placeholder:text-[#555]"
+                className="flex-1 bg-transparent border-none outline-none text-[14px] font-body"
+                style={{ color: 'var(--vt-text-bright)' }}
               />
               <EmojiPickerButton
                 onSelect={(emoji) => setInput((p) => p + emoji)}
@@ -430,7 +431,7 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
   };
 
   return (
-    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+    <div style={{ borderBottom: '1px solid var(--vt-divider)' }}>
       {/* Main comment */}
       <div className="py-3.5 flex gap-3">
         {/* Avatar */}
@@ -452,15 +453,15 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 mb-0.5">
-            <span className="text-white text-[13px] font-semibold font-body">
+            <span className="font-body" style={{ color: 'var(--vt-text-bright)', fontSize: 13, fontWeight: 600 }}>
               {comment.username}
             </span>
-            <span className="text-[#444] text-[11px] font-body">
+            <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-ghost)' }}>
               {formatTimeAgo(comment.createdAt)}
             </span>
           </div>
 
-          <p className="text-[#ddd] text-[14px] font-body leading-relaxed m-0 mb-2 break-words">
+          <p className="text-[14px] font-body leading-relaxed m-0 mb-2 break-words" style={{ color: 'var(--vt-text-body)' }}>
             <RenderMentionText content={comment.content} mentions={comment.mentions} />
           </p>
 
@@ -468,7 +469,8 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
           <div className="flex items-center gap-4">
             <button
               onClick={() => onReply(comment)}
-              className="bg-transparent border-none text-[#555] text-[12px] font-body cursor-pointer hover:text-[#888] transition-colors p-0"
+              className="bg-transparent border-none text-[12px] font-body cursor-pointer hover:text-[#888] transition-colors p-0"
+              style={{ color: 'var(--vt-text-disabled)' }}
             >
               Trả lời
             </button>
@@ -476,7 +478,8 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
             {comment.replies > 0 && (
               <button
                 onClick={handleToggleReplies}
-                className="bg-transparent border-none text-[#555] text-[12px] font-body cursor-pointer hover:text-[#888] transition-colors p-0"
+                className="bg-transparent border-none text-[12px] font-body cursor-pointer hover:text-[#888] transition-colors p-0"
+                style={{ color: 'var(--vt-text-disabled)' }}
               >
                 — Xem {comment.replies} trả lời {showReplies ? '▲' : '▼'}
               </button>
@@ -537,10 +540,10 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className="text-white text-[12px] font-semibold font-body">{reply.username}</span>
-                    <span className="text-[#444] text-[10px] font-body">{formatTimeAgo(reply.createdAt)}</span>
+                    <span className="font-body" style={{ color: 'var(--vt-text-bright)', fontSize: 12, fontWeight: 600 }}>{reply.username}</span>
+                    <span className="text-[10px] font-body" style={{ color: 'var(--vt-text-ghost)' }}>{formatTimeAgo(reply.createdAt)}</span>
                   </div>
-                  <p className="text-[#ccc] text-[13px] font-body leading-relaxed m-0 break-words">
+                  <p className="text-[13px] font-body leading-relaxed m-0 break-words" style={{ color: 'var(--vt-text-caption)' }}>
                     <RenderMentionText content={reply.content} mentions={reply.mentions} />
                   </p>
                 </div>
@@ -617,11 +620,11 @@ function RenderMentionText({ content, mentions = [] }) {
 function CommentSkeleton() {
   return (
     <div className="flex gap-3 py-3 animate-pulse">
-      <div className="w-9 h-9 rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="w-9 h-9 rounded-full flex-shrink-0" style={{ background: 'var(--vt-skeleton)' }} />
       <div className="flex-1 flex flex-col gap-2">
-        <div className="h-3 rounded-full w-24" style={{ background: 'rgba(255,255,255,0.06)' }} />
-        <div className="h-3 rounded-full w-full" style={{ background: 'rgba(255,255,255,0.04)' }} />
-        <div className="h-3 rounded-full w-3/4" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        <div className="h-3 rounded-full w-24" style={{ background: 'var(--vt-skeleton)' }} />
+        <div className="h-3 rounded-full w-full" style={{ background: 'var(--vt-skeleton-shine)' }} />
+        <div className="h-3 rounded-full w-3/4" style={{ background: 'var(--vt-skeleton-shine)' }} />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { formatTimeAgo } from '../../utils/formatters';
 import { SearchSmIcon } from '../../icons/MessageIcons';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { useTheme } from '../../contexts/ThemeContext';
 
 /* ── Avatar ── */
 export function MsgAvatar({ user = {}, size = 'md', online = false }) {
@@ -40,31 +41,37 @@ function ConversationItem({ conv, active, onClick, myId, isOnline, lastSeenText 
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all border-none cursor-pointer border-b border-[#1a1a2a] last:border-0
-                ${active ? 'bg-[#ff2d78]/10' : 'bg-transparent hover:bg-white/[0.03]'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all border-none cursor-pointer last:border-0`}
+            style={{
+                borderBottom: '1px solid var(--vt-divider)',
+                background: active ? 'rgba(255,45,120,0.1)' : 'transparent',
+            }}
         >
             <MsgAvatar user={conv} online={isOnline} />
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`text-[13px] text-white font-body truncate ${isUnread ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`text-[13px] font-body truncate ${isUnread ? 'font-semibold' : 'font-medium'}`}
+                            style={{ color: 'var(--vt-text-bright)' }}>
                             {conv.partnerFullname || conv.partnerUsername}
                         </span>
                         {isOnline}
                     </div>
-                    <span className="text-[10px] text-[#888] font-body shrink-0 ml-2">
+                    <span className="text-[10px] font-body shrink-0 ml-2" style={{ color: 'var(--vt-text-hint)' }}>
                         {conv.lastTime ? formatTimeAgo(conv.lastTime) : ''}
                     </span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className={`text-[12px] font-body truncate max-w-[160px] italic-if-recalled
-                        ${conv.lastRecalled ? 'text-[#555] italic' : isUnread ? 'text-[#aaa]' : 'text-[#888]'}`}>
-                        {!conv.lastRecalled && isMine && <span className="text-[#888]">Bạn: </span>}
+                    <span className={`text-[12px] font-body truncate flex-1
+                        ${conv.lastRecalled ? 'italic' : isUnread ? '' : ''}`}
+                        style={{ color: conv.lastRecalled ? 'var(--vt-text-disabled)' : isUnread ? 'var(--vt-text-caption)' : 'var(--vt-text-hint)' }}>
+                        {!conv.lastRecalled && isMine && <span style={{ color: 'var(--vt-text-hint)' }}>Bạn: </span>}
                         {lastText || ''}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
                         {!isOnline && lastSeenText && (
-                            <span className="text-[9px] text-[#888] font-body truncate max-w-[80px]" title={lastSeenText}>
+                            <span className="text-[9px] font-body truncate max-w-[80px]" title={lastSeenText}
+                                style={{ color: 'var(--vt-text-hint)' }}>
                                 {lastSeenText}
                             </span>
                         )}
@@ -107,16 +114,18 @@ export default function ConversationSidebar({
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-[#1a1a2a] shrink-0">
-                <h2 className="text-white font-bold text-[17px] font-display mb-3">Tin nhắn</h2>
-                <div className="flex items-center gap-2 bg-[#1a1a2e] rounded-xl px-3.5 py-2.5 border border-[#1e1e2e] focus-within:border-[#ff2d78]/30 transition-colors">
-                    <SearchSmIcon size={13} color="#fff" />
+            <div className="px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--vt-divider)' }}>
+                <h2 className="font-bold text-[17px] font-display mb-3" style={{ color: 'var(--vt-text-bright)' }}>Tin nhắn</h2>
+                <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 transition-colors"
+                    style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)' }}>
+                    <SearchSmIcon size={13} color="var(--vt-text-bright)" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={e => onSearchChange(e.target.value)}
                         placeholder="Tìm kiếm..."
-                        className="flex-1 bg-transparent border-none outline-none text-white text-[12px] font-body placeholder:text-[#333]"
+                        className="flex-1 bg-transparent border-none outline-none text-[12px] font-body"
+                        style={{ color: 'var(--vt-text-bright)' }}
                     />
                 </div>
             </div>
@@ -128,7 +137,7 @@ export default function ConversationSidebar({
                         <div className="w-5 h-5 rounded-full border-2 border-[#ff2d78]/30 border-t-[#ff2d78] animate-spin" />
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 gap-2 text-[#333]">
+                    <div className="flex flex-col items-center justify-center py-10 gap-2" style={{ color: 'var(--vt-text-invisible)' }}>
                         <p className="text-[12px] font-body text-center px-4">
                             {searchQuery ? `Không tìm thấy "${searchQuery}"` : 'Chưa có tin nhắn nào.'}
                         </p>

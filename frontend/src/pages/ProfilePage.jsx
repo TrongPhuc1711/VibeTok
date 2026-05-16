@@ -15,6 +15,7 @@ import { deleteVideo }       from '../services/videoService';
 import { formatCount }       from '../utils/formatters';
 import { isLoggedIn, getStoredUser }     from '../utils/helpers';
 import { useToast } from '../components/ui/Toast';
+import { useTheme } from '../contexts/ThemeContext';
 import { ShareSmIcon }       from '../icons/CommonIcons';
 
 import VideoThumb from '../components/profile/VideoThumb';
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const navigate     = useNavigate();
   const me           = getStoredUser();
   const { showWarning } = useToast();
+  const { isDark } = useTheme();
 
   const target = username || me?.username || me?.ten_dang_nhap;
   const { profile, videos, loading, following, toggleFollow, setProfile } = useProfile(target || '');
@@ -125,7 +127,7 @@ export default function ProfilePage() {
           >
             ← Quay lại
           </button>
-          <span className="text-white text-[16px] font-semibold font-body flex-1 text-center md:text-center">
+          <span className="text-[16px] font-semibold font-body flex-1 text-center md:text-center" style={{ color: 'var(--vt-text-bright)' }}>
             {profile.username}
           </span>
           {/* Share button */}
@@ -140,7 +142,9 @@ export default function ProfilePage() {
             className="relative overflow-hidden"
             style={{
               height: 120,
-              background: 'linear-gradient(135deg,#1a0a1e,#0d0d25 50%,#1a0a10)',
+              background: isDark
+                ? 'linear-gradient(135deg,#1a0a1e,#0d0d25 50%,#1a0a10)'
+                : 'linear-gradient(135deg,#f0e6f6,#e6e6f5 50%,#f0e6f0)',
             }}
           >
             <div className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full"
@@ -205,7 +209,7 @@ export default function ProfilePage() {
         {/* ── Profile info ── */}
         <div className="px-4 pt-14 pb-4">
           <div className="flex items-baseline gap-2 mb-0.5">
-            <h1 className="font-display font-bold text-[20px] md:text-[22px] text-white m-0">
+            <h1 className="font-display font-bold text-[20px] md:text-[22px] m-0" style={{ color: 'var(--vt-text-bright)' }}>
               {profile.fullName}
             </h1>
             {profile.isCreator && (
@@ -234,7 +238,7 @@ export default function ProfilePage() {
                   className={`flex flex-col items-center px-4 first:pl-0 shrink-0 ${s.clickable ? 'cursor-pointer' : ''}`}
                   onClick={s.clickable ? () => setFollowModal(s.modalType) : undefined}
                 >
-                  <p className={`font-display font-bold text-[18px] md:text-[20px] m-0 mb-0.5 ${s.clickable ? 'text-white' : 'text-white'}`}>
+                  <p className="font-display font-bold text-[18px] md:text-[20px] m-0 mb-0.5" style={{ color: 'var(--vt-text-bright)' }}>
                     {s.value}
                   </p>
                   <p className="text-[11px] font-body m-0 text-text-faint whitespace-nowrap">

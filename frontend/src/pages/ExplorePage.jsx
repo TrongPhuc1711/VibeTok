@@ -7,6 +7,7 @@ import { formatCount } from '../utils/formatters';
 import api from '../api/api';
 import { globalSearch } from '../services/exploreService';
 import { ArrowLeftIcon, ArrowRightIcon } from '../icons/CommonIcons';
+import { useTheme } from '../contexts/ThemeContext';
 
 const CATEGORY_TABS = [
   { id: 'all', label: 'Tất cả', keywords: [] },
@@ -109,11 +110,11 @@ function VideoGrid({ videos, loading, onVideoClick }) {
       <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
         {Array.from({ length: 12 }).map((_, i) => (
           <div key={i}>
-            <div className="rounded-sm md:rounded-lg animate-pulse bg-[#1a1a26]"
-              style={{ aspectRatio: '9/16' }} />
+            <div className="rounded-sm md:rounded-lg animate-pulse"
+              style={{ aspectRatio: '9/16', background: 'var(--vt-skeleton)' }} />
             <div className="flex items-center gap-1 mt-1 px-0.5">
-              <div className="w-[15px] h-[15px] rounded-full bg-[#1a1a26] animate-pulse flex-shrink-0" />
-              <div className="h-2 w-16 rounded bg-[#1a1a26] animate-pulse" />
+              <div className="w-[15px] h-[15px] rounded-full animate-pulse flex-shrink-0" style={{ background: 'var(--vt-skeleton)' }} />
+              <div className="h-2 w-16 rounded animate-pulse" style={{ background: 'var(--vt-skeleton)' }} />
             </div>
           </div>
         ))}
@@ -123,7 +124,7 @@ function VideoGrid({ videos, loading, onVideoClick }) {
 
   if (!videos.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-[#444]">
+      <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: 'var(--vt-text-ghost)' }}>
         <span className="text-4xl">🎬</span>
         <p className="text-sm font-body text-center px-4">Không tìm thấy video nào trong danh mục này</p>
       </div>
@@ -151,7 +152,8 @@ function UserResultCard({ user }) {
   return (
     <button
       onClick={() => navigate(`/profile/${user.username}`)}
-      className="flex items-center gap-3 px-4 py-3 bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl hover:border-[#ff2d78]/30 transition-all cursor-pointer w-full text-left group"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:border-[#ff2d78]/30 transition-all cursor-pointer w-full text-left group"
+      style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
     >
       <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden"
         style={{ background: user.anh_dai_dien ? 'transparent' : `hsl(${(user.username?.charCodeAt(0) || 0) * 47 % 360}, 55%, 45%)` }}>
@@ -160,12 +162,12 @@ function UserResultCard({ user }) {
           : initials}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-white text-[13px] font-semibold font-body leading-tight m-0 truncate group-hover:text-[#ff2d78] transition-colors">
+        <p className="text-[13px] font-semibold font-body leading-tight m-0 truncate group-hover:text-[#ff2d78] transition-colors" style={{ color: 'var(--vt-text-bright)' }}>
           {user.fullName || user.username}
         </p>
-        <p className="text-[#555] text-[11px] font-body m-0">@{user.username}</p>
+        <p className="text-[11px] font-body m-0" style={{ color: 'var(--vt-text-disabled)' }}>@{user.username}</p>
       </div>
-      <div className="flex items-center gap-3 text-[10px] font-body text-[#555] shrink-0">
+      <div className="flex items-center gap-3 text-[10px] font-body shrink-0" style={{ color: 'var(--vt-text-disabled)' }}>
         <span>{formatCount(user.followers ?? 0)} followers</span>
         {user.isCreator && (
           <span className="px-1.5 py-0.5 rounded bg-[#ff2d78]/15 text-[#ff2d78] text-[9px] font-semibold">Creator</span>
@@ -180,16 +182,17 @@ function HashtagResultCard({ hashtag }) {
   return (
     <button
       onClick={() => navigate(`/explore?q=${encodeURIComponent(hashtag.tag)}`)}
-      className="flex items-center gap-3 px-4 py-3 bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl hover:border-[#7c3aed]/30 transition-all cursor-pointer group"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:border-[#7c3aed]/30 transition-all cursor-pointer group"
+      style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
     >
       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7c3aed]/20 to-[#06b6d4]/20 flex items-center justify-center shrink-0">
         <span className="text-lg">#</span>
       </div>
       <div className="flex-1 min-w-0 text-left">
-        <p className="text-white text-[13px] font-semibold font-body m-0 group-hover:text-[#7c3aed] transition-colors">
+        <p className="text-[13px] font-semibold font-body m-0 group-hover:text-[#7c3aed] transition-colors" style={{ color: 'var(--vt-text-bright)' }}>
           {hashtag.tag}
         </p>
-        <p className="text-[#555] text-[11px] font-body m-0">{formatCount(hashtag.videos ?? 0)} video</p>
+        <p className="text-[11px] font-body m-0" style={{ color: 'var(--vt-text-disabled)' }}>{formatCount(hashtag.videos ?? 0)} video</p>
       </div>
     </button>
   );
@@ -204,19 +207,19 @@ function SearchResults({ results, loading, query, onOpenVideoFeed }) {
       <div className="space-y-6">
         {/* Users skeleton */}
         <div>
-          <div className="h-3 w-28 rounded bg-[#1a1a26] animate-pulse mb-3" />
+          <div className="h-3 w-28 rounded animate-pulse mb-3" style={{ background: 'var(--vt-skeleton)' }} />
           <div className="space-y-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 rounded-xl bg-[#1a1a26] animate-pulse" />
+              <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: 'var(--vt-skeleton)' }} />
             ))}
           </div>
         </div>
         {/* Videos skeleton */}
         <div>
-          <div className="h-3 w-20 rounded bg-[#1a1a26] animate-pulse mb-3" />
+          <div className="h-3 w-20 rounded animate-pulse mb-3" style={{ background: 'var(--vt-skeleton)' }} />
           <div className="grid grid-cols-3 md:grid-cols-6 gap-0.5 md:gap-1">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-sm md:rounded-lg animate-pulse bg-[#1a1a26]" style={{ aspectRatio: '9/16' }} />
+              <div key={i} className="rounded-sm md:rounded-lg animate-pulse" style={{ aspectRatio: '9/16', background: 'var(--vt-skeleton)' }} />
             ))}
           </div>
         </div>
@@ -226,12 +229,12 @@ function SearchResults({ results, loading, query, onOpenVideoFeed }) {
 
   if (!hasResults) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-[#444]">
+      <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: 'var(--vt-text-ghost)' }}>
         <span className="text-4xl">🔍</span>
         <p className="text-sm font-body text-center px-4">
-          Không tìm thấy kết quả cho "<span className="text-white">{query}</span>"
+          Không tìm thấy kết quả cho "<span style={{ color: 'var(--vt-text-bright)' }}>{query}</span>"
         </p>
-        <p className="text-[12px] font-body text-[#333]">Hãy thử tìm kiếm với từ khóa khác</p>
+        <p className="text-[12px] font-body" style={{ color: 'var(--vt-text-invisible)' }}>Hãy thử tìm kiếm với từ khóa khác</p>
       </div>
     );
   }
@@ -242,8 +245,8 @@ function SearchResults({ results, loading, query, onOpenVideoFeed }) {
       {users.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-white text-[13px] font-semibold font-body">Tài khoản</span>
-            <span className="text-[#555] text-[11px] font-body">{users.length}</span>
+            <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--vt-text-bright)' }}>Tài khoản</span>
+            <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-disabled)' }}>{users.length}</span>
           </div>
           <div className="space-y-2">
             {users.map(u => <UserResultCard key={u.id} user={u} />)}
@@ -255,8 +258,8 @@ function SearchResults({ results, loading, query, onOpenVideoFeed }) {
       {hashtags.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-white text-[13px] font-semibold font-body">Hashtag</span>
-            <span className="text-[#555] text-[11px] font-body">{hashtags.length}</span>
+            <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--vt-text-bright)' }}>Hashtag</span>
+            <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-disabled)' }}>{hashtags.length}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             {hashtags.map(h => <HashtagResultCard key={h.id} hashtag={h} />)}
@@ -268,8 +271,8 @@ function SearchResults({ results, loading, query, onOpenVideoFeed }) {
       {videos.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-white text-[13px] font-semibold font-body">Video</span>
-            <span className="text-[#555] text-[11px] font-body">{videos.length}</span>
+            <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--vt-text-bright)' }}>Video</span>
+            <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-disabled)' }}>{videos.length}</span>
           </div>
           <VideoGrid
             videos={videos}
@@ -283,6 +286,7 @@ function SearchResults({ results, loading, query, onOpenVideoFeed }) {
 }
 
 export default function ExplorePage() {
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -376,11 +380,12 @@ export default function ExplorePage() {
   return (
     <PageLayout>
       {/* ── Top bar ── */}
-      <div className="flex items-center border-b border-[#1a1a26] shrink-0 bg-base" style={{ height: 48 }}>
+      <div className="flex items-center shrink-0 bg-base theme-transition" style={{ height: 48, borderBottom: '1px solid var(--color-border)' }}>
 
         {/* Mobile: left arrow hidden, desktop: show */}
         <button onClick={() => scrollTabs(-1)}
-          className="hidden md:flex shrink-0 w-8 h-full items-center justify-center bg-transparent border-none cursor-pointer text-[#555] hover:text-white transition-colors">
+          className="hidden md:flex shrink-0 w-8 h-full items-center justify-center bg-transparent border-none cursor-pointer transition-colors"
+          style={{ color: 'var(--vt-text-disabled)' }}>
           <ArrowLeftIcon />
         </button>
 
@@ -417,18 +422,20 @@ export default function ExplorePage() {
         </div>
 
         <button onClick={() => scrollTabs(1)}
-          className="hidden md:flex shrink-0 w-8 h-full items-center justify-center bg-transparent border-none cursor-pointer text-[#555] hover:text-white transition-colors">
+          className="hidden md:flex shrink-0 w-8 h-full items-center justify-center bg-transparent border-none cursor-pointer transition-colors"
+          style={{ color: 'var(--vt-text-disabled)' }}>
           <ArrowRightIcon />
         </button>
 
-        <div className="w-px h-5 bg-[#2a2a3e] shrink-0 mx-1 md:mx-2" />
+        <div className="w-px h-5 shrink-0 mx-1 md:mx-2" style={{ background: 'var(--color-border2)' }} />
 
         {/* Mobile: search icon toggle; Desktop: full search */}
         <div className="flex items-center gap-2 pr-2 md:pr-3 shrink-0">
           {/* Mobile search toggle */}
           <button
             onClick={() => setShowSearch(s => !s)}
-            className="md:hidden w-8 h-8 flex items-center justify-center bg-transparent border-none cursor-pointer text-[#888]"
+            className="md:hidden w-8 h-8 flex items-center justify-center bg-transparent border-none cursor-pointer"
+            style={{ color: 'var(--vt-text-hint)' }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <circle cx="6.5" cy="6.5" r="5" />
@@ -438,17 +445,21 @@ export default function ExplorePage() {
 
           {/* Desktop search */}
           <div className={`hidden md:flex items-center gap-2 border rounded-lg px-3 py-1.5 w-[220px] transition-colors ${
-            isSearchMode ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-[#1a1a26] border-[#2a2a3e]'
+            isSearchMode
+              ? (isDark ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-[#f0f0f5] border-[#ff2d78]/30')
+              : (isDark ? 'bg-[#1a1a26] border-[#2a2a3e]' : 'bg-[#f0f0f5] border-[#d0d0e0]')
           }`}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={isSearchMode ? '#ff2d78' : '#555'} strokeWidth="1.2" strokeLinecap="round">
               <circle cx="5" cy="5" r="4" /><path d="M8.5 8.5l2.5 2.5" />
             </svg>
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm người dùng, hashtag, video..."
-              className="bg-transparent border-none outline-none text-white text-[11px] font-body w-full placeholder:text-[#444]" />
+              className="bg-transparent border-none outline-none text-sm font-body w-full"
+              style={{ color: 'var(--vt-text-bright)', '::placeholder': { color: 'var(--vt-text-ghost)' } }} />
             {searchQuery && (
               <button onClick={handleClearSearch}
-                className="bg-transparent border-none text-[#555] hover:text-white cursor-pointer text-sm transition-colors">×</button>
+                className="bg-transparent border-none hover:text-white cursor-pointer text-sm transition-colors"
+                style={{ color: 'var(--vt-text-disabled)' }}>×</button>
             )}
           </div>
 
@@ -463,14 +474,17 @@ export default function ExplorePage() {
       {showSearch && (
         <div className="md:hidden px-3 py-2 border-b border-[#1a1a26] bg-base shrink-0">
           <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 transition-colors ${
-            isSearchMode ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-[#1a1a26] border-[#2a2a3e]'
+            isSearchMode
+              ? (isDark ? 'bg-[#1a1a26] border-[#ff2d78]/30' : 'bg-[#f0f0f5] border-[#ff2d78]/30')
+              : (isDark ? 'bg-[#1a1a26] border-[#2a2a3e]' : 'bg-[#f0f0f5] border-[#d0d0e0]')
           }`}>
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke={isSearchMode ? '#ff2d78' : '#555'} strokeWidth="1.2" strokeLinecap="round">
               <circle cx="5.5" cy="5.5" r="4.5" /><path d="M9 9l3 3" />
             </svg>
             <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm người dùng, hashtag, video..."
-              className="flex-1 bg-transparent border-none outline-none text-white text-[13px] font-body placeholder:text-[#444]" />
+              className="flex-1 bg-transparent border-none outline-none text-[13px] font-body"
+              style={{ color: 'var(--vt-text-bright)' }} />
             {searchQuery && (
               <button onClick={handleClearSearch} className="bg-transparent border-none text-[#555] cursor-pointer text-lg">×</button>
             )}
