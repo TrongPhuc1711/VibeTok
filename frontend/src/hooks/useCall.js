@@ -589,6 +589,9 @@ export function useCall() {
         // Video refs (attach to <video ref={...}>)
         localVideoRef,
         remoteVideoRef,
+        // Internal element refs (for reading srcObject in WatchTogether expanded mode)
+        localVideoElementRef,
+        remoteVideoElementRef,
         // Actions
         startCall,
         acceptCall,

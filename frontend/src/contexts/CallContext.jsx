@@ -46,6 +46,9 @@ export const CallProvider = ({ children }) => {
                     onSyncWatchTogether={call.syncWatchTogether}
                     onEndWatchTogether={call.endWatchTogether}
                     watchVideoRef={call.setWatchVideoRef}
+                    /* Video element refs for Watch Together expanded PiP */
+                    localVideoElementRef={call.localVideoElementRef}
+                    remoteVideoElementRef={call.remoteVideoElementRef}
                 />
             )}
         </CallContext.Provider>

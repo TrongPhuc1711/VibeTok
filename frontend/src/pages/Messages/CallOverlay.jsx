@@ -50,6 +50,8 @@ export default function CallOverlay({
     onSyncWatchTogether,
     onEndWatchTogether,
     watchVideoRef,
+    localVideoElementRef,
+    remoteVideoElementRef,
 }) {
     const [showWatchInput, setShowWatchInput] = useState(false);
     const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -179,6 +181,8 @@ export default function CallOverlay({
                             setShowWatchInput(false);
                         }}
                         watchVideoRef={watchVideoRef}
+                        localVideoRef={localVideoElementRef}
+                        remoteVideoRef={remoteVideoElementRef}
                     />
                 </div>
             )}
