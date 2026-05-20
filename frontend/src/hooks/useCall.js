@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { getSharedSocket } from './useMessages';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/Toast';
-import { useFaceFilter } from './useFaceFilter';
+
 
 // Dynamic ICE Servers
 let cachedIceServers = null;
@@ -46,8 +46,7 @@ export function useCall() {
     // { videoUrl, isPlaying, currentTime }
     const watchVideoRef = useRef(null);
 
-    // ── Face Filter ──
-    const faceFilter = useFaceFilter();
+
 
     const [currentPartnerId, setCurrentPartnerId] = useState(null);
     const [currentPartnerInfo, setCurrentPartnerInfo] = useState(null);
@@ -334,12 +333,8 @@ export function useCall() {
         setIsCameraOff(false);
         setIsScreenSharing(false);
         setWatchTogether(null);
-        faceFilter.stopProcessing();
-        faceFilter.setActiveFilter('none');
-        faceFilter.setActiveSticker('none');
-        faceFilter.setFilterPanelOpen(false);
         iceCandidateQueueRef.current = [];
-    }, [faceFilter]);
+    }, []);
 
     // ── Actions ──
 
@@ -610,7 +605,6 @@ export function useCall() {
         syncWatchTogether,
         endWatchTogether,
         setWatchVideoRef,
-        // Face Filters
-        faceFilter,
+
     };
 }

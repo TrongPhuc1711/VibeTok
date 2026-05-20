@@ -12,7 +12,6 @@ export default function WatchTogetherPanel({
     watchVideoRef,        // callback ref for <video>
 }) {
     const [urlInput, setUrlInput] = useState('');
-    const [showInput, setShowInput] = useState(!watchTogether);
     const videoRef = useRef(null);
     const isSyncingRef = useRef(false);
 
@@ -23,7 +22,6 @@ export default function WatchTogetherPanel({
 
         isSyncingRef.current = true;
 
-        // Seek if diff > 2s
         if (Math.abs(video.currentTime - watchTogether.currentTime) > 2) {
             video.currentTime = watchTogether.currentTime;
         }
@@ -52,7 +50,6 @@ export default function WatchTogetherPanel({
         const url = urlInput.trim();
         if (!url) return;
         onStartWatch(url);
-        setShowInput(false);
     };
 
     const handlePlay = () => {
@@ -75,17 +72,17 @@ export default function WatchTogetherPanel({
         watchVideoRef?.(node);
     };
 
-    // Not started yet — show url input
+    // Not started yet — show URL input
     if (!watchTogether) {
         return (
-            <div className="absolute inset-x-4 bottom-32 md:bottom-24 z-30 animate-fade-in">
-                <div className="bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 p-4 shadow-2xl max-w-md mx-auto">
-                    <div className="flex items-center gap-2 mb-3">
+            <div className="w-full max-w-md animate-fade-in">
+                <div className="bg-black/80 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 pt-3.5 pb-1.5">
                         <WatchTogetherIcon size={18} color="#ff2d78" />
                         <span className="text-white text-sm font-semibold font-body">Xem video cùng nhau</span>
                     </div>
-                    <form onSubmit={handleSubmitUrl} className="flex gap-2">
-                        <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2 border border-white/5">
+                    <form onSubmit={handleSubmitUrl} className="flex gap-2 px-4 pb-4">
+                        <div className="flex-1 flex items-center gap-2 bg-white/[.08] rounded-xl px-3 py-2 border border-white/[.06] focus-within:border-[#ff2d78]/30 transition-colors">
                             <LinkIcon size={14} color="#666" />
                             <input
                                 type="url"
@@ -97,7 +94,7 @@ export default function WatchTogetherPanel({
                         </div>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-gradient-to-r from-[#ff2d78] to-[#ff6b35] text-white text-sm font-semibold rounded-xl border-none cursor-pointer hover:opacity-90 transition-opacity"
+                            className="px-4 py-2 bg-brand-gradient text-white text-sm font-semibold font-body rounded-xl border-none cursor-pointer hover:opacity-85 transition-opacity"
                         >
                             Bắt đầu
                         </button>
@@ -109,14 +106,14 @@ export default function WatchTogetherPanel({
 
     // Active — show player
     return (
-        <div className="absolute inset-x-2 bottom-32 md:bottom-24 z-30 animate-fade-in">
-            <div className="bg-black/85 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl max-w-lg mx-auto overflow-hidden">
+        <div className="w-full max-w-lg animate-fade-in">
+            <div className="bg-black/85 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-white/[.06]">
+                    <div className="flex items-center gap-1.5">
                         <WatchTogetherIcon size={14} color="#ff2d78" />
-                        <span className="text-white/70 text-xs font-body">Đang xem cùng nhau</span>
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="text-white/60 text-xs font-body">Đang xem cùng nhau</span>
+                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                     </div>
                     <button
                         onClick={onEndWatch}
@@ -137,7 +134,6 @@ export default function WatchTogetherPanel({
                         playsInline
                         controls={false}
                     />
-                    {/* Centered play/pause overlay */}
                     <button
                         onClick={() => {
                             if (watchTogether.isPlaying) handlePause();
@@ -145,7 +141,7 @@ export default function WatchTogetherPanel({
                         }}
                         className="absolute inset-0 flex items-center justify-center bg-transparent border-none cursor-pointer group"
                     >
-                        <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             {watchTogether.isPlaying
                                 ? <PauseIcon size={22} color="#fff" />
                                 : <PlayIcon size={22} color="#fff" />
@@ -171,9 +167,7 @@ export default function WatchTogetherPanel({
                     <div className="flex-1 text-[10px] text-[#888] font-body truncate">
                         {watchTogether.videoUrl?.split('/').pop()?.substring(0, 40) || 'Video'}
                     </div>
-                    <span className="text-[10px] text-[#ff2d78] font-mono">
-                        LIVE SYNC
-                    </span>
+                    <span className="text-[10px] text-[#ff2d78] font-mono tracking-wide">LIVE SYNC</span>
                 </div>
             </div>
         </div>

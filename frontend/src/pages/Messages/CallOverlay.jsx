@@ -1,42 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MsgAvatar } from './ConversationSidebar';
 import {
     PhoneOffIcon, MicIcon, MicOffIcon,
     VideoIcon, VideoOffIcon, SpeakerIcon,
     ScreenShareIcon, ScreenShareOffIcon,
-    WatchTogetherIcon, FilterIcon,
+    WatchTogetherIcon, DotsHorizontalIcon,
 } from '../../icons/MessageIcons';
-import FilterPanel from './FilterPanel';
 import WatchTogetherPanel from './WatchTogetherPanel';
 
-/* ── Timer display ── */
-function CallTimer({ duration }) {
-    return (
-        <span className="text-[#aaa] text-[14px] font-body font-mono tracking-wider">
-            {duration}
-        </span>
-    );
-}
-
 /* ── Control Button ── */
-function CallBtn({ onClick, children, variant = 'default', label, pulse = false }) {
-    const base = 'flex flex-col items-center gap-1.5 cursor-pointer';
-    const btnBase = 'w-14 h-14 rounded-full flex items-center justify-center border-none transition-all active:scale-95';
+function CallBtn({ onClick, children, variant = 'default', label, extraContent }) {
     const variants = {
-        default: 'bg-white/10 hover:bg-white/20',
-        danger:  'bg-red-500 hover:bg-red-600',
-        accept:  'bg-emerald-500 hover:bg-emerald-600',
-        active:  'bg-[#ff2d78]/20 hover:bg-[#ff2d78]/30 border border-[#ff2d78]/40',
-        screen:  'bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/40',
-        watch:   'bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40',
+        default: 'bg-white/10 hover:bg-white/[.18]',
+        danger:  'bg-red-500 hover:bg-red-600 shadow-[0_4px_20px_rgba(239,68,68,.35)]',
+        active:  'bg-[#ff2d78]/15 border border-[#ff2d78]/35 hover:bg-[#ff2d78]/25',
     };
 
     return (
-        <div className={base}>
-            <button onClick={onClick} className={`${btnBase} ${variants[variant]} ${pulse ? 'animate-pulse' : ''}`}>
+        <div className="relative flex flex-col items-center gap-1.5 cursor-pointer">
+            <button
+                onClick={onClick}
+                className={`w-14 h-14 rounded-full flex items-center justify-center border-none cursor-pointer transition-all duration-200 active:scale-[.93] ${variants[variant] || variants.default}`}
+            >
                 {children}
             </button>
-            {label && <span className="text-[10px] text-[#666] font-body">{label}</span>}
+            {label && <span className="text-[10px] text-[#666] font-body whitespace-nowrap">{label}</span>}
+            {extraContent}
         </div>
     );
 }
@@ -54,32 +43,41 @@ export default function CallOverlay({
     onEnd,
     onToggleMute,
     onToggleCamera,
-    // Screen sharing
     isScreenSharing,
     onToggleScreenShare,
-    // Watch Together
     watchTogether,
     onStartWatchTogether,
     onSyncWatchTogether,
     onEndWatchTogether,
     watchVideoRef,
-    // Face Filters
-    faceFilter,
 }) {
     const [showWatchInput, setShowWatchInput] = useState(false);
-    const [moreControlsOpen, setMoreControlsOpen] = useState(false);
+    const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+    const menuRef = useRef(null);
 
-    // Prevent scroll when overlay is open
+    // Prevent body scroll
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
     }, []);
 
+    // Close menu on outside click
+    useEffect(() => {
+        if (!moreMenuOpen) return;
+        const handler = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                setMoreMenuOpen(false);
+            }
+        };
+        document.addEventListener('pointerdown', handler);
+        return () => document.removeEventListener('pointerdown', handler);
+    }, [moreMenuOpen]);
+
     const statusText = {
-        calling:   'Đang gọi...',
-        ringing:   'Đang đổ chuông...',
+        calling: 'Đang gọi...',
+        ringing: 'Đang đổ chuông...',
         connected: '',
-        ended:     'Cuộc gọi đã kết thúc',
+        ended: 'Cuộc gọi đã kết thúc',
     }[callState] || '';
 
     const isConnected = callState === 'connected';
@@ -88,170 +86,106 @@ export default function CallOverlay({
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-between bg-[#070710] animate-fade-in">
 
-            {/* ── Video streams (video call only) ── */}
+            {/* ── Video streams ── */}
             {isVideo && (
                 <>
-                    {/* Remote - full background on mobile, contained on web */}
                     <video
                         ref={remoteVideoRef}
                         autoPlay playsInline
-                        className="absolute inset-0 w-full h-full object-cover md:object-contain"
-                        style={{ filter: callState !== 'connected' ? 'blur(20px) brightness(0.3)' : 'none', transition: 'filter 0.5s' }}
+                        className="absolute inset-0 w-full h-full object-cover md:object-contain transition-all duration-500"
+                        style={{ filter: !isConnected ? 'blur(20px) brightness(0.3)' : 'none' }}
                     />
-                    {/* Local - picture-in-picture */}
                     <video
                         ref={localVideoRef}
                         autoPlay playsInline muted
-                        className={`absolute bottom-28 right-4 md:bottom-8 md:right-8 w-28 h-44 md:w-48 md:h-72 object-cover rounded-2xl border-2 border-white/10 shadow-2xl z-10 transition-opacity
-                            ${isCameraOff ? 'opacity-0' : 'opacity-100'}`}
+                        className={`absolute bottom-28 right-4 md:bottom-8 md:right-8 w-[6.5rem] h-40 md:w-44 md:h-64 object-cover rounded-2xl border-2 border-white/10 shadow-2xl z-10 transition-opacity duration-300 ${isCameraOff ? 'opacity-0' : 'opacity-100'}`}
                     />
-                    {/* Screen sharing indicator */}
                     {isScreenSharing && (
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-blue-500/20 backdrop-blur-xl border border-blue-400/30 rounded-full px-4 py-1.5 shadow-lg">
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-blue-500/15 backdrop-blur-xl border border-blue-400/30 rounded-full px-4 py-1.5 shadow-lg">
                             <ScreenShareIcon size={14} color="#60a5fa" />
                             <span className="text-blue-300 text-xs font-body">Đang chia sẻ màn hình</span>
-                            <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
                         </div>
                     )}
                 </>
             )}
 
-            {/*Voice call background overlay + hidden audio for remote stream */}
+            {/* Voice call background */}
             {callType === 'voice' && (
                 <>
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d20] via-[#0a0a18] to-[#080810]" />
-                    {/* Audio element for remote audio playback (voice calls have no <video>) */}
                     <audio ref={remoteVideoRef} autoPlay />
                 </>
             )}
 
             {/* ── Top: partner info ── */}
-            <div className="relative z-10 flex flex-col items-center pt-16 gap-4">
-                <div className={`rounded-full p-1 ${callState === 'connected' ? 'ring-2 ring-[#ff2d78]/50 ring-offset-2 ring-offset-[#070710]' : ''}`}
-                    style={{ animation: callState === 'calling' || callState === 'ringing' ? 'pulse 2s infinite' : 'none' }}>
+            <div className="relative z-10 flex flex-col items-center pt-16 gap-4 animate-fade-in">
+                <div
+                    className={`rounded-full p-[3px] relative ${isConnected ? 'shadow-[0_0_0_2px_rgba(255,45,120,.4),0_0_20px_rgba(255,45,120,.15)]' : ''}`}
+                    style={{
+                        animation: callState === 'calling' || callState === 'ringing' ? 'pulse 2s infinite' : 'none',
+                    }}
+                >
                     <MsgAvatar user={partnerInfo || {}} size="lg" />
                 </div>
 
                 <div className="text-center">
-                    <p className="text-white text-[20px] font-semibold font-display">
+                    <p className="text-white text-xl font-semibold font-display m-0">
                         {partnerInfo?.partnerFullname || partnerInfo?.fullName || partnerInfo?.username || 'Đang kết nối...'}
                     </p>
-                    <p className="text-[#666] text-[12px] font-body mt-0.5">
+                    <p className="text-[#666] text-xs font-body mt-0.5">
                         {isVideo ? '🎥 Gọi video' : '📞 Gọi thoại'}
                         {isScreenSharing && ' • 🖥️ Chia sẻ MH'}
                         {watchTogether && ' • 📺 Xem cùng nhau'}
                     </p>
                     <div className="mt-2">
-                        {callState === 'connected'
-                            ? <CallTimer duration={formattedDuration} />
+                        {isConnected
+                            ? <span className="text-[#aaa] text-sm font-body font-mono tracking-wider">{formattedDuration}</span>
                             : <span className="text-[#555] text-[13px] font-body">{statusText}</span>
                         }
                     </div>
                 </div>
             </div>
 
-            {/* ── Waveform animation (voice call, connected) ── */}
-            {callType === 'voice' && callState === 'connected' && (
-                <div className="relative z-10 flex items-center gap-1 h-12">
+            {/* ── Waveform (voice, connected) ── */}
+            {callType === 'voice' && isConnected && (
+                <div className="relative z-10 flex items-center gap-[3px] h-12">
                     {[...Array(7)].map((_, i) => (
-                        <div key={i}
-                            className="w-1 bg-[#ff2d78]/60 rounded-full"
+                        <div
+                            key={i}
+                            className="w-[3px] bg-[#ff2d78]/50 rounded-full"
                             style={{
-                                height: 8 + Math.random() * 24,
-                                animation: `soundBar 0.8s ease-in-out ${i * 0.1}s infinite alternate`,
+                                height: 6 + Math.random() * 22,
+                                animation: `soundBar .8s ease-in-out ${i * 0.1}s infinite alternate`,
                             }}
                         />
                     ))}
-                    <style>{`@keyframes soundBar { from { height: 8px } to { height: 32px } }`}</style>
+                    <style>{`@keyframes soundBar { from { height: 6px } to { height: 28px } }`}</style>
                 </div>
             )}
 
             {/* ── Watch Together Panel ── */}
             {(showWatchInput || watchTogether) && isConnected && (
-                <WatchTogetherPanel
-                    watchTogether={watchTogether}
-                    onStartWatch={(url) => {
-                        onStartWatchTogether(url);
-                        setShowWatchInput(false);
-                    }}
-                    onSyncWatch={onSyncWatchTogether}
-                    onEndWatch={() => {
-                        onEndWatchTogether();
-                        setShowWatchInput(false);
-                    }}
-                    watchVideoRef={watchVideoRef}
-                />
-            )}
-
-            {/* ── Filter Panel ── */}
-            {faceFilter?.filterPanelOpen && isVideo && isConnected && (
-                <FilterPanel
-                    activeFilter={faceFilter.activeFilter}
-                    setActiveFilter={faceFilter.setActiveFilter}
-                    activeSticker={faceFilter.activeSticker}
-                    setActiveSticker={faceFilter.setActiveSticker}
-                    onClose={() => faceFilter.setFilterPanelOpen(false)}
-                />
-            )}
-
-            {/* ── More controls row (only when connected) ── */}
-            {isConnected && moreControlsOpen && (
-                <div className="relative z-10 flex items-center justify-center gap-4 animate-fade-in">
-                    {/* Screen Share (video calls only) */}
-                    {isVideo && (
-                        <CallBtn
-                            onClick={onToggleScreenShare}
-                            variant={isScreenSharing ? 'screen' : 'default'}
-                            label={isScreenSharing ? 'Dừng chia sẻ' : 'Chia sẻ MH'}
-                        >
-                            {isScreenSharing
-                                ? <ScreenShareOffIcon size={22} color="#60a5fa" />
-                                : <ScreenShareIcon size={22} color="#fff" />
-                            }
-                        </CallBtn>
-                    )}
-
-                    {/* Watch Together */}
-                    <CallBtn
-                        onClick={() => {
-                            if (watchTogether) {
-                                onEndWatchTogether();
-                            } else {
-                                setShowWatchInput(prev => !prev);
-                            }
+                <div className="relative z-20 w-full flex justify-center px-4">
+                    <WatchTogetherPanel
+                        watchTogether={watchTogether}
+                        onStartWatch={(url) => {
+                            onStartWatchTogether(url);
+                            setShowWatchInput(false);
                         }}
-                        variant={watchTogether ? 'watch' : 'default'}
-                        label={watchTogether ? 'Dừng xem' : 'Xem cùng'}
-                    >
-                        <WatchTogetherIcon size={22} color={watchTogether ? '#f59e0b' : '#fff'} />
-                    </CallBtn>
-
-                    {/* Face Filters (video calls only) */}
-                    {isVideo && (
-                        <CallBtn
-                            onClick={() => faceFilter?.toggleFilterPanel()}
-                            variant={faceFilter?.filterPanelOpen ? 'active' : 'default'}
-                            label="Bộ lọc"
-                        >
-                            <FilterIcon size={22} color={faceFilter?.filterPanelOpen ? '#ff2d78' : '#fff'} />
-                        </CallBtn>
-                    )}
+                        onSyncWatch={onSyncWatchTogether}
+                        onEndWatch={() => {
+                            onEndWatchTogether();
+                            setShowWatchInput(false);
+                        }}
+                        watchVideoRef={watchVideoRef}
+                    />
                 </div>
             )}
 
             {/* ── Bottom: controls ── */}
-            <div className="relative z-10 flex flex-col items-center gap-3 pb-14">
-                {/* More toggle */}
-                {isConnected && (
-                    <button
-                        onClick={() => setMoreControlsOpen(prev => !prev)}
-                        className="text-[11px] text-[#666] hover:text-[#aaa] font-body bg-transparent border-none cursor-pointer transition-colors mb-1"
-                    >
-                        {moreControlsOpen ? '▼ Ẩn bớt' : '▲ Thêm tính năng'}
-                    </button>
-                )}
-
-                <div className="flex items-center justify-center gap-6">
+            <div className="relative z-10 flex flex-col items-center gap-3 pb-14 animate-fade-in">
+                <div className="flex items-center justify-center gap-5">
                     {/* Mic */}
                     <CallBtn onClick={onToggleMute} variant={isMuted ? 'active' : 'default'} label={isMuted ? 'Bật mic' : 'Tắt mic'}>
                         {isMuted ? <MicOffIcon size={22} color="#ff2d78" /> : <MicIcon size={22} color="#fff" />}
@@ -265,10 +199,7 @@ export default function CallOverlay({
                     {/* Camera (video only) */}
                     {isVideo && (
                         <CallBtn onClick={onToggleCamera} variant={isCameraOff ? 'active' : 'default'} label={isCameraOff ? 'Bật cam' : 'Tắt cam'}>
-                            {isCameraOff
-                                ? <VideoOffIcon size={22} color="#ff2d78" />
-                                : <VideoIcon size={22} color="#fff" />
-                            }
+                            {isCameraOff ? <VideoOffIcon size={22} color="#ff2d78" /> : <VideoIcon size={22} color="#fff" />}
                         </CallBtn>
                     )}
 
@@ -278,46 +209,61 @@ export default function CallOverlay({
                             <SpeakerIcon size={22} color="#fff" />
                         </CallBtn>
                     )}
+
+                    {/* More (3 dots) — only when connected */}
+                    {isConnected && (
+                        <CallBtn
+                            onClick={() => setMoreMenuOpen(prev => !prev)}
+                            variant={moreMenuOpen ? 'active' : 'default'}
+                            label="Thêm"
+                            extraContent={
+                                moreMenuOpen && (
+                                    <div
+                                        ref={menuRef}
+                                        className="absolute bottom-[calc(100%+.75rem)] right-1/2 translate-x-1/2 min-w-44 bg-[#14141e]/95 backdrop-blur-2xl border border-white/10 rounded-xl p-1 shadow-[0_12px_40px_rgba(0,0,0,.6)] animate-fade-in z-50"
+                                    >
+                                        {/* Triangle pointer */}
+                                        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-1.5 bg-[#14141e]/95" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+
+                                        {/* Screen share (video only) */}
+                                        {isVideo && (
+                                            <>
+                                                <button
+                                                    className={`flex items-center gap-2.5 w-full px-3 py-2 bg-transparent border-none rounded-lg cursor-pointer transition-all text-left text-[13px] font-body ${isScreenSharing ? 'text-blue-400 hover:bg-blue-500/10' : 'text-[#ccc] hover:bg-white/[.08] hover:text-white'}`}
+                                                    onClick={(e) => { e.stopPropagation(); onToggleScreenShare(); setMoreMenuOpen(false); }}
+                                                >
+                                                    {isScreenSharing
+                                                        ? <ScreenShareOffIcon size={18} color="#60a5fa" />
+                                                        : <ScreenShareIcon size={18} color="#999" />
+                                                    }
+                                                    {isScreenSharing ? 'Dừng chia sẻ MH' : 'Chia sẻ màn hình'}
+                                                </button>
+                                                <div className="h-px bg-white/[.06] mx-2 my-1" />
+                                            </>
+                                        )}
+
+                                        {/* Watch Together */}
+                                        <button
+                                            className={`flex items-center gap-2.5 w-full px-3 py-2 bg-transparent border-none rounded-lg cursor-pointer transition-all text-left text-[13px] font-body ${watchTogether ? 'text-amber-400 hover:bg-amber-500/10' : 'text-[#ccc] hover:bg-white/[.08] hover:text-white'}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (watchTogether) { onEndWatchTogether(); }
+                                                else { setShowWatchInput(prev => !prev); }
+                                                setMoreMenuOpen(false);
+                                            }}
+                                        >
+                                            <WatchTogetherIcon size={18} color={watchTogether ? '#f59e0b' : '#999'} />
+                                            {watchTogether ? 'Dừng xem cùng' : 'Xem video cùng nhau'}
+                                        </button>
+                                    </div>
+                                )
+                            }
+                        >
+                            <DotsHorizontalIcon size={22} color={moreMenuOpen ? '#ff2d78' : '#fff'} />
+                        </CallBtn>
+                    )}
                 </div>
             </div>
-
-            {/* ── Active filter/sticker badges ── */}
-            {isVideo && isConnected && (faceFilter?.activeFilter !== 'none' || faceFilter?.activeSticker !== 'none') && (
-                <div className="absolute bottom-4 left-4 z-20 flex gap-1.5">
-                    {faceFilter.activeFilter !== 'none' && (
-                        <span className="text-[9px] px-2 py-0.5 bg-[#ff2d78]/20 border border-[#ff2d78]/30 rounded-full text-[#ff2d78] font-body backdrop-blur-sm">
-                            {FILTERS_MAP[faceFilter.activeFilter] || faceFilter.activeFilter}
-                        </span>
-                    )}
-                    {faceFilter.activeSticker !== 'none' && (
-                        <span className="text-[9px] px-2 py-0.5 bg-[#ff6b35]/20 border border-[#ff6b35]/30 rounded-full text-[#ff6b35] font-body backdrop-blur-sm">
-                            {STICKERS_MAP[faceFilter.activeSticker] || faceFilter.activeSticker}
-                        </span>
-                    )}
-                </div>
-            )}
         </div>
     );
 }
-
-/* Quick lookup maps for badge labels */
-const FILTERS_MAP = {
-    beauty: '✨ Làm đẹp',
-    cool: '❄️ Lạnh',
-    warm: '🔥 Ấm',
-    vintage: '📷 Cổ điển',
-    neon: '💜 Neon',
-    galaxy: '🌌 Galaxy',
-    anime: '🎨 Anime',
-    bw: '🖤 B&W',
-    dreamy: '🌸 Dreamy',
-};
-
-const STICKERS_MAP = {
-    hearts: '💕 Tim',
-    stars: '⭐ Sao',
-    snow: '❄️ Tuyết',
-    fire: '🔥 Lửa',
-    bubbles: '🫧 Bóng',
-    confetti: '🎉 Hoa giấy',
-};

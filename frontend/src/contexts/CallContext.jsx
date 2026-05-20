@@ -46,8 +46,6 @@ export const CallProvider = ({ children }) => {
                     onSyncWatchTogether={call.syncWatchTogether}
                     onEndWatchTogether={call.endWatchTogether}
                     watchVideoRef={call.setWatchVideoRef}
-                    /* Face Filters */
-                    faceFilter={call.faceFilter}
                 />
             )}
         </CallContext.Provider>

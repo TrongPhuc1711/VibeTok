@@ -367,33 +367,8 @@ export function WatchTogetherIcon({ size = 20, color = '#fff' }) {
   );
 }
 
-/* ─── Filter ─── */
 
-export function FilterIcon({ size = 20, color = '#fff' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2a10 10 0 0 1 0 20" fill={color} fillOpacity="0.2" />
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 8v-2M12 18v-2M16 12h2M6 12h-2" />
-    </svg>
-  );
-}
 
-/* ─── Sticker ─── */
-
-export function StickerIcon({ size = 20, color = '#fff' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-      <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3" />
-      <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3" />
-    </svg>
-  );
-}
 
 /* ─── Play / Pause for Watch Together ─── */
 
