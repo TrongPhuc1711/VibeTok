@@ -145,6 +145,15 @@ export function useCall() {
             if (!pcRef.current || !pcRef.current.remoteDescription) {
                 console.log('[Call][Socket] queuing ice candidate');
                 iceCandidateQueueRef.current.push(candidate);
+                
+                // Backup to localStorage so that a newly opened call page can retrieve them
+                try {
+                    const existing = JSON.parse(localStorage.getItem('vibetok_incoming_ice_candidates') || '[]');
+                    existing.push(candidate);
+                    localStorage.setItem('vibetok_incoming_ice_candidates', JSON.stringify(existing));
+                } catch (e) {
+                    console.error('[Call] Failed to back up ICE candidate to localStorage', e);
+                }
                 return;
             }
 
@@ -394,11 +403,16 @@ export function useCall() {
         }
     }, [callState, getMedia, createPeerConnection, cleanup, me, toast]);
 
-    const acceptCall = useCallback(async (explicitIncoming = null) => {
+    const acceptCall = useCallback(async (explicitIncoming = null, explicitIceCandidates = null) => {
         const targetIncoming = explicitIncoming || incomingCall;
         if (!targetIncoming) return;
         const { fromUserId, offer, callType: ct, callerInfo } = targetIncoming;
         console.log('[Call] acceptCall', { fromUserId, callType: ct, hasOffer: !!offer });
+
+        if (explicitIceCandidates && Array.isArray(explicitIceCandidates)) {
+            console.log('[Call] Injecting cached ICE candidates:', explicitIceCandidates.length);
+            iceCandidateQueueRef.current.push(...explicitIceCandidates);
+        }
 
         // flushSync forces synchronous re-render so CallOverlay mounts
         // BEFORE getMedia() tries to attach stream to video/audio elements

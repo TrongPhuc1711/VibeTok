@@ -42,14 +42,22 @@ export default function CallPage() {
         } else if (mode === 'inbound') {
             console.log('[CallPage] Initializing inbound call');
             const stored = localStorage.getItem('vibetok_incoming_call');
+            const storedCandidates = localStorage.getItem('vibetok_incoming_ice_candidates');
             if (stored) {
                 try {
                     const incomingCall = JSON.parse(stored);
-                    call.acceptCall(incomingCall);
+                    let iceCandidates = null;
+                    if (storedCandidates) {
+                        iceCandidates = JSON.parse(storedCandidates);
+                    }
+                    
+                    call.acceptCall(incomingCall, iceCandidates);
+                    
                     // Dọn dẹp localStorage sau khi đã đọc xong
                     localStorage.removeItem('vibetok_incoming_call');
+                    localStorage.removeItem('vibetok_incoming_ice_candidates');
                 } catch (e) {
-                    console.error('[CallPage] Failed to parse stored incoming call', e);
+                    console.error('[CallPage] Failed to parse stored incoming call/candidates', e);
                     window.close();
                 }
             } else {
