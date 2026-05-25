@@ -353,6 +353,7 @@ export function useCall() {
         setWatchTogether(null);
         iceCandidateQueueRef.current = [];
         settingRemoteDescRef.current = false;
+        localStorage.removeItem('vibetok_incoming_ice_candidates');
     }, []);
 
     // ── Actions ──
@@ -414,8 +415,6 @@ export function useCall() {
             iceCandidateQueueRef.current.push(...explicitIceCandidates);
         }
 
-        // flushSync forces synchronous re-render so CallOverlay mounts
-        // BEFORE getMedia() tries to attach stream to video/audio elements
         flushSync(() => {
             setCallType(ct);
             callTypeRef.current = ct;
@@ -600,6 +599,21 @@ export function useCall() {
         return `${m}:${s}`;
     };
 
+    const addIncomingIceCandidate = useCallback(async (candidate) => {
+        if (!candidate) return;
+        if (!pcRef.current || !pcRef.current.remoteDescription) {
+            console.log('[Call] Queuing incoming ICE candidate');
+            iceCandidateQueueRef.current.push(candidate);
+            return;
+        }
+        try {
+            console.log('[Call] Adding incoming ICE candidate');
+            await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+            console.error('[Call] addIncomingIceCandidate error:', e);
+        }
+    }, []);
+
     return {
         // State
         callState,
@@ -625,6 +639,7 @@ export function useCall() {
         endCall,
         toggleMute,
         toggleCamera,
+        addIncomingIceCandidate,
         // Screen sharing
         isScreenSharing,
         toggleScreenShare,

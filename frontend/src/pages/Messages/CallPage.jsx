@@ -82,6 +82,28 @@ export default function CallPage() {
         };
     }, [call]);
 
+    // Lắng nghe các ICE candidates đến trong quá trình Tab mới đang khởi động và chưa kết nối socket
+    useEffect(() => {
+        const handleStorage = (e) => {
+            if (e.key === 'vibetok_incoming_ice_candidates' && e.newValue) {
+                try {
+                    const candidates = JSON.parse(e.newValue);
+                    if (candidates && Array.isArray(candidates) && candidates.length > 0) {
+                        console.log('[CallPage] Received real-time ICE candidates via localStorage:', candidates.length);
+                        candidates.forEach(c => {
+                            call.addIncomingIceCandidate(c);
+                        });
+                        localStorage.removeItem('vibetok_incoming_ice_candidates');
+                    }
+                } catch (err) {
+                    console.error('[CallPage] Failed to parse ICE candidates from storage', err);
+                }
+            }
+        };
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, [call]);
+
     // Tự động đóng tab khi cuộc gọi kết thúc và quay lại trạng thái idle
     useEffect(() => {
         if (hasInitialized.current && call.callState === 'idle') {
