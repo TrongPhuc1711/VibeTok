@@ -10,7 +10,8 @@ let cachedIceServers = null;
 const getIceServers = async () => {
     if (cachedIceServers) return cachedIceServers;
     try {
-        const response = await fetch("https://vibetok.metered.live/api/v1/turn/credentials?apiKey=9ce594d0a3fc0100ff7cf5a05af3219f01f4");
+        const apiKey = import.meta.env.VITE_METERED_API_KEY || '9ce594d0a3fc0100ff7cf5a05af3219f01f4';
+        const response = await fetch(`https://vibetok.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`);
         const iceServers = await response.json();
         if (iceServers && iceServers.length > 0) {
             cachedIceServers = iceServers;
@@ -384,9 +385,10 @@ export function useCall() {
         }
     }, [callState, getMedia, createPeerConnection, cleanup, me, toast]);
 
-    const acceptCall = useCallback(async () => {
-        if (!incomingCall) return;
-        const { fromUserId, offer, callType: ct, callerInfo } = incomingCall;
+    const acceptCall = useCallback(async (explicitIncoming = null) => {
+        const targetIncoming = explicitIncoming || incomingCall;
+        if (!targetIncoming) return;
+        const { fromUserId, offer, callType: ct, callerInfo } = targetIncoming;
         console.log('[Call] acceptCall', { fromUserId, callType: ct, hasOffer: !!offer });
 
         // flushSync forces synchronous re-render so CallOverlay mounts
@@ -584,6 +586,7 @@ export function useCall() {
         callDuration,
         formattedDuration: formatDuration(callDuration),
         incomingCall,
+        setIncomingCall,
         currentPartnerId,
         currentPartnerInfo,
         // Video refs (attach to <video ref={...}>)

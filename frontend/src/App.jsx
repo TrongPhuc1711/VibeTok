@@ -18,6 +18,7 @@ import ExplorePage from './pages/ExplorePage';
 import ProfilePage from './pages/ProfilePage';
 import UploadPage from './pages/UploadPage/UploadPage';
 import MessagesPage from './pages/Messages';
+import CallPage from './pages/Messages/CallPage';
 import NotFoundPage from './pages/NotFoundPage';
 import VideoDetailPage from './pages/VideoDetailPage';
 import ImageSlideshowDemo from './pages/ImageSlideshowDemo';
@@ -94,6 +95,7 @@ export default function App() {
                 {/* Messages */}
                 <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
                 <Route path="/messages/:username" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+                <Route path="/call/active" element={<PrivateRoute><CallPage /></PrivateRoute>} />
 
                 {/* Fallback */}
                 <Route path="*" element={<NotFoundPage />} />

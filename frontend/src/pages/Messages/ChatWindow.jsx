@@ -142,12 +142,11 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
     const call = useCallContext();
     const handleStartCall = (type) => {
         if (!partnerInfo?.partnerId) return;
-        call.startCall(
-            partnerInfo.partnerId,
-            partnerInfo,
-            type,
-            (msg) => send(msg, 'call')
-        );
+        const partnerName = partnerInfo.partnerFullname || partnerInfo.fullName || partnerInfo.username || '';
+        const partnerAvatar = partnerInfo.partnerAvatar || partnerInfo.anh_dai_dien || '';
+        
+        const callUrl = `/call/active?mode=outbound&type=${type}&partnerId=${partnerInfo.partnerId}&partnerName=${encodeURIComponent(partnerName)}&partnerAvatar=${encodeURIComponent(partnerAvatar)}&partnerUsername=${partnerUsername}`;
+        window.open(callUrl, '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no');
     };
 
     // Auto scroll
