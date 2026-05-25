@@ -25,6 +25,8 @@ export default function VideoCard({
     const [duration, setDuration] = useState(0);
     const [dragging, setDragging] = useState(false);
     const [showVolume, setShowVolume] = useState(false);
+    const [tapIcon, setTapIcon] = useState(null); // 'play' | 'pause' | null
+    const tapIconTimer = useRef(null);
     const progressBarRef = useRef(null);
 
     const { volume, muted, setVolume, toggleMute, applyToVideo } = useVideoVolume();
@@ -77,17 +79,17 @@ export default function VideoCard({
     useEffect(() => {
         const v = videoRef.current;
         const a = audioRef.current;
-        
+
         if (isActive) {
             intendedPlayRef.current = true;
             applyVolumes();
-            
+
             if (v) {
                 const p = v.play();
                 playPromiseRef.current = p;
                 if (a) {
                     a.currentTime = v.currentTime;
-                    a.play().catch(() => {});
+                    a.play().catch(() => { });
                 }
                 if (p) {
                     p.then(() => { if (intendedPlayRef.current) setPlaying(true); playPromiseRef.current = null; })
@@ -97,15 +99,15 @@ export default function VideoCard({
                 // For slideshows, we don't have videoRef, but we should play audio and set playing=true
                 setPlaying(true);
                 if (a) {
-                    a.play().catch(() => {});
+                    a.play().catch(() => { });
                 }
             }
         } else {
             intendedPlayRef.current = false;
             applyVolumes(); // Ensure they are muted quickly
-            const doPause = () => { 
+            const doPause = () => {
                 if (v) { v.pause(); v.currentTime = 0; }
-                setPlaying(false); setProgress(0); 
+                setPlaying(false); setProgress(0);
                 if (a) { a.pause(); a.currentTime = 0; }
             };
             if (playPromiseRef.current) playPromiseRef.current.then(doPause).catch(doPause);
@@ -139,10 +141,16 @@ export default function VideoCard({
         setDuration(v?.duration || 0);
     };
 
+    const showTapIcon = useCallback((icon) => {
+        clearTimeout(tapIconTimer.current);
+        setTapIcon(icon);
+        tapIconTimer.current = setTimeout(() => setTapIcon(null), 600);
+    }, []);
+
     const togglePlay = useCallback(() => {
         const v = videoRef.current;
         const a = audioRef.current;
-        
+
         if (isSlideshow) {
             if (playing) {
                 intendedPlayRef.current = false;
@@ -151,8 +159,9 @@ export default function VideoCard({
             } else {
                 intendedPlayRef.current = true;
                 applyVolumes();
-                if (a) a.play().catch(() => {});
+                if (a) a.play().catch(() => { });
                 setPlaying(true);
+                showTapIcon('play');
             }
             return;
         }
@@ -164,15 +173,16 @@ export default function VideoCard({
             v.play().then(() => setPlaying(true)).catch(() => { });
             if (a) {
                 a.currentTime = v.currentTime;
-                a.play().catch(() => {});
+                a.play().catch(() => { });
             }
+            showTapIcon('play');
         } else {
             intendedPlayRef.current = false;
             v.pause();
             if (a) a.pause();
             setPlaying(false);
         }
-    }, [applyVolumes, playing, isSlideshow]);
+    }, [applyVolumes, playing, isSlideshow, showTapIcon]);
 
     const seekToRatio = useCallback((ratio) => {
         const v = videoRef.current;
@@ -227,7 +237,24 @@ export default function VideoCard({
             {/* Video or ImageSlideshow */}
             {isSlideshow ? (
                 <div className="absolute inset-0 w-full h-full z-[1]">
-                    <ImageSlideshow images={imagesArray} autoPlay={isActive} duration={3000} />
+                    <ImageSlideshow
+                        images={imagesArray}
+                        autoPlay={isActive}
+                        duration={3000}
+                        isPausedExternal={isActive && !playing}
+                        onTogglePause={(paused) => {
+                            if (paused) {
+                                intendedPlayRef.current = false;
+                                if (audioRef.current) audioRef.current.pause();
+                                setPlaying(false);
+                            } else {
+                                intendedPlayRef.current = true;
+                                applyVolumes();
+                                if (audioRef.current) audioRef.current.play().catch(() => { });
+                                setPlaying(true);
+                            }
+                        }}
+                    />
                 </div>
             ) : video?.videoUrl ? (
                 <video
@@ -236,9 +263,8 @@ export default function VideoCard({
                     loop
                     playsInline
                     preload="metadata"
-                    onClick={togglePlay}
                     onLoadedMetadata={handleLoadedMetadata}
-                    className="absolute inset-0 w-full h-full cursor-pointer"
+                    className="absolute inset-0 w-full h-full"
                     style={{ objectFit: 'cover', zIndex: 1 }}
                 />
             ) : (
@@ -248,20 +274,56 @@ export default function VideoCard({
                 </>
             )}
 
-            {/* Pause overlay */}
-            {!isSlideshow && video?.videoUrl && !playing && isActive && (
+            {/* Click-to-pause layer — sits above content (z-1) but below info overlays (z-10) */}
+            {video?.videoUrl && isActive && !isSlideshow && (
                 <div
                     onClick={togglePlay}
-                    className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
-                    style={{ background: 'rgba(0,0,0,0.15)' }}
-                >
-                    <div className="w-[60px] h-[60px] rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}>
+                    className="absolute inset-0 z-[5] cursor-pointer"
+                />
+            )}
+
+            {/* Tap icon — brief play/pause indicator */}
+            {tapIcon && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[6]">
+                    <div
+                        className="w-[60px] h-[60px] rounded-full flex items-center justify-center"
+                        style={{
+                            background: 'rgba(0,0,0,0.45)',
+                            backdropFilter: 'blur(4px)',
+                            animation: 'tapIconAnim 0.6s ease-out forwards',
+                        }}
+                    >
+                        {tapIcon === 'pause' ? (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="rgba(255,255,255,.9)">
+                                <rect x="5" y="3" width="4" height="18" rx="1" />
+                                <rect x="15" y="3" width="4" height="18" rx="1" />
+                            </svg>
+                        ) : (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="rgba(255,255,255,.9)">
+                                <path d="M6 3l14 9-14 9V3z" />
+                            </svg>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Persistent play icon when paused */}
+            {isActive && !playing && !tapIcon && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[6]">
+                    <div
+                        className="w-[60px] h-[60px] rounded-full flex items-center justify-center animate-fade-in"
+                        style={{
+                            background: 'rgba(0,0,0,0.45)',
+                            backdropFilter: 'blur(4px)',
+                        }}
+                    >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="rgba(255,255,255,.9)">
-                            <path d="M4 3l13 7-13 7V3z" />
+                            <path d="M6 3l14 9-14 9V3z" />
                         </svg>
                     </div>
                 </div>
             )}
+
 
             {/* Volume control — TikTok style, top right, hover */}
             {isActive && (
@@ -282,23 +344,17 @@ export default function VideoCard({
             {/* Overlay info */}
             <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
                 {!hideTopBar && (
-                    <div style={{ pointerEvents: 'auto' }}>
-                        <VideoCardTopBar activeTab="For You" />
-                    </div>
+                    <VideoCardTopBar activeTab="For You" />
                 )}
-                <div style={{ pointerEvents: 'auto' }}>
-                    <VideoCardInfo video={video} />
-                </div>
+                <VideoCardInfo video={video} />
                 {!hideActions && (
-                    <div style={{ pointerEvents: 'auto' }}>
-                        <VideoCardActions
-                            video={video}
-                            onComment={onComment}
-                            onLike={onLike}
-                            onShare={onShare}
-                            onBookmark={onBookmark}
-                        />
-                    </div>
+                    <VideoCardActions
+                        video={video}
+                        onComment={onComment}
+                        onLike={onLike}
+                        onShare={onShare}
+                        onBookmark={onBookmark}
+                    />
                 )}
             </div>
 

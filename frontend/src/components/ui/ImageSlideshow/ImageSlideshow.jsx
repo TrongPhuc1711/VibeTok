@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 
 import ProgressBars from './ProgressBars';
 import DotIndicators from './DotIndicators';
-import { ChevronLeftIcon, ChevronRightIcon, PauseCircleIcon } from '../../../icons/SlideshowIcons';
+import { ChevronLeftIcon, ChevronRightIcon } from '../../../icons/SlideshowIcons';
 import { useSwipeGesture, useAutoPlay } from '../../../hooks/useSlideshow';
 
 const AUTO_PLAY_DURATION = 3000;
@@ -21,10 +21,12 @@ export default function ImageSlideshow({
   style = {},
   autoPlay = true,
   duration = AUTO_PLAY_DURATION,
+  isPausedExternal = false,
+  onTogglePause,
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [showPauseIcon, setShowPauseIcon] = useState(false);
+
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef(0);
@@ -45,9 +47,10 @@ export default function ImageSlideshow({
   const goPrev = useCallback(() => goTo(currentIndex - 1), [currentIndex, goTo]);
 
   /* ── Auto-play ── */
+  const effectivePaused = isPaused || isPausedExternal;
   const { progress, reset: resetTimer } = useAutoPlay({
     duration,
-    paused: isPaused || !autoPlay || total <= 1,
+    paused: effectivePaused || !autoPlay || total <= 1,
     onComplete: goNext,
   });
 
@@ -88,17 +91,17 @@ export default function ImageSlideshow({
   const handlePointerDown = useCallback(() => {
     holdTimer.current = setTimeout(() => {
       setIsPaused(true);
-      setShowPauseIcon(true);
+      onTogglePause?.(true);
     }, 200);
-  }, []);
+  }, [onTogglePause]);
 
   const handlePointerUp = useCallback(() => {
     clearTimeout(holdTimer.current);
     if (isPaused) {
       setIsPaused(false);
-      setShowPauseIcon(false);
+      onTogglePause?.(false);
     }
-  }, [isPaused]);
+  }, [isPaused, onTogglePause]);
 
   /* ── Empty ── */
   if (total === 0) {
@@ -162,16 +165,31 @@ export default function ImageSlideshow({
 
       {/* Tap zones */}
       <button
-        className="absolute top-[50px] bottom-[40px] left-0 w-[35%] z-10 bg-transparent border-none cursor-pointer"
+        className="absolute top-[50px] bottom-[40px] left-0 w-[30%] z-10 bg-transparent border-none cursor-pointer"
         style={{ WebkitTapHighlightColor: 'transparent' }}
-        onClick={handlePrev}
+        onClick={(e) => {
+          e.stopPropagation();
+          handlePrev();
+        }}
         aria-label="Ảnh trước"
       />
       <button
-        className="absolute top-[50px] bottom-[40px] right-0 w-[65%] z-10 bg-transparent border-none cursor-pointer"
+        className="absolute top-[50px] bottom-[40px] right-0 w-[30%] z-10 bg-transparent border-none cursor-pointer"
         style={{ WebkitTapHighlightColor: 'transparent' }}
-        onClick={handleNext}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleNext();
+        }}
         aria-label="Ảnh tiếp"
+      />
+      <button
+        className="absolute top-[50px] bottom-[40px] left-[30%] right-[30%] z-10 bg-transparent border-none cursor-pointer"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTogglePause?.(!isPausedExternal);
+        }}
+        aria-label="Tạm dừng hoặc phát"
       />
 
       {/* Nav arrows (desktop: hiện khi hover) */}
@@ -200,12 +218,7 @@ export default function ImageSlideshow({
       {/* Dot indicators */}
       <DotIndicators total={total} currentIndex={currentIndex} onDotClick={goWithReset} />
 
-      {/* Pause indicator */}
-      {showPauseIcon && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[25] text-white/85 pointer-events-none animate-[pauseIn_0.3s_ease-out_forwards]">
-          <PauseCircleIcon size={44} />
-        </div>
-      )}
+
     </div>
   );
 }

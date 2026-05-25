@@ -110,7 +110,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   const user = video?.user ?? {};
   const wrapperCls = inline
     ? 'flex flex-col gap-5 items-center'
-    : 'absolute right-3 bottom-20 flex flex-col gap-4 items-center z-10';
+    : 'absolute right-3 bottom-20 flex flex-col gap-4 items-center z-10 pointer-events-auto';
 
   return (
     <>

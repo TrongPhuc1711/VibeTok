@@ -2,16 +2,11 @@ import React from 'react';
 import { VideoSearchIcon } from '../../../icons/CommonIcons';
 
 const TABS = ['Following', 'For You', 'Live'];
-/*
-  VideoCardTopBar — tab "Following / For You / Live" + search button
-  Props:
-   activeTab  – string (mặc định 'For You')
-   onTabChange – (tab: string) => void
- */
+
 export default function VideoCardTopBar({ activeTab = 'For You', onTabChange }) {
   return (
     <div
-      className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pt-4 pb-10 z-10"
+      className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pt-4 pb-10 z-10 pointer-events-auto"
       style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,.5),transparent)' }}
     >
       <div className="flex gap-5">
