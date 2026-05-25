@@ -253,14 +253,13 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                     {/* Voice call */}
                     <a
                         href={getCallUrl('voice')}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         onClick={(e) => {
-                            if (!activePartnerId || call.callState !== 'idle') {
-                                e.preventDefault();
-                            } else {
-                                console.log('[ChatWindow] Calling voice natively via link');
-                            }
+                            e.preventDefault();
+                            if (!activePartnerId || call.callState !== 'idle') return;
+                            const callUrl = getCallUrl('voice');
+                            console.log('[ChatWindow] Opening voice call in standalone window:', callUrl);
+                            const w = window.open(callUrl, '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+                            if (w) w.focus();
                         }}
                         className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!activePartnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
                         style={{ color: 'var(--vt-text-caption)', textDecoration: 'none' }}
@@ -274,14 +273,13 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                     {/* Video call */}
                     <a
                         href={getCallUrl('video')}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         onClick={(e) => {
-                            if (!activePartnerId || call.callState !== 'idle') {
-                                e.preventDefault();
-                            } else {
-                                console.log('[ChatWindow] Calling video natively via link');
-                            }
+                            e.preventDefault();
+                            if (!activePartnerId || call.callState !== 'idle') return;
+                            const callUrl = getCallUrl('video');
+                            console.log('[ChatWindow] Opening video call in standalone window:', callUrl);
+                            const w = window.open(callUrl, '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+                            if (w) w.focus();
                         }}
                         className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!activePartnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
                         style={{ color: 'var(--vt-text-caption)', textDecoration: 'none' }}
