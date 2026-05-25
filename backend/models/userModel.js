@@ -6,21 +6,21 @@ export const normalizeUser = (u) => {
     const fullName = u.ten_hien_thi || '';
     const initials = fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
     return {
-        id:         String(u.id),
-        username:   u.ten_dang_nhap,
-        fullName:   fullName,
-        email:      u.email,
+        id: String(u.id),
+        username: u.ten_dang_nhap,
+        fullName: fullName,
+        email: u.email,
         anh_dai_dien: u.anh_dai_dien,
-        vai_tro:    u.vai_tro,
+        vai_tro: u.vai_tro,
         initials,
-        bio:        u.tieu_su || '',
-        location:   u.vi_tri || '',
-        isCreator:  u.vai_tro === 'creator' || u.vai_tro === 'admin',
-        followers:  Number(u.so_nguoi_theo_doi)     || 0,
-        following:  Number(u.so_nguoi_dang_theo_doi) || 0,
-        likes:      Number(u.tong_luot_thich)        || 0,
-        videos:     Number(u.tong_so_video)          || 0,
-        createdAt:  u.ngay_tao,
+        bio: u.tieu_su || '',
+        location: u.vi_tri || '',
+        isCreator: u.vai_tro === 'creator' || u.vai_tro === 'admin',
+        followers: Number(u.so_nguoi_theo_doi) || 0,
+        following: Number(u.so_nguoi_dang_theo_doi) || 0,
+        likes: Number(u.tong_luot_thich) || 0,
+        videos: Number(u.tong_so_video) || 0,
+        createdAt: u.ngay_tao,
     };
 };
 
@@ -44,7 +44,7 @@ export const UserModel = {
     },
 
     // currentUserRole: vai trò của người đang đăng nhập ('admin', 'creator', 'user', null)
-    async getSuggestions(currentUserId, limit = 5, currentUserRole = null) {
+    async getSuggestions(currentUserId, limit = 50, currentUserRole = null) {
         // Admin có thể thấy tất cả user
         // User thường và chưa đăng nhập không thấy admin
         const hideAdmins = currentUserRole !== 'admin';
@@ -64,17 +64,28 @@ export const UserModel = {
             params = [currentUserId || 0, limit];
         }
 
+        let followingSet = new Set();
+        if (currentUserId) {
+            const [fRows] = await pool.query(
+                'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+                [currentUserId]
+            );
+            followingSet = new Set(fRows.map(r => r.ma_nguoi_duoc_theo_doi));
+        }
+
         const [rows] = await pool.query(query, params);
-        return rows;
+        return rows
+            .filter(u => !followingSet.has(u.id))
+            .map(u => ({ ...u, isFollowing: false }));
     },
 
     // Tìm kiếm user theo tên hoặc username
     async search(q, limit = 10, currentUserRole = null) {
         const hideAdmins = currentUserRole !== 'admin';
         const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
-    
+
         const adminFilter = hideAdmins ? "AND vai_tro != 'admin'" : '';
-    
+
         const [rows] = await pool.query(
             `SELECT * FROM users 
              WHERE hoat_dong = 1 
@@ -127,4 +138,4 @@ export const UserModel = {
             [delta, userId]
         );
     },
-};
+};

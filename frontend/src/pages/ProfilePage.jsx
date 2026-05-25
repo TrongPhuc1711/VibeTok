@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import PageLayout              from '../components/layout/PageLayout/PageLayout';
-import CreatorCard             from '../components/common/CreatorCard';
-import Button                  from '../components/ui/Button';
-import { SpinnerCenter }       from '../components/ui/Spinner';
-import FollowListModal         from '../components/common/FollowListModal/FollowListModal';
-import EditProfileModal        from '../components/profile/EditProfileModal/EditProfileModal';
-import ProfileVideoFeedModal   from '../components/profile/ProfileVideoFeedModal';
+import PageLayout from '../components/layout/PageLayout/PageLayout';
+import CreatorCard from '../components/common/CreatorCard';
+import Button from '../components/ui/Button';
+import { SpinnerCenter } from '../components/ui/Spinner';
+import FollowListModal from '../components/common/FollowListModal/FollowListModal';
+import EditProfileModal from '../components/profile/EditProfileModal/EditProfileModal';
+import ProfileVideoFeedModal from '../components/profile/ProfileVideoFeedModal';
 
-import { useProfile }        from '../hooks/useProfile';
+import { useProfile } from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
-import { deleteVideo }       from '../services/videoService';
-import { formatCount }       from '../utils/formatters';
-import { isLoggedIn, getStoredUser }     from '../utils/helpers';
+import { deleteVideo } from '../services/videoService';
+import { formatCount } from '../utils/formatters';
+import { isLoggedIn, getStoredUser } from '../utils/helpers';
 import { useToast } from '../components/ui/Toast';
 import { useTheme } from '../contexts/ThemeContext';
-import { ShareSmIcon }       from '../icons/CommonIcons';
+import { ShareSmIcon } from '../icons/CommonIcons';
+import { getFollowingSet } from '../utils/following';
+
 
 import VideoThumb from '../components/profile/VideoThumb';
 
@@ -24,8 +26,8 @@ const TABS = ['Videos', 'Liked', 'Reposts'];
 
 export default function ProfilePage() {
   const { username } = useParams();
-  const navigate     = useNavigate();
-  const me           = getStoredUser();
+  const navigate = useNavigate();
+  const me = getStoredUser();
   const { showWarning } = useToast();
   const { isDark } = useTheme();
 
@@ -33,12 +35,12 @@ export default function ProfilePage() {
   const { profile, videos, loading, following, toggleFollow, setProfile } = useProfile(target || '');
 
 
-  const [activeTab,    setActiveTab]    = useState('Videos');
-  const [suggests,     setSuggests]     = useState([]);
-  const [localVideos,  setLocalVideos]  = useState([]);
+  const [activeTab, setActiveTab] = useState('Videos');
+  const [suggests, setSuggests] = useState([]);
+  const [localVideos, setLocalVideos] = useState([]);
   const [feedModalIndex, setFeedModalIndex] = useState(null);
   const [followModal, setFollowModal] = useState(null);
-  const [editOpen,    setEditOpen]    = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const isMyProfile =
     !username ||
@@ -48,9 +50,17 @@ export default function ProfilePage() {
   useEffect(() => { setLocalVideos(videos); }, [videos]);
 
   useEffect(() => {
-    getSuggestedUsers({ limit: 5 })
-      .then(r => setSuggests(r.data.users.filter(u => u.username !== target)))
-      .catch(() => {});
+    getSuggestedUsers({ limit: 50 })
+      .then(r => {
+        const followingSet = getFollowingSet();
+        const all = r.data.users || [];
+        const filtered = all.filter(u => {
+          const alreadyFollowing = u.isFollowing || followingSet.has(String(u.id));
+          return !alreadyFollowing && u.username !== target;
+        });
+        setSuggests(filtered.slice(0, 50));
+      })
+      .catch(() => { });
   }, [target]);
 
   const handleDeleteVideo = async (videoId) => {
@@ -70,9 +80,9 @@ export default function ProfilePage() {
     if (!updatedUser) return;
     setProfile(p => ({
       ...p,
-      fullName:     updatedUser.fullName     || updatedUser.ten_hien_thi || p.fullName,
-      bio:          updatedUser.bio          || updatedUser.tieu_su      || p.bio,
-      location:     updatedUser.location     || updatedUser.vi_tri       || p.location,
+      fullName: updatedUser.fullName || updatedUser.ten_hien_thi || p.fullName,
+      bio: updatedUser.bio || updatedUser.tieu_su || p.bio,
+      location: updatedUser.location || updatedUser.vi_tri || p.location,
       anh_dai_dien: updatedUser.anh_dai_dien || p.anh_dai_dien,
     }));
   };
@@ -109,10 +119,10 @@ export default function ProfilePage() {
 
   const displayVideoCount = localVideos.length;
   const stats = [
-    { label: 'Videos',    value: formatCount(displayVideoCount), clickable: false },
-    { label: 'Follower',  value: formatCount(profile.followers), clickable: true, modalType: 'followers' },
+    { label: 'Videos', value: formatCount(displayVideoCount), clickable: false },
+    { label: 'Follower', value: formatCount(profile.followers), clickable: true, modalType: 'followers' },
     { label: 'Đang theo', value: formatCount(profile.following), clickable: true, modalType: 'following' },
-    { label: 'Thích',     value: formatCount(profile.likes),     clickable: false },
+    { label: 'Thích', value: formatCount(profile.likes), clickable: false },
   ];
 
   return (

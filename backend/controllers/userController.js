@@ -28,7 +28,7 @@ export const getUserProfile = async (req, res) => {
 // GET /api/users/suggestions
 export const getSuggestions = async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit) || 5;
+        const limit = parseInt(req.query.limit) || 50;
         const currentId = req.user?.id || 0;
         const currentUserRole = req.user?.vai_tro || null;
 

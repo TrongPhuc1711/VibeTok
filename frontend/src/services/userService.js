@@ -1,5 +1,5 @@
 import api from '../api/api';
-import {seedFollowingCache } from '../utils/following';
+import { seedFollowingCache } from '../utils/following';
 
 // GET /api/users/:username
 export const getUserProfile = async (username) => {
@@ -16,7 +16,7 @@ export const getUserVideos = async (username, opts = {}) => {
 };
 
 // GET /api/users/suggestions — seed cache từ kết quả trả về
-export const getSuggestedUsers = async ({ limit = 5 } = {}) => {
+export const getSuggestedUsers = async ({ limit = 50 } = {}) => {
     const res = await api.get('/users/suggestions', { params: { limit } });
     const users = res.data.users || [];
 

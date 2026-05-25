@@ -87,8 +87,10 @@ export const VideoModel = {
             )`;
         }
 
+        const orderByClause = type === 'forYou' ? 'ORDER BY RAND()' : 'ORDER BY v.ngay_tao DESC';
+
         const [rows] = await pool.query(
-            `${query} ${whereClause} ORDER BY v.ngay_tao DESC LIMIT ? OFFSET ?`,
+            `${query} ${whereClause} ${orderByClause} LIMIT ? OFFSET ?`,
             [limit, offset]
         );
 
