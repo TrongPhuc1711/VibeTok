@@ -140,17 +140,17 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
 
     // Call hook global
     const call = useCallContext();
-    const handleStartCall = (type) => {
-        console.log('[ChatWindow] handleStartCall triggered', { type, partnerInfo });
-        if (!partnerInfo?.partnerId) {
-            console.warn('[ChatWindow] Missing partnerId, cannot start call', partnerInfo);
-            return;
-        }
+    const getCallUrl = (type) => {
+        if (!partnerInfo?.partnerId) return '#';
         const partnerName = partnerInfo.partnerFullname || partnerInfo.fullName || partnerInfo.username || '';
         const partnerAvatar = partnerInfo.partnerAvatar || partnerInfo.anh_dai_dien || '';
-        
-        const callUrl = `/call/active?mode=outbound&type=${type}&partnerId=${partnerInfo.partnerId}&partnerName=${encodeURIComponent(partnerName)}&partnerAvatar=${encodeURIComponent(partnerAvatar)}&partnerUsername=${partnerUsername}`;
-        console.log('[ChatWindow] Opening call tab with URL:', callUrl);
+        return `/call/active?mode=outbound&type=${type}&partnerId=${partnerInfo.partnerId}&partnerName=${encodeURIComponent(partnerName)}&partnerAvatar=${encodeURIComponent(partnerAvatar)}&partnerUsername=${partnerUsername}`;
+    };
+
+    const handleStartCall = (type) => {
+        if (!partnerInfo?.partnerId) return;
+        const callUrl = getCallUrl(type);
+        console.log('[ChatWindow] Redialing, opening call tab with URL:', callUrl);
         window.open(callUrl, '_blank');
     };
 
@@ -249,30 +249,46 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                     </button>
 
                     {/* Voice call */}
-                    <button
-                        onClick={() => handleStartCall('voice')}
-                        disabled={call.callState !== 'idle'}
-                        className="w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-30 bg-transparent"
-                        style={{ color: 'var(--vt-text-caption)' }}
+                    <a
+                        href={getCallUrl('voice')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                            if (!partnerInfo?.partnerId || call.callState !== 'idle') {
+                                e.preventDefault();
+                            } else {
+                                console.log('[ChatWindow] Calling voice natively via link');
+                            }
+                        }}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!partnerInfo?.partnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
+                        style={{ color: 'var(--vt-text-caption)', textDecoration: 'none' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--vt-hover)'; e.currentTarget.style.color = 'var(--vt-text-bright)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--vt-text-caption)'; }}
                         title="Gọi thoại"
                     >
                         <PhoneCallIcon size={20} color="currentColor" />
-                    </button>
+                    </a>
 
                     {/* Video call */}
-                    <button
-                        onClick={() => handleStartCall('video')}
-                        disabled={call.callState !== 'idle'}
-                        className="w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-30 bg-transparent"
-                        style={{ color: 'var(--vt-text-caption)' }}
+                    <a
+                        href={getCallUrl('video')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                            if (!partnerInfo?.partnerId || call.callState !== 'idle') {
+                                e.preventDefault();
+                            } else {
+                                console.log('[ChatWindow] Calling video natively via link');
+                            }
+                        }}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!partnerInfo?.partnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
+                        style={{ color: 'var(--vt-text-caption)', textDecoration: 'none' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--vt-hover)'; e.currentTarget.style.color = 'var(--vt-text-bright)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--vt-text-caption)'; }}
                         title="Gọi video"
                     >
                         <VideoCallIcon size={20} color="currentColor" />
-                    </button>
+                    </a>
                 </div>
             </div>
 

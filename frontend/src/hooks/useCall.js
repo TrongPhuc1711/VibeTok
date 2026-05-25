@@ -77,6 +77,7 @@ export function useCall() {
     const mountedRef = useRef(true);
     const onCallLogRef = useRef(null);
     const callTypeRef = useRef('voice');
+    const settingRemoteDescRef = useRef(false);
 
     // ── Socket listener cho incoming call ──
     useEffect(() => {
@@ -109,6 +110,10 @@ export function useCall() {
         }, 1000);
         const onAnswered = async ({ answer }) => {
             if (!mountedRef.current || !pcRef.current) return;
+            if (settingRemoteDescRef.current) {
+                console.log('[Call] Already setting remote description, ignoring duplicate call_answered.');
+                return;
+            }
             
             // Prevent DOMException: Called in wrong state: stable
             if (pcRef.current.signalingState !== 'have-local-offer') {
@@ -117,6 +122,7 @@ export function useCall() {
             }
 
             try {
+                settingRemoteDescRef.current = true;
                 console.log('[Call][Socket] call_answered', { hasAnswer: !!answer });
                 await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
                 
@@ -127,6 +133,8 @@ export function useCall() {
                 }
             } catch (e) {
                 console.error('[Call] setRemoteDescription error:', e);
+            } finally {
+                settingRemoteDescRef.current = false;
             }
         };
 
@@ -335,6 +343,7 @@ export function useCall() {
         setIsScreenSharing(false);
         setWatchTogether(null);
         iceCandidateQueueRef.current = [];
+        settingRemoteDescRef.current = false;
     }, []);
 
     // ── Actions ──
