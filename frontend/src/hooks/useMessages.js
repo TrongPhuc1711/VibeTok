@@ -180,6 +180,7 @@ export function useChat(partnerUsername) {
     const [sending, setSending] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [error, setError] = useState('');
+    const [partnerId, setPartnerId] = useState(null);
     const typingTimer = useRef(null);
     const mountedRef = useRef(true);
     const me = getStoredUser();
@@ -196,6 +197,7 @@ export function useChat(partnerUsername) {
             .then(res => {
                 if (mountedRef.current) {
                     setMessages(res.data.messages || []);
+                    setPartnerId(res.data.partnerId || null);
                     msgSvc.markRead(partnerUsername).catch(() => { });
                 }
             })
@@ -356,6 +358,7 @@ export function useChat(partnerUsername) {
         send, recall, react, unreact,
         emitTyping, emitStopTyping,
         setMessages,
+        partnerId,
     };
 }
 

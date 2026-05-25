@@ -107,12 +107,14 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
         messages, loading, sending, isTyping, error,
         send, recall, react, unreact,
         emitTyping, emitStopTyping,
+        partnerId: fallbackPartnerId,
     } = useChat(partnerUsername);
 
     // Online status tracking
-    const partnerIds = partnerInfo?.partnerId ? [partnerInfo.partnerId] : [];
+    const activePartnerId = partnerInfo?.partnerId || fallbackPartnerId;
+    const partnerIds = activePartnerId ? [activePartnerId] : [];
     const { isOnline, formatLastSeen } = useOnlineStatus(partnerIds);
-    const partnerOnline = partnerInfo?.partnerId ? isOnline(partnerInfo.partnerId) : false;
+    const partnerOnline = activePartnerId ? isOnline(activePartnerId) : false;
     const partnerStatus = partnerInfo?.partnerId ? formatLastSeen(partnerInfo.partnerId) : '';
 
     const { showInfo } = useToast();
@@ -141,14 +143,14 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
     // Call hook global
     const call = useCallContext();
     const getCallUrl = (type) => {
-        if (!partnerInfo?.partnerId) return '#';
-        const partnerName = partnerInfo.partnerFullname || partnerInfo.fullName || partnerInfo.username || '';
-        const partnerAvatar = partnerInfo.partnerAvatar || partnerInfo.anh_dai_dien || '';
-        return `/call/active?mode=outbound&type=${type}&partnerId=${partnerInfo.partnerId}&partnerName=${encodeURIComponent(partnerName)}&partnerAvatar=${encodeURIComponent(partnerAvatar)}&partnerUsername=${partnerUsername}`;
+        if (!activePartnerId) return '#';
+        const partnerName = partnerInfo?.partnerFullname || partnerInfo?.fullName || partnerInfo?.username || partnerUsername;
+        const partnerAvatar = partnerInfo?.partnerAvatar || partnerInfo?.anh_dai_dien || '';
+        return `/call/active?mode=outbound&type=${type}&partnerId=${activePartnerId}&partnerName=${encodeURIComponent(partnerName)}&partnerAvatar=${encodeURIComponent(partnerAvatar)}&partnerUsername=${partnerUsername}`;
     };
 
     const handleStartCall = (type) => {
-        if (!partnerInfo?.partnerId) return;
+        if (!activePartnerId) return;
         const callUrl = getCallUrl(type);
         console.log('[ChatWindow] Redialing, opening call tab with URL:', callUrl);
         window.open(callUrl, '_blank');
@@ -254,13 +256,13 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => {
-                            if (!partnerInfo?.partnerId || call.callState !== 'idle') {
+                            if (!activePartnerId || call.callState !== 'idle') {
                                 e.preventDefault();
                             } else {
                                 console.log('[ChatWindow] Calling voice natively via link');
                             }
                         }}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!partnerInfo?.partnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!activePartnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
                         style={{ color: 'var(--vt-text-caption)', textDecoration: 'none' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--vt-hover)'; e.currentTarget.style.color = 'var(--vt-text-bright)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--vt-text-caption)'; }}
@@ -275,13 +277,13 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => {
-                            if (!partnerInfo?.partnerId || call.callState !== 'idle') {
+                            if (!activePartnerId || call.callState !== 'idle') {
                                 e.preventDefault();
                             } else {
                                 console.log('[ChatWindow] Calling video natively via link');
                             }
                         }}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!partnerInfo?.partnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer transition-all bg-transparent ${(!activePartnerId || call.callState !== 'idle') ? 'opacity-30 pointer-events-none' : ''}`}
                         style={{ color: 'var(--vt-text-caption)', textDecoration: 'none' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--vt-hover)'; e.currentTarget.style.color = 'var(--vt-text-bright)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--vt-text-caption)'; }}
