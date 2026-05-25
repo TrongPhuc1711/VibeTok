@@ -141,12 +141,17 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
     // Call hook global
     const call = useCallContext();
     const handleStartCall = (type) => {
-        if (!partnerInfo?.partnerId) return;
+        console.log('[ChatWindow] handleStartCall triggered', { type, partnerInfo });
+        if (!partnerInfo?.partnerId) {
+            console.warn('[ChatWindow] Missing partnerId, cannot start call', partnerInfo);
+            return;
+        }
         const partnerName = partnerInfo.partnerFullname || partnerInfo.fullName || partnerInfo.username || '';
         const partnerAvatar = partnerInfo.partnerAvatar || partnerInfo.anh_dai_dien || '';
         
         const callUrl = `/call/active?mode=outbound&type=${type}&partnerId=${partnerInfo.partnerId}&partnerName=${encodeURIComponent(partnerName)}&partnerAvatar=${encodeURIComponent(partnerAvatar)}&partnerUsername=${partnerUsername}`;
-        window.open(callUrl, '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no');
+        console.log('[ChatWindow] Opening call tab with URL:', callUrl);
+        window.open(callUrl, '_blank');
     };
 
     // Auto scroll
