@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatTimeAgo } from '../../utils/formatters';
 import { MsgAvatar } from './ConversationSidebar';
+import { useCallContext } from '../../contexts/CallContext';
 import {
     UnsendIcon, CopyIcon, RecalledIcon,
     CheckIcon, DoubleCheckIcon,
@@ -119,6 +120,8 @@ function HighlightedText({ text, highlight }) {
 
 /* ── Call Bubble Content ── */
 function CallBubbleContent({ msg, isMine, onCallClick }) {
+    const call = useCallContext();
+    const isCallDisabled = call.callState !== 'idle';
     const content = msg.content || '';
     const isVideo = content.toLowerCase().includes('video');
     const typeStr = isVideo ? 'video' : 'thoại';
@@ -180,8 +183,9 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
             </div>
             <div className="h-[1px] w-11/12 mx-auto" style={{ background: 'var(--vt-divider)' }} />
             <button 
-                onClick={(e) => { e.stopPropagation(); onCallClick && onCallClick(isVideo ? 'video' : 'voice'); }}
-                className="py-2 text-center text-[#3b82f6] font-medium text-[14px] hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent w-full"
+                onClick={(e) => { e.stopPropagation(); !isCallDisabled && onCallClick && onCallClick(isVideo ? 'video' : 'voice'); }}
+                disabled={isCallDisabled}
+                className={`py-2 text-center font-medium text-[14px] hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent w-full ${isCallDisabled ? 'opacity-30 cursor-not-allowed text-gray-500' : 'text-[#3b82f6]'}`}
             >
                 Gọi lại
             </button>

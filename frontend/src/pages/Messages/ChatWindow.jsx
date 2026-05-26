@@ -151,9 +151,11 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
 
     const handleStartCall = (type) => {
         if (!activePartnerId) return;
+        if (call.callState !== 'idle') return;
         const callUrl = getCallUrl(type);
-        console.log('[ChatWindow] Redialing, opening call tab with URL:', callUrl);
-        window.open(callUrl, '_blank');
+        console.log('[ChatWindow] Redialing, opening call in standalone window:', callUrl);
+        const w = window.open(callUrl, '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+        if (w) w.focus();
     };
 
     // Auto scroll

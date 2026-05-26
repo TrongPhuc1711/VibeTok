@@ -40,14 +40,12 @@ export const CallProvider = ({ children }) => {
                 <IncomingCallBanner
                     incomingCall={call.incomingCall}
                     onAccept={() => {
-                        console.log('[CallContext] onAccept clicked, preparing storage and opening window');
                         // 1. Save incoming call to localStorage
                         localStorage.setItem('vibetok_incoming_call', JSON.stringify(call.incomingCall));
                         // 2. Broadcast accept action to other tabs
                         localStorage.setItem('vibetok_call_action', JSON.stringify({ action: 'accept', timestamp: Date.now() }));
-                        // 3. Open new Chrome window for the call
-                        const w = window.open('/call/active?mode=inbound', '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
-                        if (w) w.focus();
+                        // 3. Open new tab/window for the call
+                        window.open('/call/active?mode=inbound', '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no');
                         // 4. Clear incoming call banner on this tab
                         call.setIncomingCall(null);
                     }}
