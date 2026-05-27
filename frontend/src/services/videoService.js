@@ -73,6 +73,12 @@ export const deleteVideo = async (videoId) => {
     return { data: res.data };
 };
 
+// POST /api/videos/:id/view
+export const viewVideo = async (videoId) => {
+    const res = await api.post(`/videos/${videoId}/view`);
+    return { data: res.data };
+};
+
 // POST /api/videos/upload — multipart/form-data
 export const uploadVideo = async (formData) => {
     const { caption, privacy, allowDuet, allowStitch, location, music, isDraft, file } = formData;

@@ -16,11 +16,11 @@ const redis = new Redis({
 });
 
 redis.on('connect', () => {
-    console.log('⚡ [Redis] Đã kết nối thành công!');
+    console.log('[Redis] Đã kết nối thành công!');
 });
 
 redis.on('error', (err) => {
-    console.error('❌ [Redis] Lỗi kết nối:', err);
+    console.error('[Redis] Lỗi kết nối:', err);
 });
 
 export default redis;

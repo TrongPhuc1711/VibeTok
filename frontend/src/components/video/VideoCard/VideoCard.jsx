@@ -4,6 +4,7 @@ import VideoCardInfo from './VideoCardInfo';
 import VideoCardActions from './VideoCardActions';
 import VolumeControl, { useVideoVolume } from '../../video/VolumnControl/index';
 import { ImageSlideshow } from '../../ui/ImageSlideshow';
+import { viewVideo } from '../../../services/videoService';
 
 export default function VideoCard({
     video,
@@ -19,6 +20,7 @@ export default function VideoCard({
     const videoRef = useRef(null);
     const intendedPlayRef = useRef(false);
     const playPromiseRef = useRef(null);
+    const viewRegisteredRef = useRef(false);
 
     const [playing, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -123,6 +125,26 @@ export default function VideoCard({
             if (audioRef.current) { audioRef.current.muted = true; audioRef.current.pause(); }
         };
     }, []);
+
+    // Reset view registered status when video becomes inactive
+    useEffect(() => {
+        if (!isActive) {
+            viewRegisteredRef.current = false;
+        }
+    }, [isActive]);
+
+    // Automatically count a view after watching/playing for 1 second consecutively
+    useEffect(() => {
+        if (isActive && playing && !viewRegisteredRef.current) {
+            const timer = setTimeout(() => {
+                if (isActive && playing && !viewRegisteredRef.current) {
+                    viewRegisteredRef.current = true;
+                    viewVideo(video.id).catch(() => {});
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [isActive, playing, video.id]);
 
     // Progress tracking
     useEffect(() => {

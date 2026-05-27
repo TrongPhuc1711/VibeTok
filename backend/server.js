@@ -16,6 +16,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import socialAuthRoutes from './routes/socialAuthRoutes.js';
 import bookmarkRoutes from './routes/bookmarkRoutes.js';
 
+// Khởi chạy hệ thống cronService chạy ngầm đồng bộ lượt xem từ Redis sang MySQL
+import { initCronJobs } from './services/cronService.js';
+
 const app = express();
 const server = createServer(app);
 
@@ -53,6 +56,7 @@ app.use(cors({
 app.use(express.json());
 
 initSocket(server);
+initCronJobs();
 
 app.get('/', (req, res) => res.send('<--VibeTok Backend đang hoạt động!-->'));
 

@@ -48,7 +48,7 @@ export const getVideoById = async (req, res) => {
         if (!video) return res.status(404).json({ message: 'Video không tồn tại' });
 
         // Increment views fire-and-forget
-        VideoModel.incrementViews(req.params.id).catch(() => {});
+        VideoModel.incrementViews(req.params.id).catch(() => { });
         res.json({ video });
     } catch (e) {
         console.error('getVideoById error:', e);
@@ -153,7 +153,7 @@ export const uploadVideo = async (req, res) => {
         // Attach hashtags
         const tags = (caption.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) || []);
         if (tags.length) {
-            await HashtagModel.attachToVideo(videoId, tags).catch(() => {});
+            await HashtagModel.attachToVideo(videoId, tags).catch(() => { });
         }
 
         await UserModel.incrementVideoCount(req.user.id);
@@ -221,7 +221,7 @@ export const postComment = async (req, res) => {
                 const sender = senderDb ? normalizeUser(senderDb) : req.user;
                 await triggerNotification(video.userId, sender, 'comment', video.id, comment.id);
             }
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Trigger notification for mentioned users (fire-and-forget)
         if (mentions && Array.isArray(mentions) && mentions.length > 0) {
@@ -229,7 +229,7 @@ export const postComment = async (req, res) => {
             const sender = senderDb ? normalizeUser(senderDb) : req.user;
             for (const m of mentions) {
                 if (String(m.userId) !== String(req.user.id)) {
-                    triggerNotification(m.userId, sender, 'mention', req.params.id, comment.id).catch(() => {});
+                    triggerNotification(m.userId, sender, 'mention', req.params.id, comment.id).catch(() => { });
                 }
             }
         }
@@ -243,9 +243,9 @@ export const postComment = async (req, res) => {
                 if (rows[0] && String(rows[0].ma_nguoi_dung) !== String(req.user.id)) {
                     const senderDb = await UserModel.findById(req.user.id);
                     const sender = senderDb ? normalizeUser(senderDb) : req.user;
-                    triggerNotification(rows[0].ma_nguoi_dung, sender, 'reply', req.params.id, comment.id).catch(() => {});
+                    triggerNotification(rows[0].ma_nguoi_dung, sender, 'reply', req.params.id, comment.id).catch(() => { });
                 }
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         res.status(201).json({ message: 'Bình luận thành công!', comment });
@@ -288,7 +288,7 @@ export const likeVideo = async (req, res) => {
                     const sender = senderDb ? normalizeUser(senderDb) : req.user;
                     await triggerNotification(video.userId, sender, 'like', video.id);
                 }
-            }).catch(() => {});
+            }).catch(() => { });
         }
         res.json({ message: liked ? 'Đã thích' : 'Đã thích rồi', liked: true });
     } catch (e) {
@@ -335,5 +335,16 @@ export const deleteVideo = async (req, res) => {
     } catch (e) {
         console.error('deleteVideo error:', e);
         res.status(500).json({ message: 'Lỗi xóa video', error: e.message });
+    }
+};
+
+// POST /api/videos/:id/view
+export const viewVideo = async (req, res) => {
+    try {
+        VideoModel.incrementViews(req.params.id).catch(() => { });
+        res.json({ success: true, message: 'Đã tăng lượt xem' });
+    } catch (e) {
+        console.error('viewVideo error:', e);
+        res.status(500).json({ message: 'Lỗi tăng lượt xem', error: e.message });
     }
 };

@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import { normalizeUser } from './userModel.js';
+import redis from '../config/redis.js';
 
 export const normalizeVideo = (v) => {
     if (!v) return null;
@@ -121,7 +122,14 @@ export const VideoModel = {
             `${buildVideoQuery(null)} WHERE v.id = ? AND v.hoat_dong = 1`,
             [id]
         );
-        return normalizeVideo(rows[0]) || null;
+        const video = normalizeVideo(rows[0]) || null;
+        if (video) {
+            const redisViews = await redis.get(`video:${id}:views`);
+            if (redisViews !== null) {
+                video.views = Number(redisViews);
+            }
+        }
+        return video;
     },
 
     // Find even if deleted (for cleanup after delete)
@@ -130,7 +138,14 @@ export const VideoModel = {
             `${buildVideoQuery(null)} WHERE v.id = ?`,
             [id]
         );
-        return normalizeVideo(rows[0]) || null;
+        const video = normalizeVideo(rows[0]) || null;
+        if (video) {
+            const redisViews = await redis.get(`video:${id}:views`);
+            if (redisViews !== null) {
+                video.views = Number(redisViews);
+            }
+        }
+        return video;
     },
 
     async findByIdWithAuth(id, currentUserId = null) {
@@ -138,7 +153,14 @@ export const VideoModel = {
             `${buildVideoQuery(currentUserId)} WHERE v.id = ? AND v.hoat_dong = 1`,
             [id]
         );
-        return normalizeVideo(rows[0]) || null;
+        const video = normalizeVideo(rows[0]) || null;
+        if (video) {
+            const redisViews = await redis.get(`video:${id}:views`);
+            if (redisViews !== null) {
+                video.views = Number(redisViews);
+            }
+        }
+        return video;
     },
 
     async search({ q = '', page = 1, limit = 10 } = {}) {
@@ -187,7 +209,22 @@ export const VideoModel = {
     },
 
     async incrementViews(videoId) {
-        await pool.query('UPDATE videos SET luot_xem = luot_xem + 1 WHERE id = ?', [videoId]);
+        const key = `video:${videoId}:views`;
+        try {
+            const exists = await redis.exists(key);
+            if (!exists) {
+                const [rows] = await pool.query('SELECT luot_xem FROM videos WHERE id = ?', [videoId]);
+                const dbViews = rows[0]?.luot_xem || 0;
+                await redis.set(key, dbViews + 1);
+            } else {
+                await redis.incr(key);
+            }
+            await redis.sadd('video:dirty_views', videoId);
+        } catch (err) {
+            console.error('Error incrementing views in Redis:', err);
+            // Fallback directly to DB if Redis fails
+            await pool.query('UPDATE videos SET luot_xem = luot_xem + 1 WHERE id = ?', [videoId]);
+        }
     },
 
     async updateLikeCount(videoId, delta = 1) {

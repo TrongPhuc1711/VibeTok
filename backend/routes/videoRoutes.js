@@ -5,7 +5,7 @@ import {
     getFeed, searchVideos, getVideoById, getVideosByUser,
     uploadVideo, getComments, postComment, getReplies,
     likeVideo, unlikeVideo, deleteVideo,
-    likeComment, unlikeComment,
+    likeComment, unlikeComment, viewVideo,
 } from '../controllers/videoController.js';
 
 const router = express.Router();
@@ -18,6 +18,7 @@ router.get('/user/:userId', optionalAuth, getVideosByUser);
 router.get('/:id/comments/:commentId/replies', optionalAuth, getReplies);
 router.get('/:id/comments', optionalAuth, getComments);
 router.get('/:id', optionalAuth, getVideoById);
+router.post('/:id/view', optionalAuth, viewVideo);
 
 // Protected (cần đăng nhập)
 router.post('/upload', verifyToken, uploadContent, uploadVideo);
