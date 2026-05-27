@@ -4,7 +4,7 @@ import pool from '../config/db.js';
 
 export function initCronJobs() {
     // Định nghĩa cron job chạy mỗi 2 phút (*/2 * * * *) để đồng bộ lượt xem từ Redis sang MySQL
-    cron.schedule('*/2 * * * *', async () => {
+    cron.schedule('*/30 * * * * *', async () => {
         console.log('[Cron Views] Bắt đầu đồng bộ lượt xem từ Redis sang MySQL...');
         try {
             // Lấy tất cả mã video có sự thay đổi lượt xem (dirty views)
@@ -33,5 +33,5 @@ export function initCronJobs() {
         }
     });
 
-    console.log('[Cron Service] Đã khởi tạo cron job đồng bộ lượt xem (mỗi 2 phút).');
+    console.log('[Cron Service] Đã khởi tạo cron job đồng bộ lượt xem (mỗi 30 giây).');
 }
