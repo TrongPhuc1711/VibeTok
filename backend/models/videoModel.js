@@ -196,14 +196,24 @@ export const VideoModel = {
 
     async search({ q = '', page = 1, limit = 10 } = {}) {
         const offset = (page - 1) * limit;
-        const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
         const query = buildVideoQuery(null);
+
+        if (!q.trim()) {
+            const [rows] = await pool.query(
+                `${query}
+                 WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
+                 ORDER BY v.luot_xem DESC LIMIT ? OFFSET ?`,
+                [limit, offset]
+            );
+            return rows.map(normalizeVideo);
+        }
+
         const [rows] = await pool.query(
             `${query}
              WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
-               AND (v.mo_ta LIKE ? OR v.tieu_de LIKE ?)
-             ORDER BY v.luot_xem DESC LIMIT ? OFFSET ?`,
-            [like, like, limit, offset]
+               AND MATCH(v.tieu_de, v.mo_ta) AGAINST(? IN NATURAL LANGUAGE MODE)
+             LIMIT ? OFFSET ?`,
+            [q.trim(), limit, offset]
         );
         return rows.map(normalizeVideo);
     },
