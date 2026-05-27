@@ -6,6 +6,7 @@ import {
     ShieldAdminIcon, SettingsAdminIcon, MusicAdminIcon, CollapseIcon,
 } from '../../../icons/AdminIcons';
 import { getSidebarCounts } from '../../../services/adminService';
+import Avatar from '../../common/Avatar/avatar';
 
 /* ── helpers ── */
 const fmt = (n) => {
@@ -44,11 +45,15 @@ export default function AdminSidebar() {
 
     return (
         <aside
-            className="flex flex-col h-screen bg-[#07070e] border-r border-[#13131f] sticky top-0 shrink-0 transition-all duration-300"
-            style={{ width: collapsed ? 64 : 220 }}
+            className="flex flex-col h-screen sticky top-0 shrink-0 transition-all duration-300"
+            style={{ 
+                width: collapsed ? 64 : 220,
+                background: 'var(--vt-sidebar-bg)',
+                borderRight: '1px solid var(--color-border)'
+            }}
         >
             {/* ── Header: Logo + Collapse toggle ── */}
-            <div className="flex items-center justify-between border-b border-[#13131f] px-3" style={{ height: 56 }}>
+            <div className="flex items-center justify-between px-3" style={{ height: 56, borderBottom: '1px solid var(--color-border)' }}>
                 {/* Logo */}
                 <div className="cursor-pointer" onClick={() => navigate('/admin')}>
                     {collapsed ? (
@@ -76,7 +81,8 @@ export default function AdminSidebar() {
                 {/* Collapse toggle */}
                 <button
                     onClick={() => setCollapsed(c => !c)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg border-none cursor-pointer bg-transparent hover:bg-white/[0.06] transition-colors flex-shrink-0"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg border-none cursor-pointer bg-transparent hover:bg-[var(--vt-hover)] transition-colors flex-shrink-0"
+                    style={{ color: 'var(--color-text-secondary)' }}
                     title={collapsed ? 'Mở rộng' : 'Thu gọn'}
                 >
                     <CollapseIcon collapsed={collapsed} />
@@ -86,7 +92,7 @@ export default function AdminSidebar() {
             {/* ── Nav ── */}
             <nav className="flex-1 overflow-auto py-3 px-2" style={{ scrollbarWidth: 'none' }}>
                 {!collapsed && (
-                    <p className="text-[9px] font-body font-semibold tracking-[1.5px] uppercase text-[#333] px-2 mb-2">Menu</p>
+                    <p className="text-[9px] font-body font-semibold tracking-[1.5px] uppercase px-2 mb-2" style={{ color: 'var(--color-text-muted)' }}>Menu</p>
                 )}
 
                 {items.map(({ path, label, Icon, badge, badgeColor, danger, exact }) => {
@@ -104,7 +110,7 @@ export default function AdminSidebar() {
                                 ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'}
                                 ${active
                                     ? 'bg-[#ff2d78]/12 text-[#ff2d78]'
-                                    : 'bg-transparent text-[#666] hover:bg-white/[0.04] hover:text-[#aaa]'}
+                                    : 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--vt-hover)] hover:text-[var(--color-text-primary)]'}
                             `}
                         >
                             {active && (
@@ -162,37 +168,32 @@ export default function AdminSidebar() {
 
             {/* ── User profile ── */}
             <div
-                className="border-t border-[#13131f] transition-all"
-                style={{ padding: collapsed ? '12px 8px' : '12px 12px' }}
+                className="transition-all"
+                style={{ 
+                    padding: collapsed ? '12px 8px' : '12px 12px',
+                    borderTop: '1px solid var(--color-border)'
+                }}
             >
                 {collapsed ? (
                     <div className="flex justify-center">
-                        <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden cursor-pointer"
-                            style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
-                            title={user?.fullName || 'Admin'}
-                        >
-                            {user?.anh_dai_dien
-                                ? <img src={user.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                                : initials}
-                        </div>
+                        <Avatar
+                            user={user}
+                            className="!w-8 !h-8 !text-[10px] cursor-pointer"
+                            onClick={() => navigate('/admin/settings')}
+                        />
                     </div>
                 ) : (
                     <div className="flex items-center gap-2.5 px-1">
-                        <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden flex-shrink-0"
-                            style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
-                        >
-                            {user?.anh_dai_dien
-                                ? <img src={user.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                                : initials}
-                        </div>
+                        <Avatar
+                            user={user}
+                            className="!w-8 !h-8 !text-[10px]"
+                        />
                         <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-semibold font-body text-[#ccc] leading-tight m-0 truncate">
+                            <p className="text-[12px] font-semibold font-body leading-tight m-0 truncate" style={{ color: 'var(--color-text-primary)' }}>
                                 {user?.fullName || 'Admin'}
                             </p>
-                            <p className="text-[10px] font-body text-[#444] m-0 leading-tight truncate">
-                                {user?.email || 'admin@vibetok.app'}
+                            <p className="text-[10px] font-body m-0 leading-tight truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                                {user?.email || 'admin@vibetok.com'}
                             </p>
                         </div>
                     </div>

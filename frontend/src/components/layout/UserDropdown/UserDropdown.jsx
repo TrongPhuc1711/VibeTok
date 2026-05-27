@@ -152,6 +152,9 @@ export default function UserDropdown({ placement = 'topbar' }) {
       </div>
 
       <div className="py-1">
+        {user?.vai_tro === 'admin' && (
+          <MenuItem icon={<ShieldMenuIcon />} label="Trang quản trị" onClick={() => handleNavigate('/admin')} />
+        )}
         <MenuItem icon={<ProfileMenuIcon />} label="Trang cá nhân" onClick={() => handleNavigate(ROUTES.PROFILE)} />
         <MenuItem icon={<LockMenuIcon />} label="Đổi mật khẩu" onClick={() => handleNavigate('/change-password')} />
       </div>
@@ -231,6 +234,15 @@ function MoonMenuIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function ShieldMenuIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 }

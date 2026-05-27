@@ -6,6 +6,7 @@ import DonutChart  from '../../components/charts/DonutChart';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AdminBtn    from './components/AdminBtn';
 import { BounceDots } from '../../components/ui/Spinner';
+import Avatar from '../../components/common/Avatar/avatar';
 import { getStats, getUserGrowth, getContentDistribution, getTopCreators } from '../../services/adminService';
 
 const fmt = (n) => {
@@ -62,7 +63,7 @@ export default function DashboardPage() {
             {/* ── Charts row ── */}
             <div className="grid grid-cols-[1fr_272px] gap-4 mb-4">
                 {/* Bar chart */}
-                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-4">
+                <div className="rounded-xl p-4" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-white text-[13px] font-semibold font-body">Người dùng mới theo ngày</p>
                         <div className="flex items-center gap-3">
@@ -81,7 +82,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Donut */}
-                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-4">
+                <div className="rounded-xl p-4" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                     <p className="text-white text-[13px] font-semibold font-body mb-3">Phân loại nội dung</p>
                     {content.length > 0 ? (
                         <>
@@ -93,9 +94,9 @@ export default function DashboardPage() {
                                     <div key={d.name} className="flex items-center justify-between text-[10px] font-body">
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                                            <span className="text-[#777]">{d.name}</span>
+                                            <span style={{ color: 'var(--color-text-secondary)' }}>{d.name}</span>
                                         </div>
-                                        <span className="text-[#888]">{d.value}%</span>
+                                        <span style={{ color: 'var(--color-text-muted)' }}>{d.value}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -107,14 +108,14 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Top Creators table ── */}
-            <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1a1a2a]">
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
+                <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <p className="text-white text-[13px] font-semibold font-body">Top Creators</p>
                 </div>
                 {creators.length > 0 ? (
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-[#1a1a2a]">
+                            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                                 {['#', 'Tên', 'Followers', 'Videos', 'Lượt thích', 'Trạng thái', 'Hành động'].map(h => (
                                     <th key={h} className="px-4 py-2.5 text-left text-[10px] font-body text-[#444] font-medium whitespace-nowrap">{h}</th>
                                 ))}
@@ -122,24 +123,20 @@ export default function DashboardPage() {
                         </thead>
                         <tbody>
                             {creators.map((c, i) => (
-                                <tr key={c.id} className={`border-b border-[#1a1a2a]/50 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
-                                    <td className="px-4 py-3 text-[#555] text-[11px] font-body">{c.rank}</td>
+                                <tr key={c.id} className="transition-colors hover:bg-[var(--vt-hover)]" style={{ borderBottom: '1px solid var(--vt-divider)' }}>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{c.rank}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 overflow-hidden" style={{ background: c.avatar ? 'transparent' : c.color }}>
-                                                {c.avatar
-                                                    ? <img src={c.avatar} alt="" className="w-full h-full object-cover" />
-                                                    : c.initials}
-                                            </div>
+                                            <Avatar user={{ ...c, fullName: c.name }} size="xs" className="!w-7 !h-7 !text-[9px]" />
                                             <div>
                                                 <p className="text-white text-[12px] font-semibold font-body leading-tight m-0">{c.name}</p>
-                                                <p className="text-[#555] text-[10px] font-body m-0">{c.username}</p>
+                                                <p className="text-[10px] font-body m-0" style={{ color: 'var(--color-text-secondary)' }}>{c.username}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body">{c.followers}</td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body">{c.videos}</td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body">{c.views}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{c.followers}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{c.videos}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{c.views}</td>
                                     <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                                     <td className="px-4 py-3">
                                         <AdminBtn label="Xem" />

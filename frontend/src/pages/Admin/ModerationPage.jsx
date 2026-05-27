@@ -7,6 +7,7 @@ import AdminFilters from './components/AdminFilters';
 import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
+import Avatar from '../../components/common/Avatar/avatar';
 import { PlayAdminIcon } from '../../icons/AdminIcons';
 import { getAdminVideos, getVideoCounts, hideVideo, restoreVideo } from '../../services/adminService';
 
@@ -42,6 +43,7 @@ export default function ModerationPage() {
         setLoading(true);
         try {
             const res = await getAdminVideos({ status: filter, search, page, limit: PAGE_SIZE });
+            console.log('Admin videos loaded:', res.videos);
             setVideos(res.videos);
             setTotal(res.total);
             setTotalPages(res.totalPages);
@@ -148,7 +150,7 @@ export default function ModerationPage() {
                                 <div className="p-3">
                                     <p className="text-white text-[12px] font-semibold font-body leading-tight mb-1.5 line-clamp-1">{v.title}</p>
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <div className="w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ background: v.color }}>{v.initials}</div>
+                                        <Avatar user={{ anh_dai_dien: v.avatar, initials: v.initials, fullName: v.creator }} size="xs" className="!w-7 !h-7 !text-[9px]" />
                                         <span className="text-[#555] text-[10px] font-body">{v.creator}</span>
                                         <span className="text-[#333] text-[10px] font-body ml-auto">{v.submitTime}</span>
                                     </div>
