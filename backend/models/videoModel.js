@@ -98,8 +98,24 @@ export const VideoModel = {
             `SELECT COUNT(*) AS total FROM videos ${countWhere}`
         );
 
+        const videos = rows.map(normalizeVideo);
+        if (videos.length > 0) {
+            const keys = videos.map(v => `video:${v.id}:views`);
+            try {
+                const cachedViews = await redis.mget(keys);
+                videos.forEach((video, idx) => {
+                    const views = cachedViews[idx];
+                    if (views !== null) {
+                        video.views = Number(views);
+                    }
+                });
+            } catch (err) {
+                console.error('Error fetching batch views from Redis:', err);
+            }
+        }
+
         return {
-            videos: rows.map(normalizeVideo),
+            videos,
             hasMore: offset + rows.length < total,
             total,
         };
@@ -114,7 +130,22 @@ export const VideoModel = {
              ORDER BY v.ngay_tao DESC LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
-        return rows.map(normalizeVideo);
+        const videos = rows.map(normalizeVideo);
+        if (videos.length > 0) {
+            const keys = videos.map(v => `video:${v.id}:views`);
+            try {
+                const cachedViews = await redis.mget(keys);
+                videos.forEach((video, idx) => {
+                    const views = cachedViews[idx];
+                    if (views !== null) {
+                        video.views = Number(views);
+                    }
+                });
+            } catch (err) {
+                console.error('Error fetching batch views from Redis:', err);
+            }
+        }
+        return videos;
     },
 
     async findById(id) {
