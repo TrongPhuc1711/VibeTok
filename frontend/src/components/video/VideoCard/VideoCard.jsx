@@ -338,12 +338,10 @@ export default function VideoCard({
             )}
 
 
-            {/* Volume control — TikTok style, top right, hover */}
+            {/* Volume control — Top-left, expandable on click, drag handle */}
             {isActive && (
                 <div
-                    className="absolute top-3.5 right-3.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    onMouseEnter={() => setShowVolume(true)}
-                    onMouseLeave={() => setShowVolume(false)}
+                    className="absolute top-[30px] left-3.5 z-20 opacity-80 hover:opacity-100 transition-opacity duration-300 pointer-events-auto"
                 >
                     <VolumeControl
                         volume={volume}
