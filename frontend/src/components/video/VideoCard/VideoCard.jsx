@@ -20,7 +20,6 @@ export default function VideoCard({
     const videoRef = useRef(null);
     const intendedPlayRef = useRef(false);
     const playPromiseRef = useRef(null);
-    const viewRegisteredRef = useRef(false);
 
     const [playing, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -126,19 +125,11 @@ export default function VideoCard({
         };
     }, []);
 
-    // Reset view registered status when video becomes inactive
-    useEffect(() => {
-        if (!isActive) {
-            viewRegisteredRef.current = false;
-        }
-    }, [isActive]);
-
     // Automatically count a view after watching/playing for 1 second consecutively
     useEffect(() => {
-        if (isActive && playing && !viewRegisteredRef.current) {
+        if (isActive && playing) {
             const timer = setTimeout(() => {
-                if (isActive && playing && !viewRegisteredRef.current) {
-                    viewRegisteredRef.current = true;
+                if (isActive && playing) {
                     viewVideo(video.id).catch(() => {});
                 }
             }, 1000);
