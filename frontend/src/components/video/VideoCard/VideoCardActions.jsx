@@ -10,6 +10,7 @@ import MusicDisc from './MusicDisc';
 import { useToast } from '../../ui/Toast';
 import LoginPromptModal from '../../ui/LoginPromptModal';
 import { useBookmark } from '../../../hooks/useBookmark';
+import Avatar from '../../common/Avatar/avatar';
 
 export default function VideoCardActions({ video, onComment, onShare, onBookmark, inline = false }) {
   const navigate = useNavigate();
@@ -117,15 +118,11 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
       <div className={wrapperCls}>
         {/* Avatar + Follow */}
         <div className="relative mb-1">
-          <div
+          <Avatar
+            user={user}
+            className="!w-[50px] !h-[50px] !text-[14px] border-2 border-white/60"
             onClick={() => user.username && navigate(`/profile/${user.username}`)}
-            className="w-[50px] h-[50px] rounded-full border-2 border-white/60 bg-brand-gradient flex items-center justify-center text-[14px] font-bold text-white cursor-pointer overflow-hidden"
-          >
-            {user.anh_dai_dien
-              ? <img src={user.anh_dai_dien} alt={user.username} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
-              : (user.initials ?? 'U')
-            }
-          </div>
+          />
           {!isOwnVideo && !following && (
             <button onClick={handleFollow} disabled={followLoading}
               className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary border-2 border-base flex items-center justify-center cursor-pointer disabled:opacity-60 hover:scale-110 transition-transform"

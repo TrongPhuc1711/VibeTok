@@ -7,6 +7,7 @@ import AdminFilters from './components/AdminFilters';
 import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
+import Avatar from '../../components/common/Avatar/avatar';
 import { getUsers, getUserCounts, banUser, unbanUser, resetUserPassword } from '../../services/adminService';
 
 const fmt = (n) => {
@@ -256,11 +257,7 @@ export default function UserManagerPage() {
                                 <tr key={u.id} className={`border-b border-[#1a1a2a]/40 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 overflow-hidden" style={{ background: u.avatar ? 'transparent' : u.color }}>
-                                                {u.avatar
-                                                    ? <img src={u.avatar} alt="" className="w-full h-full object-cover" />
-                                                    : u.initials}
-                                            </div>
+                                            <Avatar user={{ ...u, fullName: u.name }} size="xs" className="!w-7 !h-7 !text-[9px]" />
                                             <div>
                                                 <p className="text-white text-[12px] font-semibold font-body leading-tight m-0">{u.name}</p>
                                                 <p className="text-[#555] text-[10px] font-body m-0">{u.username}</p>

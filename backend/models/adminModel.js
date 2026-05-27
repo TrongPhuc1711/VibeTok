@@ -283,6 +283,7 @@ export const AdminModel = {
                 title: v.tieu_de || v.mo_ta || 'Không có tiêu đề',
                 creator: creatorName,
                 username: `@${v.ten_dang_nhap || ''}`,
+                avatar: v.anh_dai_dien || null,
                 initials,
                 color: COLORS[i % COLORS.length],
                 thumbnail: v.anh_thu_nho,

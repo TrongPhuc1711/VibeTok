@@ -293,10 +293,9 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
-                <span className="text-4xl">🎬</span>
                 <p className="text-sm">{isMyProfile ? 'Bạn chưa đăng video nào' : 'Người dùng chưa đăng video nào'}</p>
                 {isMyProfile && (
-                  <Button onClick={() => navigate('/upload')}>Đăng video đầu tiên</Button>
+                  <Button className='cursor-pointer' onClick={() => navigate('/upload')}>Đăng video đầu tiên</Button>
                 )}
               </div>
             )

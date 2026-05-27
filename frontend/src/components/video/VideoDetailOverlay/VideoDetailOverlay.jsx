@@ -4,6 +4,7 @@ import { getVideoById, getComments, postComment, likeVideo, unlikeVideo } from '
 import { followUser, unfollowUser } from '../../../services/userService';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
+import Avatar from '../../common/Avatar/avatar';
 
 export default function VideoDetailOverlay({ videoId, highlightComment = false, onClose }) {
   const navigate = useNavigate();
@@ -228,16 +229,11 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
 
             {/* User header */}
             <div className="flex items-center gap-3 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <div
-                className="w-11 h-11 rounded-full flex-shrink-0 overflow-hidden cursor-pointer"
-                style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
+              <Avatar
+                user={video.user}
+                className="!w-11 !h-11 !text-sm cursor-pointer"
                 onClick={() => { handleClose(); navigate(`/profile/${video.user?.username}`); }}
-              >
-                {video.user?.anh_dai_dien
-                  ? <img src={video.user.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                  : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white">{video.user?.initials || 'U'}</span>
-                }
-              </div>
+              />
               <div className="flex-1 min-w-0">
                 <p
                   className="text-white text-[14px] font-semibold font-body leading-tight cursor-pointer hover:underline"
@@ -354,15 +350,10 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
                   className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
-                  <div
-                    className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
-                  >
-                    {me?.anh_dai_dien
-                      ? <img src={me.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                      : (me?.initials || 'U')
-                    }
-                  </div>
+                  <Avatar
+                    user={me}
+                    className="!w-7 !h-7 !text-[10px]"
+                  />
                   <input
                     ref={inputRef}
                     value={input}
@@ -408,19 +399,14 @@ function CommentRow({ comment, highlight = false }) {
         }`}
       style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
     >
-      <div
-        className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white overflow-hidden"
-        style={{
-          background: comment.anh_dai_dien
-            ? undefined
-            : `hsl(${(comment.username?.charCodeAt(0) || 0) * 37 % 360},55%,38%)`,
+      <Avatar
+        user={{
+          anh_dai_dien: comment.anh_dai_dien,
+          initials: comment.initials || comment.username?.[0]?.toUpperCase(),
+          fullName: comment.username
         }}
-      >
-        {comment.anh_dai_dien
-          ? <img src={comment.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-          : (comment.initials || comment.username?.[0]?.toUpperCase() || 'U')
-        }
-      </div>
+        className="!w-8 !h-8 !text-[11px]"
+      />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-0.5">

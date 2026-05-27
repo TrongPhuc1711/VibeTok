@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { formatCount, formatTimeAgo } from '../../../utils/formatters';
+import Avatar from '../../common/Avatar/avatar';
 
-/*
- CommentItem — một dòng bình luận
- 
- Props:
- comment – { id, username, initials, content, likes, replies, createdAt }
- */
+
 export default function CommentItem({ comment }) {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(comment.likes ?? 0);
@@ -19,9 +15,15 @@ export default function CommentItem({ comment }) {
   return (
     <div className="py-3.5 flex gap-3 border-b border-border/50 last:border-0">
       {/* Avatar */}
-      <div className="w-[38px] h-[38px] rounded-full bg-gradient-to-br from-[#2a2a4a] to-[#3a3a5a] flex items-center justify-center text-xs font-bold text-text-secondary shrink-0">
-        {comment.initials}
-      </div>
+      <Avatar
+        user={{
+          anh_dai_dien: comment.anh_dai_dien,
+          avatar: comment.avatar,
+          initials: comment.initials,
+          fullName: comment.username
+        }}
+        className="!w-[38px] !h-[38px] !text-xs shrink-0"
+      />
 
       {/* Content */}
       <div className="flex-1 min-w-0">

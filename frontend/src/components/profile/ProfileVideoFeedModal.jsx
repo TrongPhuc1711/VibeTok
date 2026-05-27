@@ -6,6 +6,7 @@ import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../
 import { isLoggedIn, getStoredUser } from '../../utils/helpers';
 import { ArrowDownIcon, ArrowUpIcon } from '../../icons/NavIcons';
 import EmojiPickerButton from '../ui/EmojiPickerButton';
+import Avatar from '../common/Avatar/avatar';
 
 // ── Comment Section ──
 function CommentSection({ videoId, totalComments }) {
@@ -70,14 +71,10 @@ function CommentSection({ videoId, totalComments }) {
             <div className="px-4 py-3 shrink-0 border-t border-white/6">
                 {isLoggedIn() ? (
                     <div className="flex items-center gap-2.5">
-                        <div
-                            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden"
-                            style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
-                        >
-                            {me?.anh_dai_dien
-                                ? <img src={me.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                                : (me?.initials || 'U')}
-                        </div>
+                        <Avatar
+                            user={me}
+                            className="!w-8 !h-8 !text-[10px]"
+                        />
                         <div
                             className="flex-1 flex items-center gap-2 px-3.5 py-2 rounded-full"
                             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
@@ -122,18 +119,14 @@ function CommentRow({ comment }) {
 
     return (
         <div className="flex gap-3 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-            <div
-                className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white overflow-hidden"
-                style={{
-                    background: comment.anh_dai_dien
-                        ? undefined
-                        : `hsl(${(comment.username?.charCodeAt(0) || 0) * 37 % 360},60%,40%)`,
+            <Avatar
+                user={{
+                    anh_dai_dien: comment.anh_dai_dien,
+                    initials: comment.initials || comment.username?.[0]?.toUpperCase(),
+                    fullName: comment.username
                 }}
-            >
-                {comment.anh_dai_dien
-                    ? <img src={comment.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                    : (comment.initials || comment.username?.[0]?.toUpperCase() || 'U')}
-            </div>
+                className="!w-9 !h-9 !text-[11px]"
+            />
             <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 mb-0.5">
                     <span className="text-white text-[13px] font-semibold font-body">{comment.username}</span>
@@ -185,15 +178,11 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
         >
             {/* User header */}
             <div className="flex items-center gap-3 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div
-                    className="w-11 h-11 rounded-full flex-shrink-0 overflow-hidden cursor-pointer ring-2 ring-white/10 hover:ring-primary/50 transition-all"
-                    style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
+                <Avatar
+                    user={user}
+                    className="!w-11 !h-11 !text-sm cursor-pointer ring-2 ring-white/10 hover:ring-primary/50 transition-all"
                     onClick={() => { onClose(); navigate(`/profile/${user.username}`); }}
-                >
-                    {user.anh_dai_dien
-                        ? <img src={user.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                        : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white">{user.initials || 'U'}</span>}
-                </div>
+                />
                 <div className="flex-1 min-w-0">
                     <p
                         className="text-white text-[14px] font-semibold font-body leading-tight cursor-pointer hover:underline m-0"

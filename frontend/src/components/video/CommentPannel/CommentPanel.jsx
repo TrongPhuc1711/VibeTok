@@ -7,6 +7,7 @@ import { SendIcon } from '../../../icons/ActionIcons';
 import { getStoredUser } from '../../../utils/helpers';
 import EmojiPickerButton from '../../ui/EmojiPickerButton';
 import MentionDropdown from './MentionDropdown';
+import Avatar from '../../common/Avatar/avatar';
 
 
 export default function CommentPanel({ videoId, totalComments, onClose }) {
@@ -325,15 +326,10 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
               style={{ background: 'var(--vt-hover)', border: '1px solid var(--vt-divider)' }}
             >
               {/* Avatar mini */}
-              <div
-                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white overflow-hidden"
-                style={{ background: me?.anh_dai_dien ? undefined : 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
-              >
-                {me?.anh_dai_dien
-                  ? <img src={me.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                  : (me?.initials || me?.fullName?.[0]?.toUpperCase() || 'U')
-                }
-              </div>
+              <Avatar
+                user={me}
+                className="!w-8 !h-8 !text-[11px]"
+              />
               <input
                 ref={inputRef}
                 type="text"
@@ -435,20 +431,14 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
       {/* Main comment */}
       <div className="py-3.5 flex gap-3">
         {/* Avatar */}
-        <div
-          className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white"
-          style={{
-            background: comment.anh_dai_dien
-              ? undefined
-              : `hsl(${(comment.username?.charCodeAt(0) || 0) * 37 % 360}, 60%, 40%)`,
-            overflow: 'hidden',
+        <Avatar
+          user={{
+            anh_dai_dien: comment.anh_dai_dien,
+            initials: comment.initials || comment.username?.[0]?.toUpperCase(),
+            fullName: comment.username
           }}
-        >
-          {comment.anh_dai_dien
-            ? <img src={comment.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-            : (comment.initials || comment.username?.[0]?.toUpperCase() || 'U')
-          }
-        </div>
+          className="!w-9 !h-9 !text-[11px]"
+        />
 
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -526,18 +516,14 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
           ) : (
             replies.map((reply, i) => (
               <div key={reply.id || i} className="py-2 flex gap-2.5" style={{ borderTop: i > 0 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
-                <div
-                  className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
-                  style={{
-                    background: reply.anh_dai_dien ? undefined : `hsl(${(reply.username?.charCodeAt(0) || 0) * 37 % 360}, 55%, 40%)`,
-                    overflow: 'hidden',
+                <Avatar
+                  user={{
+                    anh_dai_dien: reply.anh_dai_dien,
+                    initials: reply.initials || reply.username?.[0]?.toUpperCase(),
+                    fullName: reply.username
                   }}
-                >
-                  {reply.anh_dai_dien
-                    ? <img src={reply.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-                    : (reply.initials || reply.username?.[0]?.toUpperCase() || 'U')
-                  }
-                </div>
+                  className="!w-7 !h-7 !text-[10px]"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 mb-0.5">
                     <span className="font-body" style={{ color: 'var(--vt-text-bright)', fontSize: 12, fontWeight: 600 }}>{reply.username}</span>
