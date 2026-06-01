@@ -64,7 +64,8 @@ api.interceptors.response.use(
                 const isPublicPage =
                     publicPaths.includes(currentPath) ||
                     currentPath.startsWith('/profile/') ||
-                    currentPath.startsWith('/video/');
+                    currentPath.startsWith('/video/') ||
+                    currentPath.startsWith('/tag/');
 
                 // Don't redirect if this was a background refresh (getMe, etc.)
                 const isBackgroundRequest = config?.url?.includes('/auth/me');

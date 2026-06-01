@@ -217,7 +217,13 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                 {hashtags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                         {hashtags.map(h => (
-                            <span key={h} className="text-primary text-[12px] font-semibold font-body">{h}</span>
+                            <span 
+                                key={h} 
+                                className="text-primary text-[12px] font-semibold font-body cursor-pointer hover:underline transition-colors"
+                                onClick={() => { onClose(); navigate(`/tag/${h.replace('#', '')}`); }}
+                            >
+                                {h}
+                            </span>
                         ))}
                     </div>
                 )}

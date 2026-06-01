@@ -43,9 +43,13 @@ export default function VideoCardInfo({ video }) {
         
         {/* Render hashtags sau caption */}
         {hashtags.length > 0 && (
-          <span className="font-bold hover:underline cursor-pointer ml-1">
+          <span className="font-bold ml-1">
             {hashtags.map((h) => (
-               <span key={h} className="text-white font-bold hover:underline cursor-pointer mr-1">
+               <span 
+                 key={h} 
+                 className="text-white font-bold hover:underline cursor-pointer mr-1"
+                 onClick={(e) => { e.stopPropagation(); navigate(`/tag/${h.replace('#', '')}`); }}
+               >
                  {h}
                </span>
             ))}

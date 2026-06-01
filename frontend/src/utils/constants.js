@@ -61,7 +61,8 @@ export const ROUTES = {
   FOLLOWING: '/following',
   MESSAGE: '/messages',
   CHANGE_PASSWORD: '/change-password',
-  FORGOT_PASSWORD: '/forgot-password'
+  FORGOT_PASSWORD: '/forgot-password',
+  HASHTAG: '/tag/:tagName',
 };
 
 // Categories

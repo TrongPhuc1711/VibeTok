@@ -21,6 +21,7 @@ import MessagesPage from './pages/Messages';
 import CallPage from './pages/Messages/CallPage';
 import NotFoundPage from './pages/NotFoundPage';
 import VideoDetailPage from './pages/VideoDetailPage';
+import HashtagPage from './pages/HashtagPage';
 import ImageSlideshowDemo from './pages/ImageSlideshowDemo';
 
 // Admin
@@ -90,6 +91,7 @@ export default function App() {
                 <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path={ROUTES.FOLLOWING} element={<PrivateRoute><HomePage feedType="following"/></PrivateRoute>} />
                 <Route path="/video/:id" element={<VideoDetailPage />} />
+                <Route path="/tag/:tagName" element={<HashtagPage />} />
                 <Route path="/slideshow-demo" element={<ImageSlideshowDemo />} />
 
                 {/* Messages */}

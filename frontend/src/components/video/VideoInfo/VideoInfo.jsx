@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../../utils/formatters';
 import { MusicIcon } from '../../../icons/ActionIcons';
 
@@ -10,6 +11,8 @@ import { MusicIcon } from '../../../icons/ActionIcons';
  video – video object
  */
 export default function VideoInfo({ video }) {
+  const navigate = useNavigate();
+
   if (!video) return null;
 
   const user = video.user ?? {};
@@ -37,7 +40,11 @@ export default function VideoInfo({ video }) {
       <p className="text-white/90 text-sm font-body leading-relaxed m-0 mb-1">
         {caption}{' '}
         {hashtags.map((h) => (
-          <span key={h} className="text-primary cursor-pointer hover:underline">
+          <span 
+            key={h} 
+            className="text-primary cursor-pointer hover:underline"
+            onClick={() => navigate(`/tag/${h.replace('#', '')}`)}
+          >
             {h}{' '}
           </span>
         ))}

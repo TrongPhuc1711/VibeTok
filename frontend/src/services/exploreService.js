@@ -55,3 +55,17 @@ export const globalSearch = async ({ q = '', limit = 20 } = {}) => {
         return { data: { videos: [], users: [], hashtags: [], query: q } };
     }
 };
+
+// GET /api/hashtags/:tagName — lấy thông tin hashtag
+export const getHashtagInfo = async (tagName) => {
+    const res = await api.get(`/hashtags/${encodeURIComponent(tagName)}`);
+    return { data: res.data };
+};
+
+// GET /api/hashtags/:tagName/videos — lấy video theo hashtag (paginated)
+export const getVideosByHashtag = async (tagName, { page = 1, limit = 12 } = {}) => {
+    const res = await api.get(`/hashtags/${encodeURIComponent(tagName)}/videos`, {
+        params: { page, limit },
+    });
+    return { data: res.data };
+};

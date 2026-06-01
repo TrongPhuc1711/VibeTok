@@ -1,6 +1,7 @@
 import express from 'express';
+import { optionalAuth } from '../middlewares/authMiddleware.js';
 import { getAllMusic } from '../controllers/contentController.js';
-import { getTrendingHashtags, searchHashtags } from '../controllers/contentController.js';
+import { getTrendingHashtags, searchHashtags, getHashtagByName, getVideosByHashtag } from '../controllers/contentController.js';
 import { getAllCategories } from '../controllers/contentController.js';
 import { syncTrendingMusicFromAudius } from '../services/audiusSyncService.js';
 
@@ -9,6 +10,9 @@ const router = express.Router();
 router.get('/music', getAllMusic);
 router.get('/hashtags/trending', getTrendingHashtags);
 router.get('/hashtags/search', searchHashtags);
+// Dynamic routes AFTER static ones to avoid conflicts
+router.get('/hashtags/:tagName/videos', optionalAuth, getVideosByHashtag);
+router.get('/hashtags/:tagName', getHashtagByName);
 router.get('/categories', getAllCategories);
 router.get('/music/sync-audius', async (req, res) => {
     const result = await syncTrendingMusicFromAudius();

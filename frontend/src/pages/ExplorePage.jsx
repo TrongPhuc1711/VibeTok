@@ -181,7 +181,7 @@ function HashtagResultCard({ hashtag }) {
   const navigate = useNavigate();
   return (
     <button
-      onClick={() => navigate(`/explore?q=${encodeURIComponent(hashtag.tag)}`)}
+      onClick={() => navigate(`/tag/${hashtag.tag.replace('#', '')}`)}
       className="flex items-center gap-3 px-4 py-3 rounded-xl hover:border-[#7c3aed]/30 transition-all cursor-pointer group"
       style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
     >
