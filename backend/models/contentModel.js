@@ -87,14 +87,38 @@ export const HashtagModel = {
         // Bước 1: Tìm TẤT CẢ hashtag liên quan bằng LIKE (fuzzy match)
         // vd: "dance" → #dance, #dancing, #dancefloor, #dancelove...
         const [hashRows] = await pool.query(
-            'SELECT id, tong_so_video FROM hashtags WHERE ten_hashtag LIKE ? ORDER BY tong_so_video DESC',
+            'SELECT id, ten_hashtag, tong_so_video FROM hashtags WHERE ten_hashtag LIKE ? ORDER BY tong_so_video DESC',
             [`%${clean}%`]
         );
-        if (hashRows.length === 0) return { videos: [], hasMore: false, total: 0 };
+
+        // Tạo danh sách các hashtag name để tìm kiếm fuzzy trong description
+        const tagNamesToMatch = new Set();
+        tagNamesToMatch.add(`#${clean}`);
+        hashRows.forEach(h => {
+            tagNamesToMatch.add(`#${h.ten_hashtag.toLowerCase()}`);
+        });
 
         const hashtagIds = hashRows.map(h => h.id);
-        // Tổng video từ tất cả hashtag liên quan (dùng cached count)
-        const total = hashRows.reduce((sum, h) => sum + Number(h.tong_so_video), 0);
+
+        let matchConditions = [];
+        let queryParams = [];
+
+        if (hashtagIds.length > 0) {
+            const placeholders = hashtagIds.map(() => '?').join(',');
+            matchConditions.push(`vh.ma_hashtag IN (${placeholders})`);
+            queryParams.push(...hashtagIds);
+        }
+
+        for (const tag of tagNamesToMatch) {
+            matchConditions.push(`v.mo_ta LIKE ?`);
+            queryParams.push(`%${tag}%`);
+        }
+
+        if (matchConditions.length === 0) {
+            return { videos: [], hasMore: false, total: 0 };
+        }
+
+        const matchClause = matchConditions.join(' OR ');
 
         // Bước 2: Subqueries is_following / is_liked dùng EXISTS (short-circuit)
         const followingExpr = currentUserId
@@ -105,30 +129,44 @@ export const HashtagModel = {
             ? `EXISTS(SELECT 1 FROM likes WHERE ma_nguoi_dung = ${pool.escape(currentUserId)} AND ma_video = v.id LIMIT 1)`
             : `0`;
 
-        // Bước 3: Main query — DISTINCT vì 1 video có thể match nhiều hashtag
-        // IN (?) trên indexed ma_hashtag column
-        const placeholders = hashtagIds.map(() => '?').join(',');
+        // Bước 3: Lấy tổng số lượng video chính xác qua count query
+        const [countRows] = await pool.query(`
+            SELECT COUNT(DISTINCT v.id) AS total
+            FROM videos v
+            LEFT JOIN video_hashtags vh ON v.id = vh.ma_video
+            WHERE v.quyen_rieng_tu = 'public'
+                AND v.hoat_dong = 1
+                AND v.la_ban_nhap = 0
+                AND (${matchClause})
+        `, queryParams);
+        const total = countRows[0]?.total || 0;
+
+        if (total === 0) {
+            return { videos: [], hasMore: false, total: 0 };
+        }
+
+        // Bước 4: Main query lấy danh sách video
         const [rows] = await pool.query(`
             SELECT DISTINCT v.*,
                 u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
                 m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
                 (${followingExpr}) AS is_following,
                 (${likedExpr}) AS is_liked
-            FROM video_hashtags vh
-            INNER JOIN videos v ON v.id = vh.ma_video
-                AND v.quyen_rieng_tu = 'public'
-                AND v.hoat_dong = 1
-                AND v.la_ban_nhap = 0
+            FROM videos v
+            LEFT JOIN video_hashtags vh ON v.id = vh.ma_video
             LEFT JOIN users u ON u.id = v.ma_nguoi_dung
             LEFT JOIN music m ON m.id = v.ma_am_nhac
-            WHERE vh.ma_hashtag IN (${placeholders})
+            WHERE v.quyen_rieng_tu = 'public'
+                AND v.hoat_dong = 1
+                AND v.la_ban_nhap = 0
+                AND (${matchClause})
             ORDER BY v.ngay_tao DESC
             LIMIT ? OFFSET ?
-        `, [...hashtagIds, limit, offset]);
+        `, [...queryParams, limit, offset]);
 
         const videos = rows.map(normalizeVideo);
 
-        // Bước 4: Batch fetch views từ Redis (fire once, không N+1)
+        // Bước 5: Batch fetch views từ Redis (fire once, không N+1)
         if (videos.length > 0) {
             const keys = videos.map(v => `video:${v.id}:views`);
             try {
