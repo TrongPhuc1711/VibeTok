@@ -8,7 +8,7 @@ import { getStoredUser } from '../../../utils/helpers';
 import { addFollowing, removeFollowing } from '../../../utils/following';
 import { useToast } from '../../ui/Toast';
 
-export default function CreatorCard({ user, layout = 'card', onFollowChange }) {
+export default function CreatorCard({ user, layout = 'card' }) {
   const navigate = useNavigate();
   const me = getStoredUser();
   const { showSuccess, showInfo, showError } = useToast();
@@ -43,11 +43,9 @@ export default function CreatorCard({ user, layout = 'card', onFollowChange }) {
       if (wasFollowing) {
         await unfollowUser(user.username);
         showInfo('Đã bỏ follow', `@${user.username}`);
-        if (onFollowChange) onFollowChange(user.id, false);
       } else {
         await followUser(user.username);
         showSuccess('Đã follow!', `Bạn đang theo dõi @${user.username}`);
-        if (onFollowChange) onFollowChange(user.id, true);
       }
     } catch {
       setFollowing(wasFollowing);
