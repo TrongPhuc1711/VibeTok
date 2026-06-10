@@ -15,7 +15,7 @@ export default function VideoThumb({ video, isOwner, onClick, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting,      setDeleting]      = useState(false);
 
-  const hue = (parseInt(video.id?.slice(-2) ?? '0', 16) || 0) % 360;
+  const hue = (parseInt(String(video.id ?? '0').slice(-2), 16) || 0) % 360;
 
   const handleDeleteClick = async (e) => {
     e.stopPropagation();
