@@ -49,8 +49,8 @@ export function HeartIcon({ filled = false, size = 24, strokeColor }) {
     return (
       <svg
         width="24" height="24" viewBox="0 0 24 24"
-        fill={filled ? '#ff2d78' : 'none'}
-        stroke={filled ? '#ff2d78' : 'currentColor'}
+        fill={filled ? '#fff82dff' : 'none'}
+        stroke={filled ? '#fff82dff' : 'currentColor'}
         strokeWidth="1.5"
       >
         <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
