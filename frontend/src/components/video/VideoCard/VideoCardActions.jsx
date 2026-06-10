@@ -35,17 +35,18 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
     videoId,
     Boolean(video?.isBookmarked)
   );
+  const [localBookmarks, setLocalBookmarks] = useState(video?.bookmarks ?? 0);
 
   // Follow state - from DB
   const [following, setFollowing] = useState(Boolean(video?.user?.isFollowing));
   const [followLoading, setFollowLoading] = useState(false);
 
-  // Sync when video changes
   useEffect(() => {
     setLiked(Boolean(video?.isLiked));
     setLocalLikes(video?.likes ?? 0);
+    setLocalBookmarks(video?.bookmarks ?? 0);
     setFollowing(Boolean(video?.user?.isFollowing));
-  }, [videoId, video?.isLiked, video?.user?.isFollowing]);
+  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.bookmarks]);
 
   const promptLogin = (action) => setLoginPrompt({ open: true, action });
 
@@ -74,8 +75,13 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
 
   const handleBookmark = async () => {
     if (!isLoggedIn()) { promptLogin('bookmark'); return; }
+    const wasBk = bookmarked;
+    setLocalBookmarks(n => wasBk ? Math.max(0, n - 1) : n + 1);
     const result = await toggleBookmarkDB();
-    if (result === null) return;
+    if (result === null) {
+      setLocalBookmarks(n => wasBk ? n + 1 : Math.max(0, n - 1));
+      return;
+    }
     onBookmark?.(videoId, result);
     if (result) showSuccess('Đã lưu video', 'Thêm vào danh sách lưu');
     else showInfo('Đã bỏ lưu', 'Xóa khỏi danh sách lưu');
@@ -145,7 +151,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
           onClick={handleShare} inline={inline} ariaLabel="Chia sẻ" />
 
         {/* Bookmark - DB */}
-        <ActionBtn icon={<BookmarkIcon filled={bookmarked} />} count={null} active={bookmarked}
+        <ActionBtn icon={<BookmarkIcon filled={bookmarked} />} count={formatCount(localBookmarks)} active={bookmarked} activeColor="#fff82d"
           onClick={handleBookmark} loading={bookmarkLoading} inline={inline} ariaLabel={bookmarked ? 'Bỏ lưu' : 'Lưu video'} />
 
         <MusicDisc track={video?.music} />
@@ -160,13 +166,15 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   );
 }
 
-function ActionBtn({ icon, count, active, onClick, loading, inline, animateOnClick, ariaLabel }) {
+function ActionBtn({ icon, count, active, activeColor, onClick, loading, inline, animateOnClick, ariaLabel }) {
   const [bounce, setBounce] = useState(false);
 
   const handleClick = () => {
     if (animateOnClick) { setBounce(true); setTimeout(() => setBounce(false), 300); }
     onClick?.();
   };
+
+  const color = active ? (activeColor || '#ff2d78') : 'var(--color-text-primary)';
 
   return (
     <button
@@ -181,7 +189,7 @@ function ActionBtn({ icon, count, active, onClick, loading, inline, animateOnCli
       </div>
       {count != null && (
         <span className="text-[13px] font-semibold font-body leading-none"
-          style={{ color: active ? '#ff2d78' : 'var(--color-text-primary)' }}>
+          style={{ color }}>
           {count}
         </span>
       )}

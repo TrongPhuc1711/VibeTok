@@ -15,7 +15,7 @@ export const normalizeVideo = (v) => {
         likes: Number(v.luot_thich) || 0,
         comments: Number(v.luot_binh_luan) || 0,
         shares: Number(v.luot_chia_se) || 0,
-        bookmarks: 0,
+        bookmarks: Number(v.bookmark_count) || 0,
         privacy: v.quyen_rieng_tu,
         allowDuet: Boolean(v.cho_phep_duet),
         allowStitch: Boolean(v.cho_phep_stitch),
@@ -65,13 +65,16 @@ const buildVideoQuery = (currentUserId = null) => {
            AND ma_video = v.id) > 0`
         : `0`;
 
+    const bookmarkCountSubquery = `(SELECT COUNT(*) FROM bookmarks WHERE ma_video = v.id)`;
+
     return `
         SELECT v.*,
             u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
             m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
             (${followingSubquery}) AS is_following,
             (${likedSubquery}) AS is_liked,
-            (${bookmarkedSubquery}) AS is_bookmarked
+            (${bookmarkedSubquery}) AS is_bookmarked,
+            (${bookmarkCountSubquery}) AS bookmark_count
         FROM videos v
         LEFT JOIN users u ON v.ma_nguoi_dung = u.id
         LEFT JOIN music m ON v.ma_am_nhac = m.id

@@ -19,7 +19,7 @@ const normalizeBookmarkVideo = (v) => {
         likes: Number(v.luot_thich) || 0,
         comments: Number(v.luot_binh_luan) || 0,
         shares: Number(v.luot_chia_se) || 0,
-        bookmarks: 0,
+        bookmarks: Number(v.bookmark_count) || 0,
         privacy: v.quyen_rieng_tu,
         allowDuet: Boolean(v.cho_phep_duet),
         allowStitch: Boolean(v.cho_phep_stitch),

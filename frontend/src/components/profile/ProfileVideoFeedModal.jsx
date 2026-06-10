@@ -284,6 +284,16 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                     <span className="text-[13px] font-body text-white/50">{formatCount(video?.shares)}</span>
                 </button>
 
+                {/* Bookmark count */}
+                <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.5">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                        </svg>
+                    </div>
+                    <span className="text-[13px] font-body text-white/50">{formatCount(video?.bookmarks)}</span>
+                </div>
+
                 {/* Views */}
                 <div className="flex items-center gap-1.5 ml-auto">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="1.5">
