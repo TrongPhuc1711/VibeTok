@@ -24,6 +24,7 @@ export const normalizeVideo = (v) => {
         createdAt: v.ngay_tao,
         isLiked: Boolean(v.is_liked),
         isFollowing: Boolean(v.is_following),
+        isBookmarked: Boolean(v.is_bookmarked),
         user: v.user_id ? {
             id: String(v.user_id),
             username: v.ten_dang_nhap,
@@ -58,12 +59,19 @@ const buildVideoQuery = (currentUserId = null) => {
            AND ma_video = v.id) > 0`
         : `0`;
 
+    const bookmarkedSubquery = currentUserId
+        ? `(SELECT COUNT(*) FROM bookmarks 
+           WHERE ma_nguoi_dung = ${pool.escape(currentUserId)} 
+           AND ma_video = v.id) > 0`
+        : `0`;
+
     return `
         SELECT v.*,
             u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
             m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
             (${followingSubquery}) AS is_following,
-            (${likedSubquery}) AS is_liked
+            (${likedSubquery}) AS is_liked,
+            (${bookmarkedSubquery}) AS is_bookmarked
         FROM videos v
         LEFT JOIN users u ON v.ma_nguoi_dung = u.id
         LEFT JOIN music m ON v.ma_am_nhac = m.id

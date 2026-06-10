@@ -31,11 +31,14 @@ export const BookmarkModel = {
     async getByUser(userId, { page = 1, limit = 12 } = {}) {
         const offset = (page - 1) * limit;
         const [rows] = await pool.query(
-            `SELECT v.*, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
+            `SELECT v.*,
+              u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
+              m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
               b.ngay_tao as bookmarked_at
        FROM bookmarks b
        JOIN videos v ON b.ma_video = v.id
        JOIN users u ON v.ma_nguoi_dung = u.id
+       LEFT JOIN music m ON v.ma_am_nhac = m.id
        WHERE b.ma_nguoi_dung = ? AND v.hoat_dong = 1
        ORDER BY b.ngay_tao DESC
        LIMIT ? OFFSET ?`,

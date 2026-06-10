@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import PageLayout from '../components/layout/PageLayout/PageLayout';
@@ -12,6 +12,7 @@ import ProfileVideoFeedModal from '../components/profile/ProfileVideoFeedModal';
 import { useProfile } from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
 import { deleteVideo } from '../services/videoService';
+import { getMyBookmarks, toggleBookmark } from '../services/bookmarkService';
 import { formatCount } from '../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../utils/helpers';
 import { useToast } from '../components/ui/Toast';
@@ -22,7 +23,7 @@ import { getFollowingSet } from '../utils/following';
 
 import VideoThumb from '../components/profile/VideoThumb';
 
-const TABS = ['Videos', 'Liked', 'Reposts'];
+const ALL_TABS = ['Videos', 'Liked', 'Bookmarks'];
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -42,12 +43,48 @@ export default function ProfilePage() {
   const [followModal, setFollowModal] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
 
+  // Bookmark state
+  const [bookmarkedVideos, setBookmarkedVideos] = useState([]);
+  const [bookmarksLoading, setBookmarksLoading] = useState(false);
+  const [bookmarksFetched, setBookmarksFetched] = useState(false);
+
   const isMyProfile =
     !username ||
     username === me?.username ||
     username === me?.ten_dang_nhap;
 
+  // Only show Bookmarks tab on own profile
+  const TABS = isMyProfile ? ALL_TABS : ALL_TABS.filter(t => t !== 'Bookmarks');
+
   useEffect(() => { setLocalVideos(videos); }, [videos]);
+
+  // Fetch bookmarked videos when Bookmarks tab is activated
+  const fetchBookmarks = useCallback(async () => {
+    if (!isMyProfile) return;
+    setBookmarksLoading(true);
+    try {
+      const data = await getMyBookmarks({ page: 1, limit: 50 });
+      setBookmarkedVideos(data.rows || []);
+      setBookmarksFetched(true);
+    } catch (err) {
+      console.error('[ProfilePage] fetch bookmarks error:', err);
+      setBookmarkedVideos([]);
+    } finally {
+      setBookmarksLoading(false);
+    }
+  }, [isMyProfile]);
+
+  useEffect(() => {
+    if (activeTab === 'Bookmarks') {
+      fetchBookmarks();
+    }
+  }, [activeTab, fetchBookmarks]);
+
+  // Reset bookmarks cache when navigating to a different profile
+  useEffect(() => {
+    setBookmarksFetched(false);
+    setBookmarkedVideos([]);
+  }, [target]);
 
   useEffect(() => {
     getSuggestedUsers({ limit: 50 })
@@ -73,6 +110,15 @@ export default function ProfilePage() {
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Không thể xóa video này');
+    }
+  };
+
+  const handleRemoveBookmark = async (videoId) => {
+    try {
+      await toggleBookmark(videoId);
+      setBookmarkedVideos(prev => prev.filter(v => v.id !== videoId));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể bỏ lưu video này');
     }
   };
 
@@ -299,6 +345,30 @@ export default function ProfilePage() {
                 )}
               </div>
             )
+          ) : activeTab === 'Bookmarks' ? (
+            bookmarksLoading ? (
+              <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+                <SpinnerCenter text="Đang tải video đã lưu..." />
+              </div>
+            ) : bookmarkedVideos.length > 0 ? (
+              bookmarkedVideos.map((v, idx) => (
+                <VideoThumb
+                  key={v.id}
+                  video={v}
+                  isOwner={isMyProfile}
+                  onClick={() => setFeedModalIndex(idx)}
+                  onDelete={handleRemoveBookmark}
+                />
+              ))
+            ) : (
+              <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-30">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                </svg>
+                <p className="text-sm">Chưa có video nào được lưu</p>
+                <p className="text-xs text-text-faint">Nhấn biểu tượng bookmark trên video để lưu lại</p>
+              </div>
+            )
           ) : (
             <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
               <p className="text-sm">Tính năng đang phát triển</p>
@@ -310,7 +380,7 @@ export default function ProfilePage() {
 
       {feedModalIndex !== null && (
         <ProfileVideoFeedModal
-          videos={localVideos}
+          videos={activeTab === 'Bookmarks' ? bookmarkedVideos : localVideos}
           initialIndex={feedModalIndex}
           onClose={() => setFeedModalIndex(null)}
         />
