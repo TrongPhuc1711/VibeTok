@@ -275,6 +275,34 @@ export const VideoModel = {
         );
     },
 
+    async getLikedByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
+        const offset = (page - 1) * limit;
+        const query = buildVideoQuery(currentUserId || userId);
+        const [rows] = await pool.query(
+            `${query}
+             INNER JOIN likes l ON l.ma_video = v.id AND l.ma_nguoi_dung = ?
+             WHERE v.hoat_dong = 1 AND v.la_ban_nhap = 0
+             ORDER BY l.ngay_tao DESC LIMIT ? OFFSET ?`,
+            [userId, limit, offset]
+        );
+        const videos = rows.map(normalizeVideo);
+        if (videos.length > 0) {
+            const keys = videos.map(v => `video:${v.id}:views`);
+            try {
+                const cachedViews = await redis.mget(keys);
+                videos.forEach((video, idx) => {
+                    const views = cachedViews[idx];
+                    if (views !== null) {
+                        video.views = Number(views);
+                    }
+                });
+            } catch (err) {
+                console.error('Error fetching batch views from Redis:', err);
+            }
+        }
+        return videos;
+    },
+
     async updateCommentCount(videoId, delta = 1) {
         await pool.query(
             'UPDATE videos SET luot_binh_luan = GREATEST(0, luot_binh_luan + ?) WHERE id = ?',

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUserProfile, followUser, unfollowUser } from '../services/userService';
-import { getUserVideosByUserId } from '../services/videoService';
+import { getUserVideosByUserId, getLikedVideosByUserId } from '../services/videoService';
 
 export function useProfile(username) {
     const [profile, setProfile] = useState(null);
     const [videos, setVideos] = useState([]);
+    const [likedVideos, setLikedVideos] = useState([]);
+    const [likedLoading, setLikedLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [following, setFollowing] = useState(false);
@@ -15,6 +17,7 @@ export function useProfile(username) {
         setError(null);
         setProfile(null);
         setVideos([]);
+        setLikedVideos([]);
 
         getUserProfile(username)
             .then(async (pRes) => {
@@ -32,6 +35,20 @@ export function useProfile(username) {
             .catch(e => setError(e.message ?? 'Không tìm thấy người dùng'))
             .finally(() => setLoading(false));
     }, [username]);
+
+    // Fetch liked videos separately (lazy, called when tab is activated)
+    const fetchLikedVideos = useCallback(async () => {
+        if (!profile?.id || likedLoading) return;
+        setLikedLoading(true);
+        try {
+            const res = await getLikedVideosByUserId(profile.id, { limit: 30 });
+            setLikedVideos(res.data.videos ?? []);
+        } catch {
+            setLikedVideos([]);
+        } finally {
+            setLikedLoading(false);
+        }
+    }, [profile?.id, likedLoading]);
 
     const toggleFollow = useCallback(async () => {
         if (!profile) return;
@@ -58,5 +75,5 @@ export function useProfile(username) {
         }
     }, [following, profile]);
 
-    return { profile, videos, loading, error, following, toggleFollow, setProfile };
+    return { profile, videos, likedVideos, likedLoading, fetchLikedVideos, loading, error, following, toggleFollow, setProfile };
 }

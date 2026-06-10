@@ -67,6 +67,12 @@ export const getUserVideosByUserId = async (userId, { page = 1, limit = 12 } = {
     return { data: res.data };
 };
 
+// GET /api/videos/user/:userId/liked
+export const getLikedVideosByUserId = async (userId, { page = 1, limit = 30 } = {}) => {
+    const res = await api.get(`/videos/user/${userId}/liked`, { params: { page, limit } });
+    return { data: res.data };
+};
+
 // DELETE /api/videos/:id
 export const deleteVideo = async (videoId) => {
     const res = await api.delete(`/videos/${videoId}`);

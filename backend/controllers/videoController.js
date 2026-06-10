@@ -348,3 +348,17 @@ export const viewVideo = async (req, res) => {
         res.status(500).json({ message: 'Lỗi tăng lượt xem', error: e.message });
     }
 };
+
+// GET /api/videos/user/:userId/liked
+export const getLikedVideos = async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 12));
+        const currentUserId = req.user?.id ?? null;
+        const videos = await VideoModel.getLikedByUserId(req.params.userId, { page, limit, currentUserId });
+        res.json({ videos });
+    } catch (e) {
+        console.error('getLikedVideos error:', e);
+        res.status(500).json({ message: 'Lỗi lấy video đã thích', error: e.message });
+    }
+};
