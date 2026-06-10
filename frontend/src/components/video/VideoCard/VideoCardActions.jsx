@@ -184,7 +184,7 @@ function ActionBtn({ icon, count, active, activeColor, onClick, loading, inline,
       className="flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer disabled:opacity-50 active:scale-90"
       style={{ transform: bounce ? 'scale(1.3)' : 'scale(1)', transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)' }}
     >
-      <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors ${inline ? 'bg-black/8 hover:bg-black/15 dark:bg-white/10 dark:hover:bg-white/20' : 'hover:bg-white/10'}`}>
+      <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors ${inline ? 'bg-gray hover:bg-black/15 dark:bg-white/10 dark:hover:bg-white/20' : 'hover:bg-white/10'}`}>
         {icon}
       </div>
       {count != null && (
