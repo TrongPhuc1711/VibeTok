@@ -100,10 +100,33 @@ export default function UploadPage() {
     if (isDraft && ok) {
         showSuccess('Đã lưu nháp', 'Bài viết của bạn đã được lưu vào bản nháp');
     } else if (!ok) {
-        if (errs?.submit) showError('Đăng thất bại', errs.submit);
-        else if (errs?.caption) showError('Lỗi thông tin', errs.caption);
-        else if (errs?.file) showError('Lỗi file', errs.file);
-        else showError('Thông tin không hợp lệ', 'Vui lòng kiểm tra lại các trường thông tin');
+        // Kiểm tra nếu video bị kiểm duyệt từ chối
+        if (result?.rejectionInfo) {
+            const { reason, categories } = result.rejectionInfo;
+            const categoryLabels = {
+                violence: '🔴 Bạo lực',
+                sexual: '🔴 Nội dung khiêu dâm',
+                drugs: '🔴 Ma túy/Chất cấm',
+                weapons: '🔴 Vũ khí nguy hiểm',
+                self_harm: '🔴 Tự gây thương tích',
+                gore: '🔴 Nội dung ghê rợn',
+                hate_speech: '🔴 Phát ngôn thù ghét',
+                child_safety: '🔴 Nguy hại trẻ em',
+            };
+            const catText = categories.map(c => categoryLabels[c] || c).join(', ');
+            showError(
+                '⚠️ Video bị từ chối',
+                `${reason}${catText ? `\n\nVi phạm: ${catText}` : ''}`
+            );
+        } else if (errs?.submit) {
+            showError('Đăng thất bại', errs.submit);
+        } else if (errs?.caption) {
+            showError('Lỗi thông tin', errs.caption);
+        } else if (errs?.file) {
+            showError('Lỗi file', errs.file);
+        } else {
+            showError('Thông tin không hợp lệ', 'Vui lòng kiểm tra lại các trường thông tin');
+        }
     }
   };
 

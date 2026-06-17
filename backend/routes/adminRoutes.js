@@ -4,7 +4,7 @@ import { uploadMusicFiles } from '../middlewares/uploadMiddleware.js';
 import {
     getStats, getUserGrowth, getContentDistribution, getTopCreators,
     getUsers, getUserCounts, banUser, unbanUser, resetUserPassword,
-    getVideos, getVideoCounts, hideVideo, restoreVideo,
+    getVideos, getVideoCounts, hideVideo, restoreVideo, approveVideo,
     getViewsPerDay, getSidebarCounts,
     getMusic, getMusicCounts, createMusic, updateMusic, deleteMusic, toggleMusicTrending,
 } from '../controllers/adminController.js';
@@ -33,6 +33,7 @@ router.get('/videos', getVideos);
 router.get('/video-counts', getVideoCounts);
 router.patch('/videos/:id/hide', hideVideo);
 router.patch('/videos/:id/restore', restoreVideo);
+router.patch('/videos/:id/approve', approveVideo);
 
 // Music
 router.get('/music', getMusic);

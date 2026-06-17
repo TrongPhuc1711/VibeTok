@@ -21,6 +21,8 @@ export const normalizeVideo = (v) => {
         allowStitch: Boolean(v.cho_phep_stitch),
         location: v.vi_tri || '',
         isDraft: Boolean(v.la_ban_nhap),
+        moderationStatus: v.trang_thai_duyet || 'approved',
+        rejectionReason: v.ly_do_tu_choi || null,
         createdAt: v.ngay_tao,
         isLiked: Boolean(v.is_liked),
         isFollowing: Boolean(v.is_following),
@@ -86,8 +88,8 @@ export const VideoModel = {
         const offset = (page - 1) * limit;
         const query = buildVideoQuery(currentUserId);
 
-        let whereClause = `WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0`;
-        let countWhere = `WHERE quyen_rieng_tu='public' AND hoat_dong=1 AND la_ban_nhap=0`;
+        let whereClause = `WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0 AND v.trang_thai_duyet = 'approved'`;
+        let countWhere = `WHERE quyen_rieng_tu='public' AND hoat_dong=1 AND la_ban_nhap=0 AND trang_thai_duyet='approved'`;
 
         if (type === 'following' && currentUserId) {
             const escapedId = pool.escape(currentUserId);
@@ -212,7 +214,7 @@ export const VideoModel = {
         if (!q.trim()) {
             const [rows] = await pool.query(
                 `${query}
-                 WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
+                 WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0 AND v.trang_thai_duyet = 'approved'
                  ORDER BY v.luot_xem DESC LIMIT ? OFFSET ?`,
                 [limit, offset]
             );
@@ -221,7 +223,7 @@ export const VideoModel = {
 
         const [rows] = await pool.query(
             `${query}
-             WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0
+             WHERE v.quyen_rieng_tu = 'public' AND v.hoat_dong = 1 AND v.la_ban_nhap = 0 AND v.trang_thai_duyet = 'approved'
                AND MATCH(v.tieu_de, v.mo_ta) AGAINST(? IN NATURAL LANGUAGE MODE)
              LIMIT ? OFFSET ?`,
             [q.trim(), limit, offset]
@@ -229,15 +231,17 @@ export const VideoModel = {
         return rows.map(normalizeVideo);
     },
 
-    async create({ userId, musicId, originalVolume, musicVolume, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt }) {
+    async create({ userId, musicId, originalVolume, musicVolume, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt, moderationStatus = 'approved', rejectionReason = null }) {
         const [result] = await pool.query(
             `INSERT INTO videos (ma_nguoi_dung, ma_am_nhac, am_luong_goc, am_luong_nhac, mo_ta, duong_dan_video, anh_thu_nho,
                 thoi_luong_giay, quyen_rieng_tu, cho_phep_duet, cho_phep_stitch, vi_tri,
-                ngay_len_lich, la_ban_nhap, hoat_dong)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                ngay_len_lich, la_ban_nhap, hoat_dong, trang_thai_duyet, ly_do_tu_choi)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [userId, musicId || null, originalVolume, musicVolume, caption, videoUrl, thumbnail || null,
                 duration || 0, privacy || 'public', allowDuet ? 1 : 0, allowStitch ? 1 : 0,
-                location || null, scheduleAt || null, isDraft ? 1 : 0]
+                location || null, scheduleAt || null, isDraft ? 1 : 0,
+                moderationStatus === 'rejected' ? 0 : 1,
+                moderationStatus, rejectionReason]
         );
         return Number(result.insertId);
     },

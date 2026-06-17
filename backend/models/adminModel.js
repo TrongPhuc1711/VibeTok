@@ -244,7 +244,8 @@ export const AdminModel = {
 
         if (status === 'active') wheres.push('v.hoat_dong = 1 AND v.la_ban_nhap = 0');
         if (status === 'draft') wheres.push('v.la_ban_nhap = 1');
-        if (status === 'hidden') wheres.push('v.hoat_dong = 0');
+        if (status === 'hidden') wheres.push('v.hoat_dong = 0 AND (v.trang_thai_duyet IS NULL OR v.trang_thai_duyet != \'rejected\')');
+        if (status === 'rejected') wheres.push('v.trang_thai_duyet = \'rejected\'');
 
         if (search.trim()) {
             wheres.push('(v.mo_ta LIKE ? OR v.tieu_de LIKE ?)');
@@ -262,6 +263,7 @@ export const AdminModel = {
             SELECT v.id, v.tieu_de, v.mo_ta, v.duong_dan_video, v.anh_thu_nho,
                    v.thoi_luong_giay, v.quyen_rieng_tu, v.luot_xem, v.luot_thich,
                    v.luot_binh_luan, v.hoat_dong, v.la_ban_nhap, v.ngay_tao,
+                   v.trang_thai_duyet, v.ly_do_tu_choi,
                    u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien
             FROM videos v
             LEFT JOIN users u ON v.ma_nguoi_dung = u.id
@@ -292,7 +294,9 @@ export const AdminModel = {
                 likes: Number(v.luot_thich),
                 comments: Number(v.luot_binh_luan),
                 privacy: v.quyen_rieng_tu,
-                status: !v.hoat_dong ? 'hidden' : v.la_ban_nhap ? 'draft' : 'active',
+                status: v.trang_thai_duyet === 'rejected' ? 'rejected' : (!v.hoat_dong ? 'hidden' : v.la_ban_nhap ? 'draft' : 'active'),
+                moderationStatus: v.trang_thai_duyet || 'approved',
+                rejectionReason: v.ly_do_tu_choi || null,
                 createdAt: v.ngay_tao ? new Date(v.ngay_tao).toLocaleDateString('vi-VN') : '',
                 submitTime: AdminModel._timeAgo(v.ngay_tao),
             };
@@ -306,8 +310,18 @@ export const AdminModel = {
         const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM videos');
         const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM videos WHERE hoat_dong = 1 AND la_ban_nhap = 0');
         const [[{ draft }]] = await pool.query('SELECT COUNT(*) AS draft FROM videos WHERE la_ban_nhap = 1');
-        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE hoat_dong = 0');
-        return { all: total, active, draft, hidden };
+        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE hoat_dong = 0 AND (trang_thai_duyet IS NULL OR trang_thai_duyet != \'rejected\')');
+        const [[{ rejected }]] = await pool.query('SELECT COUNT(*) AS rejected FROM videos WHERE trang_thai_duyet = \'rejected\'');
+        return { all: total, active, draft, hidden, rejected };
+    },
+
+    // Admin approve video bị từ chối
+    async approveVideo(videoId) {
+        const [r] = await pool.query(
+            `UPDATE videos SET trang_thai_duyet = 'approved', ly_do_tu_choi = NULL, hoat_dong = 1 WHERE id = ?`,
+            [videoId]
+        );
+        return r.affectedRows > 0;
     },
 
     //  Hide / Restore video 

@@ -89,7 +89,16 @@ export function useUpload({ onSuccess } = {}) {
         } catch (err) {
             console.error('[useUpload] Upload failed:', err);
             let msg = 'Đăng video thất bại';
-            if (err.response?.data?.message) {
+            let rejectionInfo = null;
+
+            if (err.response?.status === 403 && err.response?.data?.reason) {
+                // Video bị kiểm duyệt từ chối
+                msg = err.response.data.message || 'Video bị từ chối do vi phạm chính sách cộng đồng';
+                rejectionInfo = {
+                    reason: err.response.data.reason,
+                    categories: err.response.data.categories || [],
+                };
+            } else if (err.response?.data?.message) {
                 msg = err.response.data.message;
             } else if (err.code === 'ECONNABORTED') {
                 msg = 'Upload quá thời gian. Vui lòng thử lại với file nhỏ hơn.';
@@ -99,7 +108,7 @@ export function useUpload({ onSuccess } = {}) {
                 msg = err.message;
             }
             setErrors(p => ({ ...p, submit: msg }));
-            return { success: false, errors: { submit: msg } };
+            return { success: false, errors: { submit: msg }, rejectionInfo };
         } finally {
             setUploading(false);
         }

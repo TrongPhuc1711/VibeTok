@@ -153,6 +153,18 @@ export const restoreVideo = async (req, res) => {
     }
 };
 
+// PATCH /api/admin/videos/:id/approve — duyệt lại video bị kiểm duyệt tự động từ chối
+export const approveVideo = async (req, res) => {
+    try {
+        const ok = await AdminModel.approveVideo(req.params.id);
+        if (!ok) return res.status(404).json({ message: 'Video không tồn tại' });
+        res.json({ message: 'Đã duyệt video thành công' });
+    } catch (e) {
+        console.error('Admin approveVideo error:', e);
+        res.status(500).json({ message: 'Lỗi duyệt video', error: e.message });
+    }
+};
+
 // GET /api/admin/views-per-day?days=7
 export const getViewsPerDay = async (req, res) => {
     try {

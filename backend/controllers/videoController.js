@@ -4,6 +4,7 @@ import { LikeModel } from '../models/follow/followLikeModel.js';
 import { HashtagModel } from '../models/contentModel.js';
 import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
+import { moderateVideo as moderateContent, moderateSlideshow } from '../services/moderationService.js';
 
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
@@ -116,6 +117,20 @@ export const uploadVideo = async (req, res) => {
         console.log('[Upload] videoUrl length:', videoUrl.length);
         console.log('[Upload] thumbnail:', thumbnail);
 
+        // === KIỂM DUYỆT NỘI DUNG ===
+        console.log('[Upload] Bắt đầu kiểm duyệt nội dung...');
+        let moderationResult;
+        if (isSlideshow) {
+            // Slideshow: kiểm tra tất cả ảnh
+            const slideshowUrls = JSON.parse(videoUrl);
+            moderationResult = await moderateSlideshow(slideshowUrls);
+        } else {
+            moderationResult = await moderateContent(videoUrl, thumbnail);
+        }
+        console.log('[Upload] Kết quả kiểm duyệt:', moderationResult);
+
+        const isRejected = !moderationResult.safe;
+
         const {
             caption = '',
             privacy = 'public',
@@ -147,8 +162,21 @@ export const uploadVideo = async (req, res) => {
             allowStitch: allowStitch !== 'false',
             location: location.slice(0, 100),
             isDraft: isDraft === 'true',
+            moderationStatus: isRejected ? 'rejected' : 'approved',
+            rejectionReason: isRejected ? moderationResult.reason : null,
         });
         console.log('[Upload] Created videoId:', videoId, typeof videoId);
+
+        // Nếu video bị từ chối, trả lỗi 403
+        if (isRejected) {
+            console.log('[Upload] Video bị từ chối:', moderationResult.reason);
+            return res.status(403).json({
+                message: 'Video bị từ chối do vi phạm chính sách cộng đồng',
+                reason: moderationResult.reason,
+                categories: moderationResult.categories,
+                videoId: videoId,
+            });
+        }
 
         // Attach hashtags
         const tags = (caption.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) || []);
