@@ -101,8 +101,8 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl }) {
     for (const user of selectedUsers) {
       try {
         const username = user.username || user.ten_dang_nhap;
-        // Gửi tin nhắn video với type='video', content = videoId
-        await sendMessage(username, String(videoId), 'video');
+        // Gửi tin nhắn video với type='text', content = [ShareVideo]:videoId để tránh lỗi enum DB
+        await sendMessage(username, `[ShareVideo]:${videoId}`, 'text');
         // Nếu có message kèm theo, gửi thêm 1 tin text
         if (message.trim()) {
           await sendMessage(username, message.trim(), 'text');

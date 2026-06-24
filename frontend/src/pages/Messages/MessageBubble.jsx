@@ -307,15 +307,20 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
     const groupSpacing = prevIsMine === isMine ? 'mt-0.5' : 'mt-4';
     const isCallMsg = !msg.recalled && (msg.type === 'call' || msg.content?.startsWith('Cuộc gọi '));
     
-    // Detect video message: type='video' or legacy text with /video/ URL
+    // Detect video message: type='video' or legacy text with /video/ URL, or custom [ShareVideo]: format
     const isVideoMsg = !msg.recalled && (
         msg.type === 'video' ||
-        (!isCallMsg && msg.content && /\/video\/\d+/.test(msg.content) && msg.content.includes('chia sẻ video'))
+        (!isCallMsg && msg.content && (
+            msg.content.startsWith('[ShareVideo]:') ||
+            (/\/video\/\d+/.test(msg.content) && msg.content.includes('chia sẻ video'))
+        ))
     );
     const videoId = isVideoMsg
         ? (msg.type === 'video'
             ? msg.content
-            : msg.content?.match(/\/video\/(\d+)/)?.[1])
+            : (msg.content?.startsWith('[ShareVideo]:')
+                ? msg.content.substring(13)
+                : msg.content?.match(/\/video\/(\d+)/)?.[1]))
         : null;
 
     let bubbleClass = `rounded-2xl text-[14px] font-body leading-relaxed break-words cursor-default transition-opacity `;

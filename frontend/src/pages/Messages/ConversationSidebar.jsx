@@ -36,7 +36,9 @@ function ConversationItem({ conv, active, onClick, myId, isOnline, lastSeenText 
     const isMine = String(conv.lastSenderId) === String(myId);
     const lastText = conv.lastRecalled
         ? (isMine ? 'Bạn đã thu hồi một tin nhắn' : 'Tin nhắn đã được thu hồi')
-        : conv.lastContent;
+        : (conv.lastContent?.startsWith('[ShareVideo]:') || (conv.lastContent?.includes('/video/') && conv.lastContent?.includes('chia sẻ video')))
+            ? '[Video]'
+            : conv.lastContent;
 
     return (
         <button

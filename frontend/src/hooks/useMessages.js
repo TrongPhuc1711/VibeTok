@@ -116,7 +116,11 @@ export function useInbox() {
             if (!isInChat && toast?.showMessageToast) {
                 toast.showMessageToast({
                     senderName: msg.sender?.fullName || msg.sender?.username,
-                    content: msg.recalled ? 'Tin nhắn đã được thu hồi' : msg.content,
+                    content: msg.recalled 
+                        ? 'Tin nhắn đã được thu hồi' 
+                        : (msg.content?.startsWith('[ShareVideo]:') || (msg.content?.includes('/video/') && msg.content?.includes('chia sẻ video')))
+                            ? '🎬 [Video]'
+                            : msg.content,
                     avatar: msg.sender?.avatar || msg.sender?.anh_dai_dien || null,
                     initials: msg.sender?.initials || (msg.sender?.fullName || 'U').charAt(0).toUpperCase(),
                     username: msg.sender?.username,
