@@ -1,4 +1,5 @@
 import axios from 'axios';
+import FormData from 'form-data';
 import 'dotenv/config';
 
 const IMAGGA_API_URL = 'https://api.imagga.com/v2';
@@ -12,13 +13,28 @@ const EXPLICIT_THRESHOLD = 50;
 const SUGGESTIVE_THRESHOLD = 55;
 
 /**
- * Kiểm duyệt nội dung ảnh bằng Imagga NSFW API
- * Gọi endpoint /v2/categories/nsfw_beta với URL ảnh
- * Trả về: { safe, suggestive, explicit } với confidence score 0-100
+ * Tải ảnh từ URL về dưới dạng Buffer
  */
-async function checkImageNSFW(imageUrl) {
-    const response = await axios.get(`${IMAGGA_API_URL}/categories/nsfw_beta`, {
-        params: { image_url: imageUrl },
+async function fetchImageBuffer(imageUrl) {
+    const response = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 15000,
+    });
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    return { buffer: Buffer.from(response.data), contentType };
+}
+
+/**
+ * Upload ảnh lên Imagga để lấy upload_id
+ * Dùng khi gửi URL trực tiếp bị lỗi (Imagga không fetch được URL)
+ */
+async function uploadImageToImagga(imageBuffer, contentType) {
+    const form = new FormData();
+    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+    form.append('image', imageBuffer, { filename: `image.${ext}`, contentType });
+
+    const response = await axios.post(`${IMAGGA_API_URL}/uploads`, form, {
+        headers: form.getHeaders(),
         auth: {
             username: IMAGGA_API_KEY,
             password: IMAGGA_API_SECRET,
@@ -26,9 +42,61 @@ async function checkImageNSFW(imageUrl) {
         timeout: 30000,
     });
 
-    const categories = response.data?.result?.categories || [];
+    return response.data?.result?.upload_id;
+}
 
-    // Parse confidence scores cho từng category
+/**
+ * Kiểm duyệt nội dung ảnh bằng Imagga NSFW API
+ * Thử gửi URL trước, nếu lỗi 400 thì upload ảnh trực tiếp
+ */
+async function checkImageNSFW(imageUrl) {
+    const authConfig = {
+        auth: {
+            username: IMAGGA_API_KEY,
+            password: IMAGGA_API_SECRET,
+        },
+        timeout: 30000,
+    };
+
+    // Cách 1: Gửi URL trực tiếp
+    try {
+        const response = await axios.get(`${IMAGGA_API_URL}/categories/nsfw_beta`, {
+            params: { image_url: imageUrl },
+            ...authConfig,
+        });
+
+        if (response.data?.result?.categories?.length > 0) {
+            return parseCategories(response.data.result.categories);
+        }
+    } catch (urlError) {
+        console.log(`[Moderation] URL mode thất bại (${urlError.response?.status || urlError.message}), chuyển sang upload mode...`);
+    }
+
+    // Cách 2: Tải ảnh về → upload lên Imagga → check bằng upload_id
+    const { buffer, contentType } = await fetchImageBuffer(imageUrl);
+    const uploadId = await uploadImageToImagga(buffer, contentType);
+
+    if (!uploadId) {
+        throw new Error('Không nhận được upload_id từ Imagga');
+    }
+
+    console.log(`[Moderation] Đã upload ảnh, upload_id: ${uploadId}`);
+
+    const response = await axios.get(`${IMAGGA_API_URL}/categories/nsfw_beta`, {
+        params: { image_upload_id: uploadId },
+        ...authConfig,
+    });
+
+    // Xóa ảnh đã upload (fire-and-forget, tiết kiệm storage)
+    axios.delete(`${IMAGGA_API_URL}/uploads/${uploadId}`, authConfig).catch(() => {});
+
+    return parseCategories(response.data?.result?.categories || []);
+}
+
+/**
+ * Parse danh sách categories từ Imagga response
+ */
+function parseCategories(categories) {
     const scores = { safe: 0, suggestive: 0, explicit: 0 };
     for (const cat of categories) {
         const name = (cat.name || '').toLowerCase().trim();
@@ -36,21 +104,17 @@ async function checkImageNSFW(imageUrl) {
             scores[name] = cat.confidence || 0;
         }
     }
-
     return scores;
 }
 
 /**
  * Phân tích kết quả NSFW scores và quyết định safe/unsafe
- * @param {{ safe: number, suggestive: number, explicit: number }} scores
- * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
 function analyzeScores(scores) {
     const { safe, suggestive, explicit: explicitScore } = scores;
 
     console.log(`[Moderation] Scores — safe: ${safe.toFixed(1)}%, suggestive: ${suggestive.toFixed(1)}%, explicit: ${explicitScore.toFixed(1)}%`);
 
-    // Nội dung explicit (khiêu dâm rõ ràng)
     if (explicitScore >= EXPLICIT_THRESHOLD) {
         return {
             safe: false,
@@ -59,7 +123,6 @@ function analyzeScores(scores) {
         };
     }
 
-    // Nội dung suggestive (gợi dục) với ngưỡng cao hơn
     if (suggestive >= SUGGESTIVE_THRESHOLD) {
         return {
             safe: false,
@@ -68,11 +131,7 @@ function analyzeScores(scores) {
         };
     }
 
-    return {
-        safe: true,
-        reason: 'Nội dung an toàn',
-        categories: [],
-    };
+    return { safe: true, reason: 'Nội dung an toàn', categories: [] };
 }
 
 /**
@@ -88,7 +147,6 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
     }
 
     try {
-        // Ưu tiên dùng thumbnail (nhẹ hơn, nhanh hơn)
         const imageUrl = thumbnailUrl || videoUrl;
         console.log('[Moderation] Đang kiểm duyệt:', imageUrl);
 
@@ -96,8 +154,6 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
         return analyzeScores(scores);
     } catch (error) {
         console.error('[Moderation] Lỗi kiểm duyệt:', error.response?.data || error.message);
-
-        // Nếu API lỗi, cho phép upload (không block user vì lỗi hệ thống)
         return {
             safe: true,
             reason: 'Kiểm duyệt tạm thời không khả dụng - sẽ được review sau',
@@ -108,7 +164,6 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
 
 /**
  * Kiểm duyệt slideshow (nhiều ảnh)
- * Kiểm tra từng ảnh, nếu bất kỳ ảnh nào vi phạm thì reject toàn bộ
  * @param {string[]} imageUrls - Danh sách URL ảnh
  * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
@@ -118,7 +173,6 @@ export async function moderateSlideshow(imageUrls) {
     }
 
     try {
-        // Kiểm tra tối đa 5 ảnh đầu tiên (tiết kiệm credits)
         const urlsToCheck = imageUrls.slice(0, 5);
 
         for (const url of urlsToCheck) {
@@ -128,11 +182,10 @@ export async function moderateSlideshow(imageUrls) {
                 const result = analyzeScores(scores);
 
                 if (!result.safe) {
-                    // Một ảnh vi phạm → reject toàn bộ slideshow
                     return result;
                 }
             } catch (e) {
-                console.warn(`[Moderation] Bỏ qua ảnh lỗi: ${url}`, e.message);
+                console.error(`[Moderation] Lỗi kiểm duyệt ảnh: ${url}`, e.response?.data || e.message);
             }
         }
 
