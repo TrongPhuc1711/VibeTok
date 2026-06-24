@@ -1,101 +1,103 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 import 'dotenv/config';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const IMAGGA_API_URL = 'https://api.imagga.com/v2';
+const IMAGGA_API_KEY = process.env.IMAGGA_API_KEY || '';
+const IMAGGA_API_SECRET = process.env.IMAGGA_API_SECRET || '';
 
-const MODERATION_PROMPT = `Bạn là hệ thống kiểm duyệt nội dung video. Phân tích hình ảnh/video này và đánh giá xem nó có chứa nội dung vi phạm không.
-
-Các tiêu chí vi phạm:
-1. **violence** - Bạo lực, đánh nhau, gây thương tích, máu me
-2. **sexual** - Khiêu dâm, khỏa thân, nội dung tình dục
-3. **drugs** - Ma túy, chất cấm, sử dụng chất kích thích bất hợp pháp
-4. **weapons** - Vũ khí nguy hiểm (súng, dao) được sử dụng đe dọa
-5. **self_harm** - Tự gây thương tích, tự tử
-6. **gore** - Nội dung ghê rợn, kinh dị máu me
-7. **hate_speech** - Biểu tượng/nội dung thù ghét, phân biệt chủng tộc
-8. **child_safety** - Nội dung nguy hại đến trẻ em
-
-Trả lời CHÍNH XÁC theo format JSON sau (không thêm markdown, không thêm text khác):
-{
-  "safe": true/false,
-  "categories": ["danh_sach_vi_pham_neu_co"],
-  "reason": "Mô tả lý do bằng tiếng Việt (nếu safe=true thì ghi 'Nội dung an toàn')"
-}
-
-Lưu ý:
-- Chỉ đánh giá là unsafe khi NỘI DUNG RÕ RÀNG vi phạm
-- Nội dung thể thao, võ thuật, game không tính là bạo lực
-- Thời trang, đồ bơi bình thường không tính là khiêu dâm
-- Nếu không chắc chắn, hãy đánh giá là safe`;
+// Ngưỡng confidence để reject (0-100)
+// - explicit >= 50 → reject ngay (nội dung khiêu dâm rõ ràng)
+// - suggestive >= 55 → reject (nội dung gợi dục: lingerie, đồ lót, bán khỏa thân)
+const EXPLICIT_THRESHOLD = 50;
+const SUGGESTIVE_THRESHOLD = 55;
 
 /**
- * Tải ảnh từ URL và convert sang base64
+ * Kiểm duyệt nội dung ảnh bằng Imagga NSFW API
+ * Gọi endpoint /v2/categories/nsfw_beta với URL ảnh
+ * Trả về: { safe, suggestive, explicit } với confidence score 0-100
  */
-async function fetchImageAsBase64(imageUrl) {
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-        throw new Error(`Không thể tải ảnh: ${response.status} ${response.statusText}`);
+async function checkImageNSFW(imageUrl) {
+    const response = await axios.get(`${IMAGGA_API_URL}/categories/nsfw_beta`, {
+        params: { image_url: imageUrl },
+        auth: {
+            username: IMAGGA_API_KEY,
+            password: IMAGGA_API_SECRET,
+        },
+        timeout: 30000,
+    });
+
+    const categories = response.data?.result?.categories || [];
+
+    // Parse confidence scores cho từng category
+    const scores = { safe: 0, suggestive: 0, explicit: 0 };
+    for (const cat of categories) {
+        const name = (cat.name || '').toLowerCase().trim();
+        if (name in scores) {
+            scores[name] = cat.confidence || 0;
+        }
     }
-    const buffer = await response.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    return { base64, contentType };
+
+    return scores;
 }
 
 /**
- * Phân tích nội dung video/ảnh bằng Gemini API
+ * Phân tích kết quả NSFW scores và quyết định safe/unsafe
+ * @param {{ safe: number, suggestive: number, explicit: number }} scores
+ * @returns {{ safe: boolean, reason: string, categories: string[] }}
+ */
+function analyzeScores(scores) {
+    const { safe, suggestive, explicit: explicitScore } = scores;
+
+    console.log(`[Moderation] Scores — safe: ${safe.toFixed(1)}%, suggestive: ${suggestive.toFixed(1)}%, explicit: ${explicitScore.toFixed(1)}%`);
+
+    // Nội dung explicit (khiêu dâm rõ ràng)
+    if (explicitScore >= EXPLICIT_THRESHOLD) {
+        return {
+            safe: false,
+            reason: `Video bị từ chối: Nội dung khiêu dâm/khỏa thân (độ tin cậy: ${explicitScore.toFixed(1)}%)`,
+            categories: ['sexual'],
+        };
+    }
+
+    // Nội dung suggestive (gợi dục) với ngưỡng cao hơn
+    if (suggestive >= SUGGESTIVE_THRESHOLD) {
+        return {
+            safe: false,
+            reason: `Video bị từ chối: Nội dung gợi dục không phù hợp (độ tin cậy: ${suggestive.toFixed(1)}%)`,
+            categories: ['sexual'],
+        };
+    }
+
+    return {
+        safe: true,
+        reason: 'Nội dung an toàn',
+        categories: [],
+    };
+}
+
+/**
+ * Kiểm duyệt nội dung video/ảnh bằng Imagga API
  * @param {string} videoUrl - URL video trên Cloudinary
  * @param {string} thumbnailUrl - URL thumbnail trên Cloudinary
  * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
 export async function moderateVideo(videoUrl, thumbnailUrl) {
-    // Nếu không có API key, bỏ qua kiểm duyệt (cho phép upload)
-    if (!process.env.GEMINI_API_KEY) {
-        console.warn('[Moderation] GEMINI_API_KEY chưa được cấu hình - bỏ qua kiểm duyệt');
+    if (!IMAGGA_API_KEY || !IMAGGA_API_SECRET) {
+        console.warn('[Moderation] IMAGGA_API_KEY/SECRET chưa được cấu hình - bỏ qua kiểm duyệt');
         return { safe: true, reason: 'Kiểm duyệt bị bỏ qua (chưa cấu hình API key)', categories: [] };
     }
 
     try {
         // Ưu tiên dùng thumbnail (nhẹ hơn, nhanh hơn)
         const imageUrl = thumbnailUrl || videoUrl;
-        console.log('[Moderation] Đang phân tích:', imageUrl);
+        console.log('[Moderation] Đang kiểm duyệt:', imageUrl);
 
-        const { base64, contentType } = await fetchImageAsBase64(imageUrl);
-
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-        const result = await model.generateContent([
-            MODERATION_PROMPT,
-            {
-                inlineData: {
-                    mimeType: contentType,
-                    data: base64,
-                },
-            },
-        ]);
-
-        const responseText = result.response.text().trim();
-        console.log('[Moderation] Gemini response:', responseText);
-
-        // Parse JSON từ response (loại bỏ markdown code block nếu có)
-        const jsonStr = responseText
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/i, '')
-            .replace(/\s*```$/i, '')
-            .trim();
-
-        const parsed = JSON.parse(jsonStr);
-
-        return {
-            safe: Boolean(parsed.safe),
-            reason: parsed.reason || (parsed.safe ? 'Nội dung an toàn' : 'Nội dung vi phạm chính sách cộng đồng'),
-            categories: Array.isArray(parsed.categories) ? parsed.categories : [],
-        };
+        const scores = await checkImageNSFW(imageUrl);
+        return analyzeScores(scores);
     } catch (error) {
-        console.error('[Moderation] Lỗi kiểm duyệt:', error.message);
+        console.error('[Moderation] Lỗi kiểm duyệt:', error.response?.data || error.message);
 
-        // Nếu Gemini lỗi, cho phép upload (không block user vì lỗi hệ thống)
-        // Có thể đánh dấu pending để admin review sau
+        // Nếu API lỗi, cho phép upload (không block user vì lỗi hệ thống)
         return {
             safe: true,
             reason: 'Kiểm duyệt tạm thời không khả dụng - sẽ được review sau',
@@ -106,60 +108,35 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
 
 /**
  * Kiểm duyệt slideshow (nhiều ảnh)
+ * Kiểm tra từng ảnh, nếu bất kỳ ảnh nào vi phạm thì reject toàn bộ
  * @param {string[]} imageUrls - Danh sách URL ảnh
  * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
 export async function moderateSlideshow(imageUrls) {
-    if (!process.env.GEMINI_API_KEY || !imageUrls?.length) {
+    if (!IMAGGA_API_KEY || !IMAGGA_API_SECRET || !imageUrls?.length) {
         return { safe: true, reason: 'Bỏ qua kiểm duyệt', categories: [] };
     }
 
     try {
-        // Kiểm tra tối đa 5 ảnh đầu tiên (tránh quá nhiều request)
+        // Kiểm tra tối đa 5 ảnh đầu tiên (tiết kiệm credits)
         const urlsToCheck = imageUrls.slice(0, 5);
-        const imageParts = [];
 
         for (const url of urlsToCheck) {
             try {
-                const { base64, contentType } = await fetchImageAsBase64(url);
-                imageParts.push({
-                    inlineData: {
-                        mimeType: contentType,
-                        data: base64,
-                    },
-                });
+                console.log('[Moderation] Kiểm duyệt slideshow ảnh:', url);
+                const scores = await checkImageNSFW(url);
+                const result = analyzeScores(scores);
+
+                if (!result.safe) {
+                    // Một ảnh vi phạm → reject toàn bộ slideshow
+                    return result;
+                }
             } catch (e) {
                 console.warn(`[Moderation] Bỏ qua ảnh lỗi: ${url}`, e.message);
             }
         }
 
-        if (imageParts.length === 0) {
-            return { safe: true, reason: 'Không có ảnh để kiểm tra', categories: [] };
-        }
-
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-        const result = await model.generateContent([
-            MODERATION_PROMPT + '\n\nĐây là slideshow gồm nhiều ảnh. Hãy đánh giá TOÀN BỘ các ảnh.',
-            ...imageParts,
-        ]);
-
-        const responseText = result.response.text().trim();
-        console.log('[Moderation] Gemini slideshow response:', responseText);
-
-        const jsonStr = responseText
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/i, '')
-            .replace(/\s*```$/i, '')
-            .trim();
-
-        const parsed = JSON.parse(jsonStr);
-
-        return {
-            safe: Boolean(parsed.safe),
-            reason: parsed.reason || 'Nội dung vi phạm chính sách cộng đồng',
-            categories: Array.isArray(parsed.categories) ? parsed.categories : [],
-        };
+        return { safe: true, reason: 'Nội dung an toàn', categories: [] };
     } catch (error) {
         console.error('[Moderation] Lỗi kiểm duyệt slideshow:', error.message);
         return { safe: true, reason: 'Kiểm duyệt tạm thời không khả dụng', categories: [] };
