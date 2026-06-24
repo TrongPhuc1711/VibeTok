@@ -57,25 +57,26 @@ export const FollowListService = {
             users: rows.map(u => normalizeUser(u, followingSet, followersSet)),
             total,
             hasMore: (page - 1) * limit + rows.length < total,
-            async getFriends(username, { page, limit, currentUserId, currentUserRole }) {
-                const userId = await FollowListModel.findUserIdByUsername(username);
-                if (!userId) return null;
+        };
+    },
 
-                // Ẩn admin khỏi danh sách nếu người xem không phải admin
-                const hideAdmins = currentUserRole !== 'admin';
+    async getFriends(username, { page, limit, currentUserId, currentUserRole }) {
+        const userId = await FollowListModel.findUserIdByUsername(username);
+        if (!userId) return null;
 
-                const [{ rows, total }, followingSet, followersSet] = await Promise.all([
-                    FollowListModel.getFriends(userId, { page, limit }, hideAdmins),
-                    FollowListModel.getMyFollowingSet(currentUserId),
-                    FollowListModel.getMyFollowersSet(currentUserId),
-                ]);
+        // Ẩn admin khỏi danh sách nếu người xem không phải admin
+        const hideAdmins = currentUserRole !== 'admin';
 
-                return {
-                    users: rows.map(u => normalizeUser(u, followingSet, followersSet)),
-                    total,
-                    hasMore: (page - 1) * limit + rows.length < total,
-                };
-            },
-        }
-    }
+        const [{ rows, total }, followingSet, followersSet] = await Promise.all([
+            FollowListModel.getFriends(userId, { page, limit }, hideAdmins),
+            FollowListModel.getMyFollowingSet(currentUserId),
+            FollowListModel.getMyFollowersSet(currentUserId),
+        ]);
+
+        return {
+            users: rows.map(u => normalizeUser(u, followingSet, followersSet)),
+            total,
+            hasMore: (page - 1) * limit + rows.length < total,
+        };
+    },
 };
