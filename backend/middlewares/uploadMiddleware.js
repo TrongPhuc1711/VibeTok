@@ -71,9 +71,8 @@ function wrapMulterAndUpload(multerMw, getCloudinaryParams) {
     };
 }
 
-// ==================
+
 // Cloudinary params
-// ==================
 
 const getContentParams = async (_req, file) => {
     if (file.mimetype.startsWith('image/')) {
@@ -112,18 +111,17 @@ const getMusicParams = async (_req, file) => {
     return {};
 };
 
-// ==================
+
 // File size limits
-// ==================
 const fileSizeLimits = {
     video: 500 * 1024 * 1024, // 500 MB
     avatar: 5 * 1024 * 1024,  // 5 MB
     music: 50 * 1024 * 1024,  // 50 MB
 };
 
-// ==================
+
 // Multer instances
-// ==================
+
 
 const contentMulter = multer({
     storage: memStorage,
@@ -145,10 +143,6 @@ const musicMulter = multer({
     { name: 'audio', maxCount: 1 },
     { name: 'cover', maxCount: 1 },
 ]);
-
-// ==================
-// Exports
-// ==================
 
 export const uploadContent = wrapMulterAndUpload(contentMulter, getContentParams);
 export const uploadAvatar = wrapMulterAndUpload(avatarMulter, getAvatarParams);

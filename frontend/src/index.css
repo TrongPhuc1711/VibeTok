@@ -181,7 +181,15 @@ html[data-theme="light"] input[type="date"] {
 @keyframes pauseIn   { 0%{opacity:0;transform:translate(-50%,-50%) scale(.5)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.15)} 100%{opacity:1;transform:translate(-50%,-50%) scale(1)} }
 @keyframes tapIconAnim { 0%{opacity:0;transform:scale(.5)} 20%{opacity:1;transform:scale(1.15)} 40%{opacity:1;transform:scale(1)} 70%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1)} }
 
-/* ── Light mode comprehensive fixes ── */
+/* ShareSheet animations */
+@keyframes overlayIn   { from{opacity:0} to{opacity:1} }
+@keyframes overlayOut  { from{opacity:1} to{opacity:0} }
+@keyframes sheetUp     { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes sheetDown   { from{transform:translateY(0)} to{transform:translateY(100%)} }
+@keyframes badgePop    { from{transform:scale(0)} to{transform:scale(1)} }
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* Light mode comprehensive */
 html[data-theme="light"] {
   .bg-base { background-color: var(--color-base); }
   .bg-surface { background-color: var(--color-surface); }

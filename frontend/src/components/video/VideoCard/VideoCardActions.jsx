@@ -11,6 +11,7 @@ import { useToast } from '../../ui/Toast';
 import LoginPromptModal from '../../ui/LoginPromptModal';
 import { useBookmark } from '../../../hooks/useBookmark';
 import Avatar from '../../common/Avatar/avatar';
+import ShareSheet from '../ShareSheet/ShareSheet';
 
 export default function VideoCardActions({ video, onComment, onShare, onBookmark, inline = false }) {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   const videoId = video?.id;
 
   const [loginPrompt, setLoginPrompt] = useState({ open: false, action: 'like' });
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isOwnVideo = me && (
     String(me.id) === String(video?.user?.id) ||
@@ -37,7 +39,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   );
   const [localBookmarks, setLocalBookmarks] = useState(video?.bookmarks ?? 0);
 
-  // Follow state - from DB
+  // Follow state
   const [following, setFollowing] = useState(Boolean(video?.user?.isFollowing));
   const [followLoading, setFollowLoading] = useState(false);
 
@@ -88,12 +90,8 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/video/${videoId}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url)
-        .then(() => showSuccess('Đã sao chép link!', 'Chia sẻ với bạn bè'))
-        .catch(() => showInfo('Link video', url));
-    }
+    if (!isLoggedIn()) { promptLogin('share'); return; }
+    setShareOpen(true);
     onShare?.(videoId);
   };
 
@@ -161,6 +159,12 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
         open={loginPrompt.open}
         onClose={() => setLoginPrompt({ open: false, action: 'like' })}
         action={loginPrompt.action}
+      />
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        videoId={videoId}
       />
     </>
   );
