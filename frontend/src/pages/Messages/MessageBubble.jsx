@@ -27,7 +27,7 @@ function ContextMenu({ x, y, isMine, recalled, onRecall, onCopy, onReact, onClos
 
     // Clamp to viewport
     const left = Math.min(x, window.innerWidth - 200);
-    const top  = Math.min(y, window.innerHeight - 220);
+    const top = Math.min(y, window.innerHeight - 220);
 
     return (
         <div
@@ -129,11 +129,11 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
     const typeStr = isVideo ? 'video' : 'thoại';
     const isMissed = content.toLowerCase().includes('nhỡ');
     const isRejected = content.toLowerCase().includes('từ chối');
-    
+
     let title = '';
     let durationStr = '';
     let iconType = ''; // 'incoming' | 'outgoing' | 'missed'
-    
+
     if (isMissed) {
         title = `Cuộc gọi ${typeStr} nhỡ`;
         durationStr = 'Bị nhỡ';
@@ -145,7 +145,7 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
     } else {
         title = isMine ? `Cuộc gọi ${typeStr} đi` : `Cuộc gọi ${typeStr} đến`;
         iconType = isMine ? 'outgoing' : 'incoming';
-        
+
         // Extract duration e.g. "Cuộc gọi video kết thúc (00:34)"
         const match = content.match(/\((.*?)\)/);
         if (match) {
@@ -159,7 +159,7 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
             durationStr = 'Đã kết thúc';
         }
     }
-    
+
     const iconColor = iconType === 'missed' ? '#ef4444' : '#777';
 
     return (
@@ -184,7 +184,7 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
                 </div>
             </div>
             <div className="h-[1px] w-11/12 mx-auto" style={{ background: 'var(--vt-divider)' }} />
-            <button 
+            <button
                 onClick={(e) => { e.stopPropagation(); !isCallDisabled && onCallClick && onCallClick(isVideo ? 'video' : 'voice'); }}
                 disabled={isCallDisabled}
                 className={`py-2 text-center font-medium text-[14px] hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent w-full ${isCallDisabled ? 'opacity-30 cursor-not-allowed text-gray-500' : 'text-[#3b82f6]'}`}
@@ -234,8 +234,18 @@ function VideoBubbleContent({ videoId, onClick }) {
         );
     }
 
-    // Parse thumbnail: use video's thumbnail or fallback from videoUrl
-    const thumbnail = video.thumbnail || '';
+    // Parse thumbnail: use video's thumbnail or fallback from videoUrl (slideshow images)
+    let thumbnail = video.thumbnail || '';
+    if (!thumbnail && video.videoUrl?.startsWith('["') && video.videoUrl?.endsWith('"]')) {
+        try {
+            const parsed = JSON.parse(video.videoUrl);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                thumbnail = parsed[0];
+            }
+        } catch (e) {
+            console.error('Failed to parse slideshow videoUrl:', e);
+        }
+    }
     const username = video.user?.username || '';
     const userAvatar = video.user;
 
@@ -256,7 +266,6 @@ function VideoBubbleContent({ videoId, onClick }) {
             ) : (
                 <div className="w-full h-full flex items-center justify-center"
                     style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #0a0a1a 100%)' }}>
-                    <span className="text-white/15 text-5xl">🎬</span>
                 </div>
             )}
 
@@ -301,12 +310,12 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
     };
 
     const handleCopy = () => {
-        if (msg.content) navigator.clipboard.writeText(msg.content).catch(() => {});
+        if (msg.content) navigator.clipboard.writeText(msg.content).catch(() => { });
     };
 
     const groupSpacing = prevIsMine === isMine ? 'mt-0.5' : 'mt-4';
     const isCallMsg = !msg.recalled && (msg.type === 'call' || msg.content?.startsWith('Cuộc gọi '));
-    
+
     // Detect video message: type='video' or legacy text with /video/ URL, or custom [ShareVideo]: format
     const isVideoMsg = !msg.recalled && (
         msg.type === 'video' ||
@@ -324,7 +333,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
         : null;
 
     let bubbleClass = `rounded-2xl text-[14px] font-body leading-relaxed break-words cursor-default transition-opacity `;
-    
+
     if (isVideoMsg) {
         bubbleClass += `p-0 overflow-hidden `;
         bubbleClass += isMine ? 'rounded-br-sm ' : 'rounded-bl-sm ';

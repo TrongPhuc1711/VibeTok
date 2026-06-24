@@ -30,7 +30,7 @@ export function MsgAvatar({ user = {}, size = 'md', online = false }) {
     );
 }
 
-/* ── ConversationItem ── */
+/* ConversationItem  */
 function ConversationItem({ conv, active, onClick, myId, isOnline, lastSeenText }) {
     const isUnread = conv.unreadCount > 0;
     const isMine = String(conv.lastSenderId) === String(myId);

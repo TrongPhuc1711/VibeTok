@@ -5,6 +5,7 @@ import { followUser, unfollowUser } from '../../../services/userService';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
 import Avatar from '../../common/Avatar/avatar';
+import { ImageSlideshow } from '../../ui/ImageSlideshow';
 
 export default function VideoDetailOverlay({ videoId, highlightComment = false, onClose }) {
   const navigate = useNavigate();
@@ -127,6 +128,8 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
 
   const hashtags = parseHashtags(video?.caption ?? '');
   const captionTxt = stripHashtags(video?.caption ?? '');
+  const isSlideshow = video?.videoUrl?.startsWith('["') && video?.videoUrl?.endsWith('"]');
+  const imagesArray = isSlideshow ? JSON.parse(video.videoUrl).map((url, i) => ({ id: String(i), url })) : [];
 
   return (
     <div
@@ -166,7 +169,15 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
             className="relative flex-shrink-0 bg-black flex items-center justify-center"
             style={{ width: 400 }}
           >
-            {video.videoUrl ? (
+            {isSlideshow ? (
+              <div className="absolute inset-0 w-full h-full z-[1]">
+                <ImageSlideshow
+                  images={imagesArray}
+                  autoPlay={true}
+                  duration={3000}
+                />
+              </div>
+            ) : video.videoUrl ? (
               <video
                 ref={videoRef}
                 src={video.videoUrl}
@@ -180,11 +191,10 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
                 className="w-full h-full flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg,#1a0a2e,#0a0a1a)' }}
               >
-                <span className="text-white/20 text-5xl">🎬</span>
               </div>
             )}
 
-            {video.videoUrl && !playing && (
+            {video.videoUrl && !isSlideshow && !playing && (
               <div
                 onClick={handleTogglePlay}
                 className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/20"
