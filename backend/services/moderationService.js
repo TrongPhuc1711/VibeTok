@@ -60,7 +60,7 @@ async function checkImageNSFW(imageUrl) {
 
     // Cách 1: Gửi URL trực tiếp
     try {
-        const response = await axios.get(`${IMAGGA_API_URL}/categories/nsfw_beta`, {
+        const response = await axios.get(`${IMAGGA_API_URL}/categories/adult_content`, {
             params: { image_url: imageUrl },
             ...authConfig,
         });
@@ -82,7 +82,7 @@ async function checkImageNSFW(imageUrl) {
 
     console.log(`[Moderation] Đã upload ảnh, upload_id: ${uploadId}`);
 
-    const response = await axios.get(`${IMAGGA_API_URL}/categories/nsfw_beta`, {
+    const response = await axios.get(`${IMAGGA_API_URL}/categories/adult_content`, {
         params: { image_upload_id: uploadId },
         ...authConfig,
     });
@@ -99,7 +99,16 @@ async function checkImageNSFW(imageUrl) {
 function parseCategories(categories) {
     const scores = { safe: 0, suggestive: 0, explicit: 0 };
     for (const cat of categories) {
-        const name = (cat.name || '').toLowerCase().trim();
+        let name = '';
+        if (typeof cat.name === 'string') {
+            name = cat.name;
+        } else if (cat.name && typeof cat.name === 'object') {
+            name = cat.name.en || '';
+        }
+        
+        name = name.toLowerCase().trim();
+        if (name === 'nsfw') name = 'explicit'; // Fallback support for older configurations
+
         if (name in scores) {
             scores[name] = cat.confidence || 0;
         }
