@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { formatTimeAgo } from '../../utils/formatters';
 import { MsgAvatar } from './ConversationSidebar';
 import { useCallContext } from '../../contexts/CallContext';
+import { getVideoById } from '../../services/videoService';
+import Avatar from '../../components/common/Avatar/avatar';
 import {
     UnsendIcon, CopyIcon, RecalledIcon,
     CheckIcon, DoubleCheckIcon,
@@ -193,8 +195,103 @@ function CallBubbleContent({ msg, isMine, onCallClick }) {
     );
 }
 
+/* ── Video Bubble Content ── */
+function VideoBubbleContent({ videoId, onClick }) {
+    const [video, setVideo] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        if (!videoId) return;
+        setLoading(true);
+        getVideoById(videoId)
+            .then(r => {
+                setVideo(r.data.video);
+                setError(false);
+            })
+            .catch(() => setError(true))
+            .finally(() => setLoading(false));
+    }, [videoId]);
+
+    if (loading) {
+        return (
+            <div className="w-[220px] h-[320px] rounded-2xl overflow-hidden flex items-center justify-center animate-pulse"
+                style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-white/50 animate-spin" />
+            </div>
+        );
+    }
+
+    if (error || !video) {
+        return (
+            <div className="w-[220px] h-[140px] rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.05)' }}
+                onClick={() => onClick?.(videoId)}
+            >
+                <span className="text-2xl">🎬</span>
+                <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-disabled)' }}>Video không khả dụng</span>
+            </div>
+        );
+    }
+
+    // Parse thumbnail: use video's thumbnail or fallback from videoUrl
+    const thumbnail = video.thumbnail || '';
+    const username = video.user?.username || '';
+    const userAvatar = video.user;
+
+    return (
+        <div
+            className="relative w-[220px] h-[320px] rounded-2xl overflow-hidden cursor-pointer group"
+            style={{ background: '#000' }}
+            onClick={(e) => { e.stopPropagation(); onClick?.(videoId); }}
+        >
+            {/* Thumbnail */}
+            {thumbnail ? (
+                <img
+                    src={thumbnail}
+                    alt="Video"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    loading="lazy"
+                />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #0a0a1a 100%)' }}>
+                    <span className="text-white/15 text-5xl">🎬</span>
+                </div>
+            )}
+
+            {/* Play button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-black/60"
+                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                        <path d="M5 3l14 9-14 9V3z" />
+                    </svg>
+                </div>
+            </div>
+
+            {/* Bottom overlay: user info */}
+            <div className="absolute bottom-0 left-0 right-0 p-3 pt-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)' }}>
+                <div className="flex items-center gap-2">
+                    <Avatar
+                        user={userAvatar}
+                        className="!w-6 !h-6 !text-[9px] shrink-0 ring-1 ring-white/20"
+                    />
+                    <span className="text-white text-[12px] font-semibold font-body truncate">
+                        {username}
+                    </span>
+                </div>
+            </div>
+
+            {/* Hover effect border */}
+            <div className="absolute inset-0 rounded-2xl ring-1 ring-white/10 group-hover:ring-white/25 transition-all pointer-events-none" />
+        </div>
+    );
+}
+
 /* ── MessageBubble ── */
-export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myId, onRecall, onReact, onUnreact, searchQuery, onCallClick }) {
+export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myId, onRecall, onReact, onUnreact, searchQuery, onCallClick, onVideoClick }) {
     const [menu, setMenu] = useState(null); // { x, y }
     const [showTime, setShowTime] = useState(false);
 
@@ -209,10 +306,24 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
 
     const groupSpacing = prevIsMine === isMine ? 'mt-0.5' : 'mt-4';
     const isCallMsg = !msg.recalled && (msg.type === 'call' || msg.content?.startsWith('Cuộc gọi '));
+    
+    // Detect video message: type='video' or legacy text with /video/ URL
+    const isVideoMsg = !msg.recalled && (
+        msg.type === 'video' ||
+        (!isCallMsg && msg.content && /\/video\/\d+/.test(msg.content) && msg.content.includes('chia sẻ video'))
+    );
+    const videoId = isVideoMsg
+        ? (msg.type === 'video'
+            ? msg.content
+            : msg.content?.match(/\/video\/(\d+)/)?.[1])
+        : null;
 
     let bubbleClass = `rounded-2xl text-[14px] font-body leading-relaxed break-words cursor-default transition-opacity `;
     
-    if (isCallMsg) {
+    if (isVideoMsg) {
+        bubbleClass += `p-0 overflow-hidden `;
+        bubbleClass += isMine ? 'rounded-br-sm ' : 'rounded-bl-sm ';
+    } else if (isCallMsg) {
         bubbleClass += `p-0 w-[200px] shadow-sm `;
         bubbleClass += `border `;
         bubbleClass += isMine ? 'rounded-br-sm ' : 'rounded-bl-sm ';
@@ -227,9 +338,11 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
     bubbleClass += msg.recalled ? 'opacity-50 ' : '';
 
     // Theme-aware bubble styles
-    const bubbleStyle = isCallMsg
-        ? { background: 'var(--vt-msg-call)', borderColor: 'var(--vt-msg-call-border)' }
-        : (!isMine ? { background: 'var(--vt-msg-theirs)', color: 'var(--vt-text-body)' } : {});
+    const bubbleStyle = isVideoMsg
+        ? { background: 'transparent' }
+        : isCallMsg
+            ? { background: 'var(--vt-msg-call)', borderColor: 'var(--vt-msg-call-border)' }
+            : (!isMine ? { background: 'var(--vt-msg-theirs)', color: 'var(--vt-text-body)' } : {});
 
     return (
         <>
@@ -256,6 +369,8 @@ export default function MessageBubble({ msg, isMine, showAvatar, prevIsMine, myI
                                 <RecalledIcon size={13} color="currentColor" />
                                 {isMine ? 'Bạn đã thu hồi tin nhắn này' : 'Tin nhắn đã được thu hồi'}
                             </span>
+                        ) : isVideoMsg && videoId ? (
+                            <VideoBubbleContent videoId={videoId} onClick={onVideoClick} />
                         ) : isCallMsg ? (
                             <CallBubbleContent msg={msg} isMine={isMine} onCallClick={onCallClick} />
                         ) : (

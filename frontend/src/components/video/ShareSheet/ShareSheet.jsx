@@ -96,14 +96,17 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl }) {
   const handleSend = async () => {
     if (selectedUsers.length === 0) return;
     setSending(true);
-    const shareContent = message.trim()
-      ? `${message.trim()}\n\n🎬 ${shareUrl}`
-      : `Đã chia sẻ video với bạn: ${shareUrl}`;
 
     let successCount = 0, failCount = 0;
     for (const user of selectedUsers) {
       try {
-        await sendMessage(user.username || user.ten_dang_nhap, shareContent, 'text');
+        const username = user.username || user.ten_dang_nhap;
+        // Gửi tin nhắn video với type='video', content = videoId
+        await sendMessage(username, String(videoId), 'video');
+        // Nếu có message kèm theo, gửi thêm 1 tin text
+        if (message.trim()) {
+          await sendMessage(username, message.trim(), 'text');
+        }
         successCount++;
       } catch { failCount++; }
     }

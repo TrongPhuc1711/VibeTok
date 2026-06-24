@@ -9,6 +9,7 @@ import { SpinnerCenter } from '../../components/ui/Spinner';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import { MsgAvatar } from './ConversationSidebar';
+import VideoDetailOverlay from '../../components/video/VideoDetailOverlay/VideoDetailOverlay';
 import {
     BackChevronIcon, PhoneCallIcon, VideoCallIcon,
     SearchSmIcon, CloseIcon, ChevronUpIcon, ChevronDownIcon,
@@ -139,6 +140,9 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
     const bottomRef   = useRef(null);
     const typingRef   = useRef(null);
     const msgRefs     = useRef({});
+
+    // Video overlay state
+    const [overlayVideoId, setOverlayVideoId] = useState(null);
 
     // Call hook global
     const call = useCallContext();
@@ -341,6 +345,7 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                                         onUnreact={unreact}
                                         searchQuery={searchQuery}
                                         onCallClick={(type) => handleStartCall(type)}
+                                        onVideoClick={(videoId) => setOverlayVideoId(videoId)}
                                     />
                                 </div>
                             );
@@ -364,6 +369,14 @@ export default function ChatWindow({ partnerUsername, partnerInfo, onBack }) {
                 partnerUsername={partnerUsername}
                 disabled={sending}
             />
+
+            {/* Video Detail Overlay */}
+            {overlayVideoId && (
+                <VideoDetailOverlay
+                    videoId={overlayVideoId}
+                    onClose={() => setOverlayVideoId(null)}
+                />
+            )}
         </div>
     );
 }
