@@ -45,7 +45,6 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
 
   // Share state
   const [localShares, setLocalShares] = useState(video?.shares ?? 0);
-  const [shared, setShared] = useState(false);
 
   useEffect(() => {
     setLiked(Boolean(video?.isLiked));
@@ -100,14 +99,10 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   };
 
   const handleShareDone = () => {
-    if (!shared) {
-      setShared(true);
-      setLocalShares(n => n + 1);
-      shareVideoApi(videoId).catch(() => {
-        setLocalShares(n => Math.max(0, n - 1));
-        setShared(false);
-      });
-    }
+    setLocalShares(n => n + 1);
+    shareVideoApi(videoId).catch(() => {
+      setLocalShares(n => Math.max(0, n - 1));
+    });
     onShare?.(videoId);
   };
 
