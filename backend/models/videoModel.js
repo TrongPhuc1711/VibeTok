@@ -324,4 +324,11 @@ export const VideoModel = {
             [delta, videoId]
         );
     },
+
+    async updateShareCount(videoId, delta = 1) {
+        await pool.query(
+            'UPDATE videos SET luot_chia_se = GREATEST(0, luot_chia_se + ?) WHERE id = ?',
+            [delta, videoId]
+        );
+    },
 };

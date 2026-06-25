@@ -10,7 +10,7 @@ import {
   FacebookIcon, TelegramIcon, TwitterIcon,
 } from '../../../icons/ShareIcons';
 
-export default function ShareSheet({ open, onClose, videoId, videoUrl }) {
+export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDone }) {
   const me = getStoredUser();
   const { showSuccess, showError, showInfo } = useToast();
 
@@ -111,20 +111,20 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl }) {
       } catch { failCount++; }
     }
     setSending(false);
-    if (successCount > 0) showSuccess(`Đã gửi đến ${successCount} người`, failCount > 0 ? `${failCount} thất bại` : 'Chia sẻ thành công!');
+    if (successCount > 0) { showSuccess(`Đã gửi đến ${successCount} người`, failCount > 0 ? `${failCount} thất bại` : 'Chia sẻ thành công!'); onShareDone?.(); }
     else showError('Không thể gửi', 'Vui lòng thử lại');
     handleClose();
   };
 
   const handleCopyLink = async () => {
-    try { await navigator.clipboard.writeText(shareUrl); showSuccess('Đã sao chép link!', 'Dán vào bất kỳ đâu để chia sẻ'); }
+    try { await navigator.clipboard.writeText(shareUrl); showSuccess('Đã sao chép link!', 'Dán vào bất kỳ đâu để chia sẻ'); onShareDone?.(); }
     catch { showInfo('Link video', shareUrl); }
   };
 
-  const handleShareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
-  const handleShareWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(shareUrl)}`, '_blank');
-  const handleShareTelegram = () => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}`, '_blank');
-  const handleShareTwitter = () => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+  const handleShareFacebook = () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400'); onShareDone?.(); };
+  const handleShareWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareUrl)}`, '_blank'); onShareDone?.(); };
+  const handleShareTelegram = () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}`, '_blank'); onShareDone?.(); };
+  const handleShareTwitter = () => { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400'); onShareDone?.(); };
 
   if (!open && !closing) return null;
 

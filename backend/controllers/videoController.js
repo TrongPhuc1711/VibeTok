@@ -390,3 +390,14 @@ export const getLikedVideos = async (req, res) => {
         res.status(500).json({ message: 'Lỗi lấy video đã thích', error: e.message });
     }
 };
+
+// POST /api/videos/:id/share
+export const shareVideo = async (req, res) => {
+    try {
+        await VideoModel.updateShareCount(req.params.id, 1);
+        res.json({ success: true, message: 'Đã chia sẻ' });
+    } catch (e) {
+        console.error('shareVideo error:', e);
+        res.status(500).json({ message: 'Lỗi chia sẻ video', error: e.message });
+    }
+};

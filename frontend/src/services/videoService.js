@@ -85,6 +85,12 @@ export const viewVideo = async (videoId) => {
     return { data: res.data };
 };
 
+// POST /api/videos/:id/share
+export const shareVideo = async (videoId) => {
+    const res = await api.post(`/videos/${videoId}/share`);
+    return { data: res.data };
+};
+
 // POST /api/videos/upload — multipart/form-data
 export const uploadVideo = async (formData) => {
     const { caption, privacy, allowDuet, allowStitch, location, music, isDraft, file } = formData;

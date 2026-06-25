@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCount } from '../../../utils/formatters';
 import { followUser, unfollowUser } from '../../../services/userService';
-import { likeVideo, unlikeVideo } from '../../../services/videoService';
+import { likeVideo, unlikeVideo, shareVideo as shareVideoApi } from '../../../services/videoService';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
 import { HeartIcon, CommentIcon, ShareIcon, BookmarkIcon } from '../../../icons/ActionIcons';
 import { PlusIcon } from '../../../icons/NavIcons';
@@ -43,12 +43,17 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   const [following, setFollowing] = useState(Boolean(video?.user?.isFollowing));
   const [followLoading, setFollowLoading] = useState(false);
 
+  // Share state
+  const [localShares, setLocalShares] = useState(video?.shares ?? 0);
+  const [shared, setShared] = useState(false);
+
   useEffect(() => {
     setLiked(Boolean(video?.isLiked));
     setLocalLikes(video?.likes ?? 0);
     setLocalBookmarks(video?.bookmarks ?? 0);
     setFollowing(Boolean(video?.user?.isFollowing));
-  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.bookmarks]);
+    setLocalShares(video?.shares ?? 0);
+  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.bookmarks, video?.shares]);
 
   const promptLogin = (action) => setLoginPrompt({ open: true, action });
 
@@ -92,6 +97,17 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   const handleShare = () => {
     if (!isLoggedIn()) { promptLogin('share'); return; }
     setShareOpen(true);
+  };
+
+  const handleShareDone = () => {
+    if (!shared) {
+      setShared(true);
+      setLocalShares(n => n + 1);
+      shareVideoApi(videoId).catch(() => {
+        setLocalShares(n => Math.max(0, n - 1));
+        setShared(false);
+      });
+    }
     onShare?.(videoId);
   };
 
@@ -145,7 +161,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
           onClick={handleComment} inline={inline} ariaLabel="Bình luận" />
 
         {/* Share */}
-        <ActionBtn icon={<ShareIcon />} count={formatCount(video?.shares)}
+        <ActionBtn icon={<ShareIcon />} count={formatCount(localShares)}
           onClick={handleShare} inline={inline} ariaLabel="Chia sẻ" />
 
         {/* Bookmark - DB */}
@@ -165,6 +181,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         videoId={videoId}
+        onShareDone={handleShareDone}
       />
     </>
   );
