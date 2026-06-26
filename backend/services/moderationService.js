@@ -6,23 +6,17 @@ const IMAGGA_API_URL = 'https://api.imagga.com/v2';
 const IMAGGA_API_KEY = process.env.IMAGGA_API_KEY || '';
 const IMAGGA_API_SECRET = process.env.IMAGGA_API_SECRET || '';
 
-// ============================================================
 // NGƯỠNG KIỂM DUYỆT
-// ============================================================
 
-// Ngưỡng NSFW (adult_content categories)
+// Ngưỡng NSFW 
 const EXPLICIT_THRESHOLD = 50;   // explicit >= 50% → reject
 const SUGGESTIVE_THRESHOLD = 55; // suggestive >= 55% → reject
 
-// Ngưỡng confidence tối thiểu cho tags nguy hiểm (0-100)
-// Tags đơn lẻ cần confidence >= ngưỡng này để bị reject
+// Ngưỡng confidence 
+// Tags đơn lẻ cần 
 const VIOLENCE_TAG_THRESHOLD = 30;
-// Tổ hợp nguy hiểm cần confidence >= ngưỡng thấp hơn (vì kết hợp = rõ ràng hơn)
+// Tổ hợp nguy hiểm 
 const COMBO_TAG_THRESHOLD = 10;
-
-// ============================================================
-// DANH SÁCH TỪ KHÓA NGUY HIỂM (Tags Imagga)
-// ============================================================
 
 // Tags RẤT NGUY HIỂM — rõ ràng, không mơ hồ → reject ở ngưỡng thấp (>= 10%)
 const HIGH_DANGER_TAGS = [
@@ -49,7 +43,7 @@ const VIOLENCE_TAGS = [
     'decapitation', 'dismember', 'mutilation', 'mutilated',
 ];
 
-// Tự hại, tự tử (chỉ giữ từ rõ ràng, loại bỏ: cut, jump, falling, silhouette, depression)
+// Tự hại, tự tử 
 const SELF_HARM_TAGS = [
     'suicide', 'suicidal', 'self-harm', 'selfharm',
     'hanging', 'hanged', 'noose', 'gallows',
@@ -58,7 +52,7 @@ const SELF_HARM_TAGS = [
     'drowning',
 ];
 
-// Ma túy, chất cấm (chỉ giữ từ rõ ràng, loại bỏ: pipe, pill, tablet, powder, crystal, smoking)
+// Ma túy, chất cấm 
 const DRUG_TAGS = [
     'narcotics', 'cocaine', 'heroin', 'meth', 'methamphetamine',
     'marijuana', 'cannabis',
@@ -66,8 +60,7 @@ const DRUG_TAGS = [
     'bong',
 ];
 
-// Kết hợp từ khóa nguy hiểm (sử dụng khi 2+ tag cùng xuất hiện)
-// Mỗi tag riêng lẻ có thể vô hại, nhưng kết hợp lại → rất nguy hiểm
+// Kết hợp từ khóa nguy hiểm 
 const DANGEROUS_COMBINATIONS = [
     { tags: ['rope', 'silhouette'], category: 'self-harm', label: 'Nghi ngờ tự tử (treo cổ)' },
     { tags: ['rope', 'hanging'], category: 'self-harm', label: 'Nghi ngờ tự tử (treo cổ)' },
@@ -84,9 +77,7 @@ const DANGEROUS_COMBINATIONS = [
     { tags: ['rope', 'person'], category: 'self-harm', label: 'Nghi ngờ tự tử' },
 ];
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
+
 
 const authConfig = {
     auth: {
@@ -148,13 +139,11 @@ async function getUploadId(imageUrl) {
  */
 function cleanupUpload(uploadId) {
     if (uploadId) {
-        axios.delete(`${IMAGGA_API_URL}/uploads/${uploadId}`, authConfig).catch(() => {});
+        axios.delete(`${IMAGGA_API_URL}/uploads/${uploadId}`, authConfig).catch(() => { });
     }
 }
 
-// ============================================================
-// TẦNG 1: KIỂM DUYỆT NSFW (adult_content)
-// ============================================================
+
 
 /**
  * Kiểm duyệt NSFW bằng Imagga adult_content categorizer
@@ -163,8 +152,6 @@ function cleanupUpload(uploadId) {
  */
 async function checkNSFW(imageUrl) {
     let uploadId = null;
-
-    // Cách 1: Gửi URL trực tiếp
     try {
         const response = await axios.get(`${IMAGGA_API_URL}/categories/adult_content`, {
             params: { image_url: imageUrl },
@@ -181,7 +168,6 @@ async function checkNSFW(imageUrl) {
         console.log(`[Moderation] URL mode thất bại (${urlError.response?.status || urlError.message}), chuyển sang upload mode...`);
     }
 
-    // Cách 2: Tải ảnh về → upload lên Imagga → check bằng upload_id
     uploadId = await getUploadId(imageUrl);
 
     const response = await axios.get(`${IMAGGA_API_URL}/categories/adult_content`, {
@@ -244,9 +230,7 @@ function analyzeNSFWScores(scores) {
     return null; // Qua tầng 1
 }
 
-// ============================================================
-// TẦNG 2: KIỂM DUYỆT BẠO LỰC / TỰ HẠI / MA TÚY (tags)
-// ============================================================
+
 
 /**
  * Lấy tags từ Imagga Tags API
@@ -255,7 +239,6 @@ function analyzeNSFWScores(scores) {
  * @returns {Array<{tag: string, confidence: number}>} Danh sách tags
  */
 async function getImageTags(imageUrl, uploadId) {
-    // Cách 1: Thử gửi URL trực tiếp
     if (imageUrl) {
         try {
             const response = await axios.get(`${IMAGGA_API_URL}/tags`, {
@@ -271,7 +254,6 @@ async function getImageTags(imageUrl, uploadId) {
         }
     }
 
-    // Cách 2: Dùng upload_id (đã upload từ tầng 1 hoặc upload mới)
     let needCleanup = false;
     if (!uploadId && imageUrl) {
         uploadId = await getUploadId(imageUrl);
@@ -416,20 +398,86 @@ function analyzeTagsForDanger(tags) {
         };
     }
 
-    return null; // Qua tầng 2
+    return null;
 }
 
-// ============================================================
 // EXPORT: Kiểm duyệt chính
-// ============================================================
+// TRÍCH XUẤT FRAME TỪ VIDEO (Cloudinary)
+
 
 /**
- * Kiểm duyệt nội dung video/ảnh bằng Imagga API (2 tầng)
- * Tầng 1: NSFW (adult_content) — khiêu dâm, gợi dục
- * Tầng 2: Tags — bạo lực, máu me, tự hại, ma túy
- *
+ * Số lượng frame tối đa trích xuất từ video để kiểm duyệt
+ */
+const MAX_VIDEO_FRAMES = 4;
+
+/**
+ 
  * @param {string} videoUrl - URL video trên Cloudinary
- * @param {string} thumbnailUrl - URL thumbnail trên Cloudinary
+ * @returns {string[]} Danh sách URL ảnh (frame) trích xuất từ video
+ */
+function extractVideoFrames(videoUrl) {
+    // Chỉ áp dụng cho URL Cloudinary
+    if (!videoUrl || !videoUrl.includes('cloudinary.com')) {
+        return [];
+    }
+
+    const offsets = ['0', '25p', '50p', '75p'];
+    const frames = [];
+
+    for (const offset of offsets.slice(0, MAX_VIDEO_FRAMES)) {
+        try {
+
+            const frameUrl = videoUrl
+                .replace('/upload/', `/upload/so_${offset}/`)
+                .replace(/\.[^.]+$/, '.jpg');
+            frames.push(frameUrl);
+        } catch (e) {
+        }
+    }
+
+    return frames;
+}
+
+/**
+ * Kiểm duyệt 1 ảnh qua cả 2 tầng (NSFW + Tags)
+ * @param {string} imageUrl - URL ảnh cần kiểm tra
+ * @param {string} label - Nhãn hiển thị trong log (vd: "Thumbnail", "Frame@25%")
+ * @returns {{ safe: boolean, reason: string, categories: string[] } | null} - null = an toàn
+ */
+async function moderateOneImage(imageUrl, label = 'Image') {
+    let uploadId = null;
+
+    try {
+        console.log(`[Moderation] --- Kiểm duyệt ${label}: ${imageUrl} ---`);
+
+        // Tầng 1: NSFW
+        const nsfwResult = await checkNSFW(imageUrl);
+        uploadId = nsfwResult.uploadId;
+
+        const nsfwDecision = analyzeNSFWScores(nsfwResult.scores);
+        if (nsfwDecision) {
+            console.log(`[Moderation] ❌ REJECT ${label} (NSFW): ${nsfwDecision.reason}`);
+            return nsfwDecision;
+        }
+
+        // Tầng 2: Tags (bạo lực, tự hại, ma túy)
+        const tags = await getImageTags(imageUrl, uploadId);
+        const tagDecision = analyzeTagsForDanger(tags);
+        if (tagDecision) {
+            console.log(`[Moderation] ❌ REJECT ${label} (Tags): ${tagDecision.reason}`);
+            return tagDecision;
+        }
+
+        return null;
+    } finally {
+        cleanupUpload(uploadId);
+    }
+}
+
+// EXPORT: Kiểm duyệt chính
+/**
+ * @param {string} videoUrl - URL video/ảnh trên Cloudinary
+ * @param {string} thumbnailUrl - URL thumbnail trên Cloudinary 
  * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
 export async function moderateVideo(videoUrl, thumbnailUrl) {
@@ -438,34 +486,51 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
         return { safe: true, reason: 'Kiểm duyệt bị bỏ qua (chưa cấu hình API key)', categories: [] };
     }
 
-    let uploadId = null;
-
     try {
-        const imageUrl = thumbnailUrl || videoUrl;
         console.log('[Moderation] ========== BẮT ĐẦU KIỂM DUYỆT ==========');
-        console.log('[Moderation] URL:', imageUrl);
 
-        // ─── TẦNG 1: NSFW ───
-        console.log('[Moderation] --- Tầng 1: Kiểm tra NSFW (adult_content) ---');
-        const nsfwResult = await checkNSFW(imageUrl);
-        uploadId = nsfwResult.uploadId;
+        // Xác định danh sách ảnh cần kiểm tra
+        const imagesToCheck = [];
 
-        const nsfwDecision = analyzeNSFWScores(nsfwResult.scores);
-        if (nsfwDecision) {
-            console.log(`[Moderation] ❌ REJECT (NSFW): ${nsfwDecision.reason}`);
-            return nsfwDecision;
+        // Kiểm tra xem videoUrl có phải là video không (có extension video)
+        const isVideo = videoUrl && /\.(mp4|mov|avi|webm|mkv|flv|wmv|m4v)(\?|$)/i.test(videoUrl);
+
+        if (isVideo) {
+            // VIDEO: trích xuất nhiều frame từ Cloudinary
+            const frames = extractVideoFrames(videoUrl);
+            console.log(`[Moderation] Video detected — trích xuất ${frames.length} frames`);
+
+            // Thêm thumbnail (nếu có và khác các frame)
+            if (thumbnailUrl) {
+                imagesToCheck.push({ url: thumbnailUrl, label: 'Thumbnail' });
+            }
+
+            // Thêm các frame trích xuất
+            frames.forEach((frameUrl, i) => {
+                const pct = ['0%', '25%', '50%', '75%'][i] || `${i}`;
+                imagesToCheck.push({ url: frameUrl, label: `Frame@${pct}` });
+            });
+        } else {
+            // ẢNH: chỉ kiểm tra 1 URL
+            const imageUrl = thumbnailUrl || videoUrl;
+            imagesToCheck.push({ url: imageUrl, label: 'Image' });
         }
-        console.log('[Moderation] ✅ Tầng 1 OK — không phát hiện NSFW');
 
-        // ─── TẦNG 2: BẠO LỰC / TỰ HẠI / MA TÚY ───
-        console.log('[Moderation] --- Tầng 2: Kiểm tra Bạo lực / Tự hại / Ma túy (tags) ---');
-        const tags = await getImageTags(imageUrl, uploadId);
-        const tagDecision = analyzeTagsForDanger(tags);
-        if (tagDecision) {
-            console.log(`[Moderation] ❌ REJECT (Tags): ${tagDecision.reason}`);
-            return tagDecision;
+        console.log(`[Moderation] Tổng số ảnh cần kiểm tra: ${imagesToCheck.length}`);
+
+        // Kiểm tra từng ảnh — dừng ngay khi phát hiện vi phạm
+        for (const { url, label } of imagesToCheck) {
+            try {
+                const decision = await moderateOneImage(url, label);
+                if (decision) {
+                    console.log(`[Moderation] ========== KẾT QUẢ: BỊ TỪ CHỐI (${label}) ==========`);
+                    return decision;
+                }
+                console.log(`[Moderation] ${label} OK`);
+            } catch (frameError) {
+                console.warn(`[Moderation] Lỗi kiểm tra ${label}:`, frameError.response?.data || frameError.message);
+            }
         }
-        console.log('[Moderation] ✅ Tầng 2 OK — không phát hiện nội dung nguy hiểm');
 
         console.log('[Moderation] ========== KẾT QUẢ: AN TOÀN ==========');
         return { safe: true, reason: 'Nội dung an toàn', categories: [] };
@@ -477,8 +542,6 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
             reason: 'Kiểm duyệt tạm thời không khả dụng - sẽ được review sau',
             categories: [],
         };
-    } finally {
-        cleanupUpload(uploadId);
     }
 }
 
