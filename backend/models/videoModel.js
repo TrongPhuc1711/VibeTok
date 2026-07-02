@@ -331,4 +331,20 @@ export const VideoModel = {
             [delta, videoId]
         );
     },
+
+    /**
+     * Cập nhật trạng thái kiểm duyệt video
+     * @param {number} videoId
+     * @param {'approved'|'rejected'|'pending'} status
+     * @param {string|null} reason - Lý do từ chối (nếu rejected)
+     */
+    async updateModerationStatus(videoId, status, reason = null) {
+        // Khi approved → hiển thị (hoat_dong = 1)
+        // Khi rejected → ẩn đi (hoat_dong = 0)
+        const hoatDong = status === 'rejected' ? 0 : 1;
+        await pool.query(
+            `UPDATE videos SET trang_thai_duyet = ?, ly_do_tu_choi = ?, hoat_dong = ? WHERE id = ?`,
+            [status, reason, hoatDong, videoId]
+        );
+    },
 };

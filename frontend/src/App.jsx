@@ -27,6 +27,9 @@ import ImageSlideshowDemo from './pages/ImageSlideshowDemo';
 // Admin
 import AdminRoutes from './pages/Admin/AdminRoutes';
 
+// Moderation — lắng nghe kết quả kiểm duyệt real-time
+import { useModerationStatus } from './hooks/useModerationStatus';
+
 // Component bắt lỗi giao diện
 import ErrorBoundary from './components/common/ErrorBoundary';
 
@@ -35,6 +38,12 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Lấy ID Client từ biến môi trường
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+/* Moderation listener — phải nằm trong ToastProvider */
+function ModerationListener() {
+  useModerationStatus();
+  return null;
+}
 
 /*  Route guards  */
 function PrivateRoute({ children }) {
@@ -65,6 +74,7 @@ export default function App() {
         {/* AuthProvider bọc toàn bộ app để sidebar reactive khi login/logout */}
         <AuthProvider>
           <ToastProvider>
+            <ModerationListener />
             <CallProvider>
               <BrowserRouter>
                 <ErrorBoundary>
