@@ -15,6 +15,7 @@ export const normalizeUser = (u) => {
         initials,
         bio: u.tieu_su || '',
         location: u.vi_tri || '',
+        so_dien_thoai: u.so_dien_thoai || '',
         isCreator: u.vai_tro === 'creator' || u.vai_tro === 'admin',
         followers: Number(u.so_nguoi_theo_doi) || 0,
         following: Number(u.so_nguoi_dang_theo_doi) || 0,
@@ -136,6 +137,66 @@ export const UserModel = {
         await pool.query(
             'UPDATE users SET tong_so_video = GREATEST(0, tong_so_video + ?) WHERE id = ?',
             [delta, userId]
+        );
+    },
+
+    // Tìm user theo danh sách số điện thoại (dùng cho đồng bộ danh bạ Google)
+    async findByPhoneNumbers(currentUserId, phoneList) {
+        if (!phoneList || phoneList.length === 0) return [];
+
+        // Lấy danh sách ID đã follow để loại trừ
+        const excludeIds = [currentUserId];
+        if (currentUserId) {
+            const [followRows] = await pool.query(
+                'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+                [currentUserId]
+            );
+            followRows.forEach(r => excludeIds.push(r.ma_nguoi_duoc_theo_doi));
+        }
+
+        const [rows] = await pool.query(
+            `SELECT * FROM users 
+             WHERE hoat_dong = 1 
+               AND so_dien_thoai IN (?) 
+               AND id NOT IN (?)
+               AND vai_tro != 'admin'
+             LIMIT 50`,
+            [phoneList, excludeIds]
+        );
+        return rows;
+    },
+
+    // Tìm user theo danh sách email (dùng cho đồng bộ danh bạ Google)
+    async findByEmails(currentUserId, emailList) {
+        if (!emailList || emailList.length === 0) return [];
+
+        // Lấy danh sách ID đã follow để loại trừ
+        const excludeIds = [currentUserId];
+        if (currentUserId) {
+            const [followRows] = await pool.query(
+                'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+                [currentUserId]
+            );
+            followRows.forEach(r => excludeIds.push(r.ma_nguoi_duoc_theo_doi));
+        }
+
+        const [rows] = await pool.query(
+            `SELECT * FROM users 
+             WHERE hoat_dong = 1 
+               AND email IN (?) 
+               AND id NOT IN (?)
+               AND vai_tro != 'admin'
+             LIMIT 50`,
+            [emailList, excludeIds]
+        );
+        return rows;
+    },
+
+    // Cập nhật số điện thoại (chuẩn E.164)
+    async updatePhone(userId, phoneNumber) {
+        await pool.query(
+            'UPDATE users SET so_dien_thoai = ? WHERE id = ?',
+            [phoneNumber || null, userId]
         );
     },
 };

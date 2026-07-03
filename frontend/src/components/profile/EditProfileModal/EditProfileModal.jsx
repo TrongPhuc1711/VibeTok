@@ -12,6 +12,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
     ten_hien_thi: profile?.fullName || '',
     tieu_su:      profile?.bio      || '',
     vi_tri:       profile?.location || '',
+    so_dien_thoai: profile?.so_dien_thoai || '',
   });
   const [avatarFile,    setAvatarFile]    = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(profile?.anh_dai_dien || null);
@@ -74,6 +75,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
         fd.append('ten_hien_thi', form.ten_hien_thi.trim());
         fd.append('tieu_su',      form.tieu_su.trim());
         fd.append('vi_tri',       form.vi_tri.trim());
+        fd.append('so_dien_thoai', form.so_dien_thoai.trim());
         const res = await api.patch('/users/me', fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -83,6 +85,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
           ten_hien_thi: form.ten_hien_thi.trim(),
           tieu_su:      form.tieu_su.trim(),
           vi_tri:       form.vi_tri.trim(),
+          so_dien_thoai: form.so_dien_thoai.trim(),
         });
         updatedUser = res.data.user;
       }
@@ -212,6 +215,23 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
               />
               <p className="text-[#555] text-[12px] mt-1 font-body text-right">
                 {form.tieu_su.length}/{bioMax}
+              </p>
+            </div>
+          </Row>
+
+          {/* Số điện thoại */}
+          <Row label="Số điện thoại">
+            <div>
+              <input
+                type="tel"
+                value={form.so_dien_thoai}
+                onChange={setField('so_dien_thoai')}
+                maxLength={15}
+                placeholder="+84 901 234 567"
+                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
+              />
+              <p className="text-[#555] text-[12px] mt-1.5 font-body">
+                Dùng để bạn bè tìm thấy bạn qua danh bạ. Chỉ bạn mới thấy SĐT.
               </p>
             </div>
           </Row>
