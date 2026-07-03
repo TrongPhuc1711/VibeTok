@@ -50,7 +50,7 @@ export const UserModel = {
     async findUsersByPhones(phones, currentUserId) {
         if (!phones || phones.length === 0) return [];
         const [rows] = await pool.query(
-            'SELECT * FROM users WHERE so_dien_thoai IN (?) AND id != ? AND hoat_dong = 1 AND vai_tro != "admin"',
+            "SELECT * FROM users WHERE so_dien_thoai IN (?) AND id != ? AND hoat_dong = 1 AND vai_tro != 'admin'",
             [phones, currentUserId]
         );
         return rows;
