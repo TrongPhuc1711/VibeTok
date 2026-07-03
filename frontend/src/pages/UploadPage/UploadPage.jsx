@@ -40,8 +40,15 @@ export default function UploadPage() {
   const [musicVolume, setMusicVolume] = useState(0.5);
 
   const { form, file, errors, uploading, progress, setField, selectFile, submit } = useUpload({
-    onSuccess: () => {
-      showSuccess('Đăng video thành công! ', 'Video của bạn đang được xử lý và sẽ hiển thị trên feed sớm nhất');
+    onSuccess: ({ pending } = {}) => {
+      if (pending) {
+        showSuccess(
+          'Video đã được tải lên! 🎬',
+          'Video đang được kiểm duyệt tự động. Bạn sẽ nhận thông báo khi hoàn tất.'
+        );
+      } else {
+        showSuccess('Đăng video thành công!', 'Video của bạn đã hiển thị trên feed.');
+      }
       setTimeout(() => navigate(ROUTES.HOME), 800);
     },
   });

@@ -18,6 +18,8 @@ import bookmarkRoutes from './routes/bookmarkRoutes.js';
 
 // Khởi chạy hệ thống cronService chạy ngầm đồng bộ lượt xem từ Redis sang MySQL
 import { initCronJobs } from './services/cronService.js';
+// Khởi chạy Worker kiểm duyệt nội dung bất đồng bộ (BullMQ + Gemini AI)
+import { initModerationWorker } from './services/moderationQueue.js';
 
 const app = express();
 const server = createServer(app);
@@ -57,6 +59,7 @@ app.use(express.json());
 
 initSocket(server);
 initCronJobs();
+initModerationWorker();
 
 app.get('/', (req, res) => res.send('<--VibeTok Backend đang hoạt động!-->'));
 

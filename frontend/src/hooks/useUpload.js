@@ -74,7 +74,7 @@ export function useUpload({ onSuccess } = {}) {
             if (extraData.originalVolume !== undefined) data.append('originalVolume', String(extraData.originalVolume));
             if (extraData.musicVolume !== undefined) data.append('musicVolume', String(extraData.musicVolume));
 
-            await api.post('/videos/upload', data, {
+            const res = await api.post('/videos/upload', data, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 timeout: 5 * 60 * 1000, // 5 phút cho upload (nhiều ảnh qua Cloudinary cần thời gian)
                 onUploadProgress: (e) => {
@@ -84,21 +84,18 @@ export function useUpload({ onSuccess } = {}) {
             });
 
             setProgress(100);
-            onSuccess?.();
-            return { success: true };
+
+            // 202 Accepted = upload thành công, kiểm duyệt đang chạy nền
+            // 201 Created = upload thành công (legacy/fallback)
+            const isPending = res.status === 202 || res.data?.moderationStatus === 'pending';
+
+            onSuccess?.({ pending: isPending });
+            return { success: true, pending: isPending };
         } catch (err) {
             console.error('[useUpload] Upload failed:', err);
             let msg = 'Đăng video thất bại';
-            let rejectionInfo = null;
 
-            if (err.response?.status === 403 && err.response?.data?.reason) {
-                // Video bị kiểm duyệt từ chối
-                msg = err.response.data.message || 'Video bị từ chối do vi phạm chính sách cộng đồng';
-                rejectionInfo = {
-                    reason: err.response.data.reason,
-                    categories: err.response.data.categories || [],
-                };
-            } else if (err.response?.data?.message) {
+            if (err.response?.data?.message) {
                 msg = err.response.data.message;
             } else if (err.code === 'ECONNABORTED') {
                 msg = 'Upload quá thời gian. Vui lòng thử lại với file nhỏ hơn.';
@@ -108,7 +105,7 @@ export function useUpload({ onSuccess } = {}) {
                 msg = err.message;
             }
             setErrors(p => ({ ...p, submit: msg }));
-            return { success: false, errors: { submit: msg }, rejectionInfo };
+            return { success: false, errors: { submit: msg } };
         } finally {
             setUploading(false);
         }

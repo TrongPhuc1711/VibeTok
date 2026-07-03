@@ -4,7 +4,7 @@ import { LikeModel } from '../models/follow/followLikeModel.js';
 import { HashtagModel } from '../models/contentModel.js';
 import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
-import { moderateVideo as moderateContent, moderateSlideshow } from '../services/moderationService.js';
+import { addModerationJob } from '../services/moderationQueue.js';
 
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
@@ -99,9 +99,11 @@ export const uploadVideo = async (req, res) => {
         console.log('[Upload] isSlideshow:', isSlideshow);
 
         let videoUrl, thumbnail, duration;
+        let slideshowUrls = null;
 
         if (isSlideshow) {
-            videoUrl = JSON.stringify(imageFiles.map(f => f.path));
+            slideshowUrls = imageFiles.map(f => f.path);
+            videoUrl = JSON.stringify(slideshowUrls);
             thumbnail = imageFiles[0].path
                 .replace('/upload/', '/upload/c_fill,w_300,h_400,g_auto/')
                 .replace(/\.[^.]+$/, '.jpg');
@@ -116,20 +118,6 @@ export const uploadVideo = async (req, res) => {
 
         console.log('[Upload] videoUrl length:', videoUrl.length);
         console.log('[Upload] thumbnail:', thumbnail);
-
-        // === KIỂM DUYỆT NỘI DUNG ===
-        console.log('[Upload] Bắt đầu kiểm duyệt nội dung...');
-        let moderationResult;
-        if (isSlideshow) {
-            // Slideshow: kiểm tra tất cả ảnh
-            const slideshowUrls = JSON.parse(videoUrl);
-            moderationResult = await moderateSlideshow(slideshowUrls);
-        } else {
-            moderationResult = await moderateContent(videoUrl, thumbnail);
-        }
-        console.log('[Upload] Kết quả kiểm duyệt:', moderationResult);
-
-        const isRejected = !moderationResult.safe;
 
         const {
             caption = '',
@@ -147,7 +135,8 @@ export const uploadVideo = async (req, res) => {
         const validPrivacy = ['public', 'friends', 'private'];
         const safePrivacy = validPrivacy.includes(privacy) ? privacy : 'public';
 
-        console.log('[Upload] Creating video in DB...');
+        // Lưu video với trạng thái 'pending' — kiểm duyệt sẽ chạy nền
+        console.log('[Upload] Creating video in DB (status: pending)...');
         const videoId = await VideoModel.create({
             userId: req.user.id,
             musicId: musicId || null,
@@ -162,21 +151,10 @@ export const uploadVideo = async (req, res) => {
             allowStitch: allowStitch !== 'false',
             location: location.slice(0, 100),
             isDraft: isDraft === 'true',
-            moderationStatus: isRejected ? 'rejected' : 'approved',
-            rejectionReason: isRejected ? moderationResult.reason : null,
+            moderationStatus: 'pending',
+            rejectionReason: null,
         });
         console.log('[Upload] Created videoId:', videoId, typeof videoId);
-
-        // Nếu video bị từ chối, trả lỗi 403
-        if (isRejected) {
-            console.log('[Upload] Video bị từ chối:', moderationResult.reason);
-            return res.status(403).json({
-                message: 'Video bị từ chối do vi phạm chính sách cộng đồng',
-                reason: moderationResult.reason,
-                categories: moderationResult.categories,
-                videoId: videoId,
-            });
-        }
 
         // Attach hashtags
         const tags = (caption.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) || []);
@@ -186,10 +164,27 @@ export const uploadVideo = async (req, res) => {
 
         await UserModel.incrementVideoCount(req.user.id);
 
+        // Đẩy job kiểm duyệt vào hàng đợi nền (không chờ kết quả)
+        console.log('[Upload] Đẩy job kiểm duyệt vào hàng đợi...');
+        await addModerationJob({
+            videoId,
+            userId: req.user.id,
+            videoUrl,
+            thumbnailUrl: thumbnail,
+            isSlideshow,
+            slideshowUrls,
+        });
+
         const video = await VideoModel.findById(videoId);
         console.log('[Upload] findById result:', video ? 'found' : 'NOT FOUND');
-        console.log('[Upload] === END ===');
-        res.status(201).json({ message: 'Đăng video thành công!', video });
+        console.log('[Upload] === END (async moderation queued) ===');
+
+        // Phản hồi ngay cho client — 202 Accepted
+        res.status(202).json({
+            message: 'Video đã được tải lên và đang chờ kiểm duyệt!',
+            video,
+            moderationStatus: 'pending',
+        });
     } catch (e) {
         console.error('[Upload] ERROR:', e);
         res.status(500).json({ message: 'Lỗi đăng video', error: e.message });
