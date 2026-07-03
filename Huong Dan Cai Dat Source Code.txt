@@ -41,7 +41,7 @@ BƯỚC 2: CÀI ĐẶT BACKEND
    DB_PORT=3306
 
    # JWT Secret (chuỗi bí mật bất kỳ, càng dài càng tốt)
-   JWT_SECRET=vibetok_super_secret_key_2024
+   JWT_SECRET=vibetok_super_secret_key_2026
 
    # Port server (mặc định 5000)
    PORT=5000
@@ -49,16 +49,16 @@ BƯỚC 2: CÀI ĐẶT BACKEND
    # CORS - địa chỉ frontend
    CORS_ORIGINS=http://localhost:5173
 
-   # Cloudinary (lưu trữ video/ảnh) - đăng ký tại cloudinary.com
+   # Cloudinary (lưu trữ video/ảnh)
    CLOUDINARY_CLOUD_NAME=your_cloud_name
    CLOUDINARY_API_KEY=your_api_key
    CLOUDINARY_API_SECRET=your_api_secret
 
-   # Brevo (gửi email OTP) - đăng ký tại brevo.com
+   # Brevo (gửi email OTP)
    BREVO_SENDER_EMAIL=your_email@example.com
    BREVO_API_KEY=your_brevo_api_key
 
-   # Google OAuth - tạo tại console.cloud.google.com
+   # Google OAuth
    GOOGLE_CLIENT_ID=your_google_client_id
 
 5. Tạo database MySQL:

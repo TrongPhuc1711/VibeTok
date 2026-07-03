@@ -21,6 +21,8 @@ export const normalizeUser = (u) => {
         following: Number(u.so_nguoi_dang_theo_doi) || 0,
         likes: Number(u.tong_luot_thich) || 0,
         videos: Number(u.tong_so_video) || 0,
+        phone: u.so_dien_thoai || null,
+        isPhoneVerified: Boolean(u.da_xac_minh_sdt),
         createdAt: u.ngay_tao,
     };
 };
@@ -42,6 +44,25 @@ export const UserModel = {
             [id]
         );
         return rows[0] || null;
+    },
+
+    // Tìm các user có số điện thoại thuộc danh sách truyền vào và loại trừ chính user hiện tại
+    async findUsersByPhones(phones, currentUserId) {
+        if (!phones || phones.length === 0) return [];
+        const [rows] = await pool.query(
+            'SELECT * FROM users WHERE so_dien_thoai IN (?) AND id != ? AND hoat_dong = 1 AND vai_tro != "admin"',
+            [phones, currentUserId]
+        );
+        return rows;
+    },
+
+    // Cập nhật số điện thoại và đánh dấu đã xác thực
+    async updatePhone(userId, phone) {
+        await pool.query(
+            'UPDATE users SET so_dien_thoai = ?, da_xac_minh_sdt = 1 WHERE id = ?',
+            [phone, userId]
+        );
+        return this.findById(userId);
     },
 
     // currentUserRole: vai trò của người đang đăng nhập ('admin', 'creator', 'user', null)

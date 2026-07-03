@@ -3,6 +3,7 @@ import { updateProfile } from '../../../services/userService';
 import { setStoredUser, getStoredUser } from '../../../utils/helpers';
 import api from '../../../api/api';
 import { useToast } from '../../ui/Toast';
+import PhoneVerificationModal from '../PhoneVerificationModal';
 
 export default function EditProfileModal({ profile, onClose, onSaved }) {
   const fileRef = useRef(null);
@@ -18,6 +19,11 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
   const [avatarPreview, setAvatarPreview] = useState(profile?.anh_dai_dien || null);
   const [saving,        setSaving]        = useState(false);
   const [error,         setError]         = useState('');
+
+  // States cho xác thực số điện thoại
+  const [verifyPhoneOpen, setVerifyPhoneOpen] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(Boolean(profile?.isPhoneVerified));
+  const [displayPhone, setDisplayPhone] = useState(profile?.phone || '');
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
@@ -237,7 +243,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
           </Row>
 
           {/* Vị trí */}
-          <Row label="Vị trí" noBorder>
+          <Row label="Vị trí">
             <input
               type="text"
               value={form.vi_tri}
@@ -246,6 +252,30 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
               placeholder="Thành phố, quốc gia..."
               className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
             />
+          </Row>
+
+          {/* Số điện thoại */}
+          <Row label="Số điện thoại" noBorder>
+            <div className="flex items-center justify-between gap-3 bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3">
+              {phoneVerified ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-[14px] font-body">{displayPhone}</span>
+                  <span className="text-[11px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-semibold">
+                    Đã xác minh
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[#555] text-[14px] font-body">Chưa liên kết số điện thoại</span>
+              )}
+              
+              <button
+                type="button"
+                onClick={() => setVerifyPhoneOpen(true)}
+                className="px-3 py-1.5 rounded-md bg-[#2c2c2c] hover:bg-[#383838] border border-[#444] text-white text-[12px] font-medium cursor-pointer transition-colors"
+              >
+                {phoneVerified ? 'Thay đổi' : 'Liên kết ngay'}
+              </button>
+            </div>
           </Row>
 
         </div>
@@ -275,6 +305,27 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
         </div>
 
       </div>
+
+      {verifyPhoneOpen && (
+        <PhoneVerificationModal
+          onClose={() => setVerifyPhoneOpen(false)}
+          onVerified={(updatedUser) => {
+            setPhoneVerified(true);
+            setDisplayPhone(updatedUser.phone || updatedUser.so_dien_thoai);
+            
+            // Cập nhật lại thông tin user trong LocalStorage
+            const stored = getStoredUser();
+            if (stored) {
+              setStoredUser({
+                ...stored,
+                phone: updatedUser.phone || updatedUser.so_dien_thoai,
+                isPhoneVerified: true
+              });
+            }
+            onSaved?.(updatedUser);
+          }}
+        />
+      )}
     </div>
   );
 }
