@@ -226,11 +226,9 @@ function analyzeNSFWScores(scores) {
     return null; // Qua tầng 1
 }
 
-<<<<<<< HEAD
-// TẦNG 2: KIỂM DUYỆT BẠO LỰC / TỰ HẠI / MA TÚY (tags)
-=======
 
->>>>>>> 766586f570e007675e5e796fb82768189ed1f12a
+// TẦNG 2: KIỂM DUYỆT BẠO LỰC / TỰ HẠI / MA TÚY (tags)
+
 
 /**
  * Lấy tags từ Imagga Tags API
@@ -402,11 +400,10 @@ function analyzeTagsForDanger(tags) {
 }
 
 // EXPORT: Kiểm duyệt chính
-<<<<<<< HEAD
-=======
+
 // TRÍCH XUẤT FRAME TỪ VIDEO (Cloudinary)
 
->>>>>>> 766586f570e007675e5e796fb82768189ed1f12a
+
 
 /**
  * Số lượng frame tối đa trích xuất từ video để kiểm duyệt

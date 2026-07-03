@@ -282,6 +282,8 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
               {saving ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>
+        </div>
+
       </div>
 
       {verifyPhoneOpen && (
