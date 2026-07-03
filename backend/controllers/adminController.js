@@ -248,7 +248,7 @@ export const getMusicCounts = async (req, res) => {
 export const createMusic = async (req, res) => {
     try {
         const { title, artist, duration, trending } = req.body;
-        
+
         const audioUrl = req.files?.audio?.[0]?.path;
         const cover = req.files?.cover?.[0]?.path || '';
 
@@ -259,15 +259,15 @@ export const createMusic = async (req, res) => {
             return res.status(400).json({ message: 'File âm thanh là bắt buộc!' });
         }
 
-        const id = await AdminModel.createMusic({ 
-            title, 
-            artist, 
-            duration: Number(duration) || 0, 
-            audioUrl, 
-            cover, 
-            trending: trending === 'true' 
+        const id = await AdminModel.createMusic({
+            title,
+            artist,
+            duration: Number(duration) || 0,
+            audioUrl,
+            cover,
+            trending: trending === 'true'
         });
-        
+
         res.status(201).json({ message: 'Đã thêm bài hát!', id });
     } catch (e) {
         console.error('Admin createMusic error:', e);
@@ -279,7 +279,7 @@ export const createMusic = async (req, res) => {
 export const updateMusic = async (req, res) => {
     try {
         const updates = { ...req.body };
-        
+
         if (updates.trending !== undefined) {
             updates.trending = updates.trending === 'true';
         }

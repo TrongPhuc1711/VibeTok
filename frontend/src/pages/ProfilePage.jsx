@@ -124,7 +124,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleProfileSaved = (updatedUser) => {
+  const handleProfileSaved = (updatedUser, triggerSync) => {
     if (!updatedUser) return;
     setProfile(p => ({
       ...p,
@@ -132,7 +132,11 @@ export default function ProfilePage() {
       bio: updatedUser.bio || updatedUser.tieu_su || p.bio,
       location: updatedUser.location || updatedUser.vi_tri || p.location,
       anh_dai_dien: updatedUser.anh_dai_dien || p.anh_dai_dien,
+      so_dien_thoai: updatedUser.so_dien_thoai || updatedUser.phone || p.so_dien_thoai,
     }));
+    if (triggerSync) {
+      setContactSyncOpen(true);
+    }
   };
 
   /* Desktop right panel */

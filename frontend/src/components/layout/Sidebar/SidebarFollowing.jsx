@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../api/api';
 import { getStoredUser } from '../../../utils/helpers';
+import FindFriendsModal from '../../common/FindFriendsModal/FindFriendsModal';
 
 export default function SidebarFollowing() {
     const navigate = useNavigate();
     const me       = getStoredUser();
     const [users,   setUsers]   = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showFindFriends, setShowFindFriends] = useState(false);
 
     useEffect(() => {
         if (!me?.username) { setLoading(false); return; }
@@ -39,49 +41,90 @@ export default function SidebarFollowing() {
         );
     }
 
-    if (!users.length) return null;
-
     return (
         <div>
-            <div className="px-5 pt-3 pb-1">
-                <div className="h-px bg-border" />
-                <p className="text-[11px] tracking-[0.5px] mt-2.5 mb-1 font-body" style={{ color: 'var(--vt-text-caption)' }}>
-                    ĐANG THEO DÕI
-                </p>
-            </div>
-
-            {users.map((user) => (
-                <button
-                    key={user.id}
-                    onClick={() => navigate(`/profile/${user.username}`)}
-                    className="flex items-center gap-2.5 w-full px-5 py-2 border-none bg-transparent cursor-pointer transition-colors"
-                    style={{ ':hover': { background: 'var(--vt-hover)' } }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--vt-hover)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                    {/* Avatar */}
-                    <div
-                        className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden"
-                        style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
-                    >
-                        {user.anh_dai_dien ? (
-                            <img
-                                src={user.anh_dai_dien}
-                                alt={user.username}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            user.initials || user.fullName?.[0]?.toUpperCase() || 'U'
-                        )}
+            {users.length > 0 && (
+                <>
+                    <div className="px-5 pt-3 pb-1">
+                        <div className="h-px bg-border" />
+                        <p className="text-[11px] tracking-[0.5px] mt-2.5 mb-1 font-body" style={{ color: 'var(--vt-text-caption)' }}>
+                            ĐANG THEO DÕI
+                        </p>
                     </div>
 
-                    <span className="font-body text-[13px] flex-1 text-left truncate" style={{ color: 'var(--vt-text-bright)' }}>
-                        {user.fullName}
-                    </span>
+                    {users.map((user) => (
+                        <button
+                            key={user.id}
+                            onClick={() => navigate(`/profile/${user.username}`)}
+                            className="flex items-center gap-2.5 w-full px-5 py-2 border-none bg-transparent cursor-pointer transition-colors"
+                            style={{ ':hover': { background: 'var(--vt-hover)' } }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--vt-hover)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                            {/* Avatar */}
+                            <div
+                                className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden"
+                                style={{ background: 'linear-gradient(135deg,#ff2d78,#ff6b35)' }}
+                            >
+                                {user.anh_dai_dien ? (
+                                    <img
+                                        src={user.anh_dai_dien}
+                                        alt={user.username}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    user.initials || user.fullName?.[0]?.toUpperCase() || 'U'
+                                )}
+                            </div>
 
-                    {/* Có thể thêm "LIVE" badge nếu backend hỗ trợ sau */}
+                            <span className="font-body text-[13px] flex-1 text-left truncate" style={{ color: 'var(--vt-text-bright)' }}>
+                                {user.fullName}
+                            </span>
+
+                            {/* Có thể thêm "LIVE" badge nếu backend hỗ trợ sau */}
+                        </button>
+                    ))}
+                </>
+            )}
+
+            {/* Nút tìm bạn từ danh bạ Google */}
+            <div className="px-5 pt-3 pb-2">
+                {users.length === 0 && <div className="h-px bg-border mb-2" />}
+                <button
+                    onClick={() => setShowFindFriends(true)}
+                    className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg border border-dashed cursor-pointer transition-all duration-200 group"
+                    style={{
+                        background: 'transparent',
+                        borderColor: 'var(--color-border2)',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#ff2d78';
+                        e.currentTarget.style.background = 'rgba(255,45,120,0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-border2)';
+                        e.currentTarget.style.background = 'transparent';
+                    }}
+                >
+                    <div className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: 'linear-gradient(135deg, rgba(255,45,120,0.15), rgba(255,107,53,0.15))' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ff2d78" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <line x1="19" y1="8" x2="19" y2="14" />
+                            <line x1="22" y1="11" x2="16" y2="11" />
+                        </svg>
+                    </div>
+                    <span className="font-body text-[12px] font-medium" style={{ color: 'var(--vt-text-hint)' }}>
+                        Tìm bạn từ danh bạ
+                    </span>
                 </button>
-            ))}
+            </div>
+
+            {/* Modal */}
+            {showFindFriends && (
+                <FindFriendsModal onClose={() => setShowFindFriends(false)} />
+            )}
         </div>
     );
 }

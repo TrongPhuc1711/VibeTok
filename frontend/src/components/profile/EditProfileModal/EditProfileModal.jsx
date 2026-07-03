@@ -3,7 +3,6 @@ import { updateProfile } from '../../../services/userService';
 import { setStoredUser, getStoredUser } from '../../../utils/helpers';
 import api from '../../../api/api';
 import { useToast } from '../../ui/Toast';
-import PhoneVerificationModal from '../PhoneVerificationModal';
 
 export default function EditProfileModal({ profile, onClose, onSaved }) {
   const fileRef = useRef(null);
@@ -11,18 +10,16 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
   const [form, setForm] = useState({
     ten_hien_thi: profile?.fullName || '',
-    tieu_su:      profile?.bio      || '',
-    vi_tri:       profile?.location || '',
+    tieu_su: profile?.bio || '',
+    vi_tri: profile?.location || '',
+    so_dien_thoai: profile?.so_dien_thoai || '',
   });
-  const [avatarFile,    setAvatarFile]    = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(profile?.anh_dai_dien || null);
-  const [saving,        setSaving]        = useState(false);
-  const [error,         setError]         = useState('');
-
-  // States cho xác thực số điện thoại
-  const [verifyPhoneOpen, setVerifyPhoneOpen] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(Boolean(profile?.isPhoneVerified));
-  const [displayPhone, setDisplayPhone] = useState(profile?.phone || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [showSyncPrompt, setShowSyncPrompt] = useState(false);
+  const [savedUserTemp, setSavedUserTemp] = useState(null);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
@@ -76,10 +73,11 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
       if (avatarFile) {
         const fd = new FormData();
-        fd.append('avatar',       avatarFile);
+        fd.append('avatar', avatarFile);
         fd.append('ten_hien_thi', form.ten_hien_thi.trim());
-        fd.append('tieu_su',      form.tieu_su.trim());
-        fd.append('vi_tri',       form.vi_tri.trim());
+        fd.append('tieu_su', form.tieu_su.trim());
+        fd.append('vi_tri', form.vi_tri.trim());
+        fd.append('so_dien_thoai', form.so_dien_thoai.trim());
         const res = await api.patch('/users/me', fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -87,8 +85,9 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
       } else {
         const res = await updateProfile({
           ten_hien_thi: form.ten_hien_thi.trim(),
-          tieu_su:      form.tieu_su.trim(),
-          vi_tri:       form.vi_tri.trim(),
+          tieu_su: form.tieu_su.trim(),
+          vi_tri: form.vi_tri.trim(),
+          so_dien_thoai: form.so_dien_thoai.trim(),
         });
         updatedUser = res.data.user;
       }
@@ -97,15 +96,22 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
       if (stored) {
         setStoredUser({
           ...stored,
-          fullName:     form.ten_hien_thi.trim(),
+          fullName: form.ten_hien_thi.trim(),
           ten_hien_thi: form.ten_hien_thi.trim(),
           ...(updatedUser?.anh_dai_dien ? { anh_dai_dien: updatedUser.anh_dai_dien } : {}),
         });
       }
 
-      showSuccess('Cập nhật hồ sơ thành công! ✨', 'Thông tin của bạn đã được lưu');
-      onSaved?.(updatedUser);
-      onClose();
+      showSuccess('Cập nhật hồ sơ thành công!', 'Thông tin của bạn đã được lưu');
+      
+      const hasNewPhone = form.so_dien_thoai.trim() && form.so_dien_thoai.trim() !== (profile?.so_dien_thoai || profile?.phone || '');
+      if (hasNewPhone) {
+        setSavedUserTemp(updatedUser);
+        setShowSyncPrompt(true);
+      } else {
+        onSaved?.(updatedUser);
+        onClose();
+      }
     } catch (e) {
       const msg = e.response?.data?.message || e.message || 'Cập nhật thất bại';
       setError(msg);
@@ -222,8 +228,25 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
             </div>
           </Row>
 
+          {/* Số điện thoại */}
+          <Row label="Số điện thoại">
+            <div>
+              <input
+                type="tel"
+                value={form.so_dien_thoai}
+                onChange={setField('so_dien_thoai')}
+                maxLength={15}
+                placeholder="+84 901 234 567"
+                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
+              />
+              <p className="text-[#555] text-[12px] mt-1.5 font-body">
+                Dùng để bạn bè tìm thấy bạn qua danh bạ. Chỉ bạn mới thấy SĐT.
+              </p>
+            </div>
+          </Row>
+
           {/* Vị trí */}
-          <Row label="Vị trí">
+          <Row label="Vị trí" noBorder>
             <input
               type="text"
               value={form.vi_tri}
@@ -232,30 +255,6 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
               placeholder="Thành phố, quốc gia..."
               className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
             />
-          </Row>
-
-          {/* Số điện thoại */}
-          <Row label="Số điện thoại" noBorder>
-            <div className="flex items-center justify-between gap-3 bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3">
-              {phoneVerified ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-white text-[14px] font-body">{displayPhone}</span>
-                  <span className="text-[11px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-semibold">
-                    Đã xác minh
-                  </span>
-                </div>
-              ) : (
-                <span className="text-[#555] text-[14px] font-body">Chưa liên kết số điện thoại</span>
-              )}
-              
-              <button
-                type="button"
-                onClick={() => setVerifyPhoneOpen(true)}
-                className="px-3 py-1.5 rounded-md bg-[#2c2c2c] hover:bg-[#383838] border border-[#444] text-white text-[12px] font-medium cursor-pointer transition-colors"
-              >
-                {phoneVerified ? 'Thay đổi' : 'Liên kết ngay'}
-              </button>
-            </div>
           </Row>
 
         </div>
@@ -286,25 +285,43 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
       </div>
 
-      {verifyPhoneOpen && (
-        <PhoneVerificationModal
-          onClose={() => setVerifyPhoneOpen(false)}
-          onVerified={(updatedUser) => {
-            setPhoneVerified(true);
-            setDisplayPhone(updatedUser.phone || updatedUser.so_dien_thoai);
-            
-            // Cập nhật lại thông tin user trong LocalStorage
-            const stored = getStoredUser();
-            if (stored) {
-              setStoredUser({
-                ...stored,
-                phone: updatedUser.phone || updatedUser.so_dien_thoai,
-                isPhoneVerified: true
-              });
-            }
-            onSaved?.(updatedUser);
-          }}
-        />
+      {showSyncPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-md">
+          <div className="w-[380px] bg-[#1e1e1e] rounded-2xl border border-[#2d2d2d] shadow-2xl p-6 flex flex-col items-center text-center animate-fade-in font-body">
+            <div className="w-14 h-14 rounded-full bg-brand-gradient flex items-center justify-center text-white mb-4 shadow-lg shadow-primary/20">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <h3 className="text-[18px] font-bold text-white mb-2">Đồng bộ danh bạ điện thoại?</h3>
+            <p className="text-[13px] text-[#aaa] leading-relaxed mb-6 px-2">
+              Tìm những người bạn quen biết trên VibeTok. Các liên hệ trong danh bạ sẽ được đồng bộ hóa liên tục để đề xuất tài khoản phù hợp nhất cho bạn.
+            </p>
+            <div className="w-full flex flex-col gap-2.5">
+              <button
+                onClick={() => {
+                  onSaved?.(savedUserTemp, true);
+                  onClose();
+                }}
+                className="w-full py-3 rounded-xl bg-brand-gradient text-white text-[14px] font-semibold cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
+              >
+                Đồng bộ ngay
+              </button>
+              <button
+                onClick={() => {
+                  onSaved?.(savedUserTemp, false);
+                  onClose();
+                }}
+                className="w-full py-3 rounded-xl bg-[#2c2c2c] hover:bg-[#383838] text-[#ccc] hover:text-white text-[14px] font-semibold cursor-pointer active:scale-[0.98] transition-all"
+              >
+                Để sau
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -324,15 +341,15 @@ function Row({ label, children, noBorder = false }) {
 function CameraIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round">
-      <path d="M2 8.5C2 7.4 2.9 6.5 4 6.5h1.5l1.5-2h8l1.5 2H18c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-9z"/>
-      <circle cx="12" cy="12" r="3"/>
+      <path d="M2 8.5C2 7.4 2.9 6.5 4 6.5h1.5l1.5-2h8l1.5 2H18c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-9z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
 function PencilIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#aaa" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 2l2 2L4 11H2V9L9 2z"/>
+      <path d="M9 2l2 2L4 11H2V9L9 2z" />
     </svg>
   );
 }
@@ -340,7 +357,7 @@ function SpinIcon() {
   return (
     <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
       <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5"
-        strokeDasharray="20" strokeDashoffset="10" strokeLinecap="round"/>
+        strokeDasharray="20" strokeDashoffset="10" strokeLinecap="round" />
     </svg>
   );
 }
