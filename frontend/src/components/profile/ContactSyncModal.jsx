@@ -4,6 +4,20 @@ import { useToast } from '../ui/Toast';
 import { toggleFollowing } from '../../utils/following';
 import api from '../../api/api';
 
+// Hàm dọn dẹp số điện thoại
+const cleanPhoneNumber = (number) => {
+  if (!number) return '';
+  // Loại bỏ tất cả khoảng trắng, dấu gạch ngang, dấu ngoặc đơn
+  let cleaned = number.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
+  
+  // Tùy chọn: Nếu database lưu mặc định đầu +84 cho mọi số:
+  // if (cleaned.startsWith('0')) {
+  //   cleaned = '+84' + cleaned.substring(1);
+  // }
+  
+  return cleaned;
+};
+
 export default function ContactSyncModal({ onClose }) {
   const { showError } = useToast();
   const [loading, setLoading] = useState(true);
@@ -27,7 +41,16 @@ export default function ContactSyncModal({ onClose }) {
           contactsList.forEach(c => {
             if (c.tel) {
               c.tel.forEach(t => {
-                if (t) phonesToSync.push(t.trim());
+                if (t) {
+                  const formattedPhone = cleanPhoneNumber(t);
+                  // Chỉ đẩy vào mảng đối soát nếu số hợp lệ (ví dụ độ dài từ 9-15 ký tự)
+                  if (formattedPhone && formattedPhone.length >= 9) {
+                    // Tránh đẩy trùng lặp số điện thoại
+                    if (!phonesToSync.includes(formattedPhone)) {
+                      phonesToSync.push(formattedPhone);
+                    }
+                  }
+                }
               });
             }
           });
@@ -99,7 +122,6 @@ export default function ContactSyncModal({ onClose }) {
   const handleSearch = async (val) => {
     setSearchQuery(val);
     if (!val.trim()) {
-      // Re-run the default contacts sync/suggestion list
       performSync(true);
       return;
     }
@@ -110,12 +132,13 @@ export default function ContactSyncModal({ onClose }) {
       let results = [];
 
       if (isPhone) {
-        // Search by phone number in DB directly
-        const res = await syncContacts([val.trim()]);
+        // Làm sạch số điện thoại người dùng tự nhập trước khi đối soát DB
+        const cleanSearchPhone = cleanPhoneNumber(val);
+        const res = await syncContacts([cleanSearchPhone]);
         results = res.data.users || [];
         setIsSuggested(false);
       } else {
-        // Search by name/username
+        // Tìm kiếm bằng tên/username giữ nguyên
         const res = await api.get('/users/search', { params: { q: val.trim(), limit: 15 } });
         results = res.data.users || [];
         setIsSuggested(false);
