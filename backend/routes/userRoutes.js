@@ -4,7 +4,8 @@ import { uploadAvatar } from '../middlewares/uploadMiddleware.js';
 import {
     getUserProfile, getSuggestions, searchUsers,
     followUser, unfollowUser,
-    updateMyProfile, searchMentionUsers
+    updateMyProfile, searchMentionUsers,
+    updateUserPhone, syncContacts
 } from '../controllers/userController.js';
 import { getFollowers, getFollowing, getFriends } from '../controllers/followListController.js';
 
@@ -21,6 +22,8 @@ router.get('/:username', optionalAuth, getUserProfile);
 
 // Protected 
 router.patch('/me', verifyToken, uploadAvatar, updateMyProfile);
+router.patch('/me/phone', verifyToken, updateUserPhone);
+router.post('/me/sync-contacts', verifyToken, syncContacts);
 router.post('/:username/follow', verifyToken, followUser);
 router.delete('/:username/follow', verifyToken, unfollowUser);
 

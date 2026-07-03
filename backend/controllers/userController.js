@@ -178,3 +178,72 @@ export const searchMentionUsers = async (req, res) => {
         res.status(500).json({ message: 'Lỗi tìm kiếm người dùng', error: e.message });
     }
 };
+
+// PATCH /api/users/me/phone
+export const updateUserPhone = async (req, res) => {
+    try {
+        const { phone } = req.body;
+        if (!phone) {
+            return res.status(400).json({ message: 'Số điện thoại không được để trống' });
+        }
+
+        // Chuẩn hóa số điện thoại: Loại bỏ khoảng trắng, dấu cộng, hoặc chuyển đổi định dạng
+        const cleanPhone = phone.trim().replace(/[\s\-\(\)\+]/g, '');
+
+        // Kiểm tra xem số điện thoại đã được đăng ký bởi user khác chưa
+        const [existing] = await pool.query(
+            'SELECT id FROM users WHERE so_dien_thoai = ? AND id != ? AND hoat_dong = 1',
+            [cleanPhone, req.user.id]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Số điện thoại này đã được liên kết với một tài khoản khác' });
+        }
+
+        const updated = await UserModel.updatePhone(req.user.id, cleanPhone);
+        res.json({
+            message: 'Xác thực và cập nhật số điện thoại thành công',
+            user: normalizeUser(updated)
+        });
+    } catch (e) {
+        res.status(500).json({ message: 'Lỗi cập nhật số điện thoại', error: e.message });
+    }
+};
+
+// POST /api/users/me/sync-contacts
+export const syncContacts = async (req, res) => {
+    try {
+        const { contacts = [] } = req.body; // Mảng các số điện thoại từ danh bạ
+        if (!Array.isArray(contacts) || contacts.length === 0) {
+            return res.json({ users: [] });
+        }
+
+        // Chuẩn hóa danh sách số điện thoại nhận từ client (xóa khoảng trắng, dấu ngoặc, +84, v.v...)
+        const cleanPhones = contacts.map(p => {
+            let phone = p.trim().replace(/[\s\-\(\)\+]/g, '');
+            // Chuyển đổi đầu số 84 thành 0 nếu cần hoặc giữ nguyên tùy theo cách lưu trữ trong DB
+            if (phone.startsWith('84')) {
+                phone = '0' + phone.substring(2);
+            }
+            return phone;
+        }).filter(Boolean);
+
+        if (cleanPhones.length === 0) return res.json({ users: [] });
+
+        // Tìm các user khớp số điện thoại
+        const matchedUsers = await UserModel.findUsersByPhones(cleanPhones, req.user.id);
+
+        // Lấy danh sách id mà user hiện tại đang follow để kiểm tra xem đã follow chưa
+        const followingIds = await FollowModel.getFollowingIds(req.user.id);
+        const followingSet = new Set(followingIds);
+
+        const result = matchedUsers.map(u => ({
+            ...normalizeUser(u),
+            isFollowing: followingSet.has(u.id)
+        }));
+
+        res.json({ users: result });
+    } catch (e) {
+        res.status(500).json({ message: 'Lỗi đồng bộ danh bạ', error: e.message });
+    }
+};

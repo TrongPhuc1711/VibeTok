@@ -65,3 +65,15 @@ export const searchMentionUsers = async (q = '', limit = 10) => {
     const res = await api.get('/users/mention-search', { params: { q, limit } });
     return { data: res.data };
 };
+
+// PATCH /api/users/me/phone — Lưu số điện thoại sau khi xác thực
+export const updateUserPhone = async (phone) => {
+    const res = await api.patch('/users/me/phone', { phone });
+    return { data: res.data };
+};
+
+// POST /api/users/me/sync-contacts — Gửi danh bạ để tìm gợi ý kết bạn
+export const syncContacts = async (contacts) => {
+    const res = await api.post('/users/me/sync-contacts', { contacts });
+    return { data: res.data };
+};

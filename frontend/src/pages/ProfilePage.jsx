@@ -8,6 +8,7 @@ import { SpinnerCenter } from '../components/ui/Spinner';
 import FollowListModal from '../components/common/FollowListModal/FollowListModal';
 import EditProfileModal from '../components/profile/EditProfileModal/EditProfileModal';
 import ProfileVideoFeedModal from '../components/profile/ProfileVideoFeedModal';
+import ContactSyncModal from '../components/profile/ContactSyncModal';
 
 import { useProfile } from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
@@ -43,6 +44,7 @@ export default function ProfilePage() {
   const [likedFeedModalIndex, setLikedFeedModalIndex] = useState(null);
   const [followModal, setFollowModal] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [contactSyncOpen, setContactSyncOpen] = useState(false);
   const [likedFetched, setLikedFetched] = useState(false);
   const [bookmarkedVideos, setBookmarkedVideos] = useState([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(false);
@@ -135,12 +137,35 @@ export default function ProfilePage() {
 
   /* Desktop right panel */
   const rightPanel = (
-    <div className="p-[18px]">
-      <h3 className="text-text-secondary text-[13px] font-body mb-4 tracking-[0.3px]">
-        Gợi ý theo dõi
-      </h3>
-      <div className="flex flex-col gap-1">
-        {suggests.map(u => <CreatorCard key={u.id} user={u} layout="row" />)}
+    <div className="p-[18px] flex flex-col gap-5">
+      {isMyProfile && (
+        <button
+          onClick={() => {
+            if (!isLoggedIn()) {
+              showWarning('Cần đăng nhập', 'Đăng nhập để tìm bạn bè');
+              navigate('/login');
+              return;
+            }
+            setContactSyncOpen(true);
+          }}
+          className="w-full py-2.5 rounded-xl bg-brand-gradient hover:opacity-95 text-white font-semibold text-[13px] border-none cursor-pointer flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Tìm bạn qua danh bạ
+        </button>
+      )}
+      <div>
+        <h3 className="text-text-secondary text-[13px] font-body mb-3 tracking-[0.3px]">
+          Gợi ý theo dõi
+        </h3>
+        <div className="flex flex-col gap-1">
+          {suggests.map(u => <CreatorCard key={u.id} user={u} layout="row" />)}
+        </div>
       </div>
     </div>
   );
@@ -438,6 +463,12 @@ export default function ProfilePage() {
           profile={profile}
           onClose={() => setEditOpen(false)}
           onSaved={handleProfileSaved}
+        />
+      )}
+
+      {contactSyncOpen && (
+        <ContactSyncModal
+          onClose={() => setContactSyncOpen(false)}
         />
       )}
     </PageLayout>

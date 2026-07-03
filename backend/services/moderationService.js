@@ -6,9 +6,7 @@ const IMAGGA_API_URL = 'https://api.imagga.com/v2';
 const IMAGGA_API_KEY = process.env.IMAGGA_API_KEY || '';
 const IMAGGA_API_SECRET = process.env.IMAGGA_API_SECRET || '';
 
-// ============================================================
 // NGƯỠNG KIỂM DUYỆT
-// ============================================================
 
 // Ngưỡng NSFW (adult_content categories)
 const EXPLICIT_THRESHOLD = 50;   // explicit >= 50% → reject
@@ -20,10 +18,7 @@ const VIOLENCE_TAG_THRESHOLD = 30;
 // Tổ hợp nguy hiểm cần confidence >= ngưỡng thấp hơn (vì kết hợp = rõ ràng hơn)
 const COMBO_TAG_THRESHOLD = 10;
 
-// ============================================================
 // DANH SÁCH TỪ KHÓA NGUY HIỂM (Tags Imagga)
-// ============================================================
-
 // Tags RẤT NGUY HIỂM — rõ ràng, không mơ hồ → reject ở ngưỡng thấp (>= 10%)
 const HIGH_DANGER_TAGS = [
     'suicide', 'suicidal', 'noose', 'gallows',
@@ -84,10 +79,7 @@ const DANGEROUS_COMBINATIONS = [
     { tags: ['rope', 'person'], category: 'self-harm', label: 'Nghi ngờ tự tử' },
 ];
 
-// ============================================================
 // HELPER FUNCTIONS
-// ============================================================
-
 const authConfig = {
     auth: {
         username: IMAGGA_API_KEY,
@@ -96,9 +88,7 @@ const authConfig = {
     timeout: 30000,
 };
 
-/**
- * Tải ảnh từ URL về dưới dạng Buffer
- */
+/* Tải ảnh từ URL về dưới dạng Buffer */
 async function fetchImageBuffer(imageUrl) {
     const response = await axios.get(imageUrl, {
         responseType: 'arraybuffer',
@@ -108,9 +98,8 @@ async function fetchImageBuffer(imageUrl) {
     return { buffer: Buffer.from(response.data), contentType };
 }
 
-/**
- * Upload ảnh lên Imagga để lấy upload_id
- * Dùng khi gửi URL trực tiếp bị lỗi (Imagga không fetch được URL)
+/* Upload ảnh lên Imagga để lấy upload_id
+Dùng khi gửi URL trực tiếp bị lỗi (Imagga không fetch được URL)
  */
 async function uploadImageToImagga(imageBuffer, contentType) {
     const form = new FormData();
@@ -129,9 +118,8 @@ async function uploadImageToImagga(imageBuffer, contentType) {
     return response.data?.result?.upload_id;
 }
 
-/**
- * Lấy upload_id cho ảnh (download → upload lên Imagga)
- * Trả về upload_id, cần gọi cleanup sau khi dùng xong
+/*Lấy upload_id cho ảnh (download → upload lên Imagga)
+ Trả về upload_id, cần gọi cleanup sau khi dùng xong
  */
 async function getUploadId(imageUrl) {
     const { buffer, contentType } = await fetchImageBuffer(imageUrl);
@@ -152,9 +140,7 @@ function cleanupUpload(uploadId) {
     }
 }
 
-// ============================================================
 // TẦNG 1: KIỂM DUYỆT NSFW (adult_content)
-// ============================================================
 
 /**
  * Kiểm duyệt NSFW bằng Imagga adult_content categorizer
@@ -244,9 +230,7 @@ function analyzeNSFWScores(scores) {
     return null; // Qua tầng 1
 }
 
-// ============================================================
 // TẦNG 2: KIỂM DUYỆT BẠO LỰC / TỰ HẠI / MA TÚY (tags)
-// ============================================================
 
 /**
  * Lấy tags từ Imagga Tags API
@@ -419,9 +403,7 @@ function analyzeTagsForDanger(tags) {
     return null; // Qua tầng 2
 }
 
-// ============================================================
 // EXPORT: Kiểm duyệt chính
-// ============================================================
 
 /**
  * Kiểm duyệt nội dung video/ảnh bằng Imagga API (2 tầng)
@@ -445,7 +427,7 @@ export async function moderateVideo(videoUrl, thumbnailUrl) {
         console.log('[Moderation] ========== BẮT ĐẦU KIỂM DUYỆT ==========');
         console.log('[Moderation] URL:', imageUrl);
 
-        // ─── TẦNG 1: NSFW ───
+        // TẦNG 1: NSFW 
         console.log('[Moderation] --- Tầng 1: Kiểm tra NSFW (adult_content) ---');
         const nsfwResult = await checkNSFW(imageUrl);
         uploadId = nsfwResult.uploadId;
