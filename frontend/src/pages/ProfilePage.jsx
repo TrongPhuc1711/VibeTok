@@ -206,6 +206,28 @@ export default function ProfilePage() {
 
         {/* ── Top bar ── */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border sticky top-0 bg-base z-10">
+          {/* Nút Tìm bạn bè (Mobile) hoặc Quay lại (Desktop) */}
+          {isMyProfile ? (
+            <button
+              onClick={() => setContactSyncOpen(true)}
+              className="md:hidden flex bg-transparent border-none text-text-secondary cursor-pointer items-center justify-center w-8 h-8 hover:text-white transition-colors"
+              title="Tìm bạn bè"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(-1)}
+              className="md:hidden flex bg-transparent border-none text-text-secondary cursor-pointer items-center justify-center w-8 h-8 hover:text-white transition-colors"
+            >
+              ←
+            </button>
+          )}
           <button
             onClick={() => navigate(-1)}
             className="md:flex hidden bg-transparent border-none text-text-secondary cursor-pointer items-center gap-2 text-sm font-body hover:text-white transition-colors"

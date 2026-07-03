@@ -118,13 +118,17 @@ export default function ContactSyncModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm px-0 md:px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-[440px] bg-[#121212] rounded-2xl border border-[#2a2a2a] shadow-2xl flex flex-col max-h-[80vh] overflow-hidden animate-fade-in text-white font-body">
+      
+      <div className="w-full md:max-w-[440px] bg-[#121212] md:rounded-2xl rounded-t-3xl border-t md:border border-[#2a2a2a] shadow-2xl flex flex-col h-[75vh] md:h-[80dvh] overflow-hidden text-white font-body animate-[sheetUp_0.35s_cubic-bezier(0.16,1,0.3,1)_forwards] md:animate-[fadeIn_0.25s_cubic-bezier(0.16,1,0.3,1)_forwards]">
+        
+        {/* Thanh kéo ngang giả lập trên Mobile */}
+        <div className="w-9 h-1 bg-[#2d2d2d] rounded-full mx-auto my-3 md:hidden shrink-0" />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2a] shrink-0">
+        <div className="flex items-center justify-between px-6 pb-4 pt-1 md:pt-6 border-b border-[#2a2a2a] shrink-0">
           <h3 className="text-[17px] font-bold tracking-tight">Tìm bạn bè</h3>
           <button
             onClick={onClose}
