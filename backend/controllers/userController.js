@@ -363,12 +363,13 @@ export const syncContacts = async (req, res) => {
             return res.json({ users: [] });
         }
 
-        // Chuẩn hóa danh sách số điện thoại nhận từ client (xóa khoảng trắng, dấu ngoặc, +84, v.v...)
+        // Chuẩn hóa danh sách số điện thoại nhận từ client sang định dạng +84... hoặc +...
         const cleanPhones = contacts.map(p => {
-            let phone = p.trim().replace(/[\s\-\(\)\+]/g, '');
-            // Chuyển đổi đầu số 84 thành 0 nếu cần hoặc giữ nguyên tùy theo cách lưu trữ trong DB
-            if (phone.startsWith('84')) {
-                phone = '0' + phone.substring(2);
+            let phone = p.trim().replace(/[\s\-().]/g, '');
+            if (phone && phone.startsWith('0')) {
+                phone = '+84' + phone.substring(1);
+            } else if (phone && !phone.startsWith('+')) {
+                phone = '+' + phone;
             }
             return phone;
         }).filter(Boolean);
