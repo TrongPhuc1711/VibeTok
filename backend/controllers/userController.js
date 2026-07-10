@@ -156,7 +156,7 @@ export const updateMyProfile = async (req, res) => {
     }
 };
 
-// POST /api/users/sync-google-contacts — Đồng bộ danh bạ Google để gợi ý bạn bè
+// POST /api/users/me/sync-google-contacts — Đồng bộ danh bạ Google để gợi ý bạn bè
 export const syncGoogleContacts = async (req, res) => {
     try {
         const { access_token } = req.body;
