@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import PageLayout from '../components/layout/PageLayout/PageLayout';
@@ -492,10 +493,12 @@ export default function ProfilePage() {
         />
       )}
 
-      {contactSyncOpen && (
+      {/* Portal — thoát stacking context của PageLayout */}
+      {contactSyncOpen && ReactDOM.createPortal(
         <ContactSyncModal
           onClose={() => setContactSyncOpen(false)}
-        />
+        />,
+        document.body
       )}
     </PageLayout>
   );

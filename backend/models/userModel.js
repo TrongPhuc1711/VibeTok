@@ -214,11 +214,4 @@ export const UserModel = {
         return rows;
     },
 
-    // Cập nhật số điện thoại (chuẩn E.164)
-    async updatePhone(userId, phoneNumber) {
-        await pool.query(
-            'UPDATE users SET so_dien_thoai = ? WHERE id = ?',
-            [phoneNumber || null, userId]
-        );
-    },
 };

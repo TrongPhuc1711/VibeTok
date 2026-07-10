@@ -28,10 +28,13 @@ export default function ContactSyncModal({ onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  const [contactApiSupported, setContactApiSupported] = useState(null);
+
   const performSync = useCallback(async (active = true) => {
     setLoading(true);
     let phonesToSync = [];
     const supported = 'contacts' in navigator && 'ContactsManager' in window;
+    setContactApiSupported(supported);
 
     if (supported) {
       setLoadingText('Đang yêu cầu quyền truy cập danh bạ...');
@@ -182,7 +185,7 @@ export default function ContactSyncModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm px-0 md:px-4"
+      className="fixed inset-0 z-[500] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm px-0 md:px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full md:max-w-[440px] bg-[#121212] md:rounded-2xl rounded-t-3xl border-t md:border border-[#2a2a2a] shadow-2xl flex flex-col h-[75vh] md:h-[80dvh] overflow-hidden text-white font-body animate-[sheetUp_0.35s_cubic-bezier(0.16,1,0.3,1)_forwards] md:animate-[fadeIn_0.25s_cubic-bezier(0.16,1,0.3,1)_forwards]">
@@ -233,6 +236,23 @@ export default function ContactSyncModal({ onClose }) {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
+              {/* Thông báo cho Desktop khi Contact Picker API không được hỗ trợ */}
+              {contactApiSupported === false && isSuggested && !searchQuery.trim() && (
+                <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-[#1a1a2e] border border-[#2a2a4a]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[12px] font-semibold text-[#a5b4fc]">Trình duyệt không hỗ trợ đọc danh bạ</span>
+                    <span className="text-[11px] text-[#777] leading-relaxed">
+                      Tính năng đồng bộ danh bạ thiết bị chỉ khả dụng trên trình duyệt di động. Bạn có thể tìm bạn bè bằng tên hoặc số điện thoại ở ô tìm kiếm phía trên, hoặc sử dụng nút "Tìm bạn từ danh bạ" ở sidebar để kết nối qua Google Contacts.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1">
                 <span className="text-[14px] font-bold text-white">
                   {searchQuery.trim() 
