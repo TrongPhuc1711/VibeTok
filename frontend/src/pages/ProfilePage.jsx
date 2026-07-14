@@ -9,7 +9,7 @@ import { SpinnerCenter } from '../components/ui/Spinner';
 import FollowListModal from '../components/common/FollowListModal/FollowListModal';
 import EditProfileModal from '../components/profile/EditProfileModal/EditProfileModal';
 import ProfileVideoFeedModal from '../components/profile/ProfileVideoFeedModal';
-import ContactSyncModal from '../components/profile/ContactSyncModal';
+import FindFriendsModal from '../components/common/FindFriendsModal/FindFriendsModal';
 
 import { useProfile } from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
@@ -45,7 +45,7 @@ export default function ProfilePage() {
   const [likedFeedModalIndex, setLikedFeedModalIndex] = useState(null);
   const [followModal, setFollowModal] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [contactSyncOpen, setContactSyncOpen] = useState(false);
+  const [findFriendsOpen, setFindFriendsOpen] = useState(false);
   const [likedFetched, setLikedFetched] = useState(false);
   const [bookmarkedVideos, setBookmarkedVideos] = useState([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(false);
@@ -136,7 +136,7 @@ export default function ProfilePage() {
       so_dien_thoai: updatedUser.so_dien_thoai || updatedUser.phone || p.so_dien_thoai,
     }));
     if (triggerSync) {
-      setContactSyncOpen(true);
+      setFindFriendsOpen(true);
     }
   };
 
@@ -151,7 +151,7 @@ export default function ProfilePage() {
               navigate('/login');
               return;
             }
-            setContactSyncOpen(true);
+            setFindFriendsOpen(true);
           }}
           className="w-full py-2.5 rounded-xl bg-brand-gradient hover:opacity-95 text-white font-semibold text-[13px] border-none cursor-pointer flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]"
         >
@@ -210,7 +210,7 @@ export default function ProfilePage() {
           {/* Nút Tìm bạn bè (Mobile) hoặc Quay lại (Desktop) */}
           {isMyProfile ? (
             <button
-              onClick={() => setContactSyncOpen(true)}
+              onClick={() => setFindFriendsOpen(true)}
               className="md:hidden flex bg-transparent border-none text-text-secondary cursor-pointer items-center justify-center w-8 h-8 hover:text-white transition-colors"
               title="Tìm bạn bè"
             >
@@ -494,9 +494,9 @@ export default function ProfilePage() {
       )}
 
       {/* Portal — thoát stacking context của PageLayout */}
-      {contactSyncOpen && ReactDOM.createPortal(
-        <ContactSyncModal
-          onClose={() => setContactSyncOpen(false)}
+      {findFriendsOpen && ReactDOM.createPortal(
+        <FindFriendsModal
+          onClose={() => setFindFriendsOpen(false)}
         />,
         document.body
       )}
