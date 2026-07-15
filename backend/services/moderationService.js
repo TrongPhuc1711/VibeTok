@@ -296,12 +296,13 @@ function parseTags(tags) {
 
 /**
  * Kiểm tra xem tag có nằm trong danh sách nguy hiểm không
+ * CHỈ dùng exact match (so khớp chính xác) để tránh false-positive
+ * Ví dụ: "cat" KHÔNG match "decapitation", "art" KHÔNG match "martial"
  */
 function findDangerousTags(tags, dangerousList) {
     return tags.filter(t => {
-        // Kiểm tra exact match hoặc partial match
         return dangerousList.some(keyword => {
-            return t.tag === keyword || t.tag.includes(keyword) || keyword.includes(t.tag);
+            return t.tag === keyword;
         });
     });
 }
@@ -315,19 +316,20 @@ function checkDangerousCombinations(tags) {
 
     for (const combo of DANGEROUS_COMBINATIONS) {
         const allPresent = combo.tags.every(keyword =>
-            tagNames.some(tag => tag === keyword || tag.includes(keyword))
+            tagNames.some(tag => tag === keyword)
         );
 
         if (allPresent) {
             return {
                 found: true,
                 combo,
-                matchedTags: tags.filter(t => combo.tags.some(k => t.tag.includes(k))),
+                matchedTags: tags.filter(t => combo.tags.some(k => t.tag === k)),
             };
         }
     }
 
     return { found: false };
+
 }
 
 /**
