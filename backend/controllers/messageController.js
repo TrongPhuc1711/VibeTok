@@ -47,9 +47,9 @@ export const sendMessage = async (req, res) => {
         // Add receiver info for the sender's client so it can update its sidebar with partner details
         newMessage.receiver = {
             id: String(partner.id),
-            username: partner.ten_dang_nhap,
-            fullName: partner.ten_hien_thi || partner.ten_dang_nhap,
-            avatar: partner.anh_dai_dien,
+            username: partner.username,
+            fullName: partner.display_name || partner.username,
+            avatar: partner.avatar_url,
         };
 
         const io = getIO();

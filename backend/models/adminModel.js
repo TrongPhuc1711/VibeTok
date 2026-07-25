@@ -4,10 +4,10 @@ export const AdminModel = {
 
     // Dashboard Stats
     async getOverviewStats() {
-        const [[users]] = await pool.query('SELECT COUNT(*) AS total FROM users WHERE hoat_dong = 1');
-        const [[videos]] = await pool.query('SELECT COUNT(*) AS total FROM videos WHERE hoat_dong = 1');
-        const [[views]] = await pool.query('SELECT COALESCE(SUM(luot_xem),0) AS total FROM videos WHERE hoat_dong = 1');
-        const [[comments]] = await pool.query('SELECT COUNT(*) AS total FROM comments WHERE hoat_dong = 1');
+        const [[users]] = await pool.query('SELECT COUNT(*) AS total FROM users WHERE is_active = 1');
+        const [[videos]] = await pool.query('SELECT COUNT(*) AS total FROM videos WHERE is_active = 1');
+        const [[views]] = await pool.query('SELECT COALESCE(SUM(views_count),0) AS total FROM videos WHERE is_active = 1');
+        const [[comments]] = await pool.query('SELECT COUNT(*) AS total FROM comments WHERE is_active = 1');
         const [[likes]] = await pool.query('SELECT COUNT(*) AS total FROM likes');
 
         // Thống kê tháng trước để tính % thay đổi
@@ -15,13 +15,13 @@ export const AdminModel = {
         const firstOfLastMonth = new Date(firstOfMonth); firstOfLastMonth.setMonth(firstOfLastMonth.getMonth() - 1);
 
         const [[prevUsers]] = await pool.query(
-            'SELECT COUNT(*) AS total FROM users WHERE hoat_dong = 1 AND ngay_tao < ?', [firstOfMonth]);
+            'SELECT COUNT(*) AS total FROM users WHERE is_active = 1 AND created_at < ?', [firstOfMonth]);
         const [[prevVideos]] = await pool.query(
-            'SELECT COUNT(*) AS total FROM videos WHERE hoat_dong = 1 AND ngay_tao < ?', [firstOfMonth]);
+            'SELECT COUNT(*) AS total FROM videos WHERE is_active = 1 AND created_at < ?', [firstOfMonth]);
         const [[prevViews]] = await pool.query(
-            'SELECT COALESCE(SUM(luot_xem),0) AS total FROM videos WHERE hoat_dong = 1 AND ngay_tao < ?', [firstOfMonth]);
+            'SELECT COALESCE(SUM(views_count),0) AS total FROM videos WHERE is_active = 1 AND created_at < ?', [firstOfMonth]);
         const [[prevComments]] = await pool.query(
-            'SELECT COUNT(*) AS total FROM comments WHERE hoat_dong = 1 AND ngay_tao < ?', [firstOfMonth]);
+            'SELECT COUNT(*) AS total FROM comments WHERE is_active = 1 AND created_at < ?', [firstOfMonth]);
 
         const pct = (cur, prev) => prev > 0 ? +((cur - prev) / prev * 100).toFixed(1) : 0;
 
@@ -56,12 +56,12 @@ export const AdminModel = {
     // User Growth (N ngày gần nhất) 
     async getUserGrowth(days = 12) {
         const [rows] = await pool.query(`
-            SELECT DATE(ngay_tao) AS date,
+            SELECT DATE(created_at) AS date,
                    COUNT(*) AS newUsers
             FROM users
-            WHERE ngay_tao >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-              AND hoat_dong = 1
-            GROUP BY DATE(ngay_tao)
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+              AND is_active = 1
+            GROUP BY DATE(created_at)
             ORDER BY date ASC
         `, [days]);
 
@@ -76,11 +76,11 @@ export const AdminModel = {
         const COLORS = ['#ff2d78', '#ff6b35', '#7c3aed', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#3a3a5a'];
 
         const [rows] = await pool.query(`
-            SELECT c.ten_danh_muc AS name, COUNT(vc.ma_video) AS total
+            SELECT c.name AS name, COUNT(vc.video_id) AS total
             FROM categories c
-            LEFT JOIN video_categories vc ON vc.ma_danh_muc = c.id
+            LEFT JOIN video_categories vc ON vc.category_id = c.id
             WHERE c.id != 1
-            GROUP BY c.id, c.ten_danh_muc
+            GROUP BY c.id, c.name
             ORDER BY total DESC
         `);
 
@@ -96,31 +96,31 @@ export const AdminModel = {
     // Top Creators 
     async getTopCreators(limit = 5) {
         const [rows] = await pool.query(`
-            SELECT id, ten_dang_nhap, ten_hien_thi, email, anh_dai_dien,
-                   vai_tro, so_nguoi_theo_doi, tong_so_video, tong_luot_thich, hoat_dong
+            SELECT id, username, display_name, email, avatar_url,
+                   role, followers, total_videos, total_likes, is_active
             FROM users
-            WHERE hoat_dong = 1
-            ORDER BY so_nguoi_theo_doi DESC
+            WHERE is_active = 1
+            ORDER BY followers DESC
             LIMIT ?
         `, [limit]);
 
         const COLORS = ['#ff2d78', '#ff6b35', '#f59e0b', '#06b6d4', '#7c3aed', '#10b981', '#ec4899'];
 
         return rows.map((u, i) => {
-            const fullName = u.ten_hien_thi || u.ten_dang_nhap;
+            const fullName = u.display_name || u.username;
             const initials = fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
             return {
                 id: String(u.id),
                 rank: i + 1,
                 name: fullName,
-                username: `@${u.ten_dang_nhap}`,
-                avatar: u.anh_dai_dien || null,
+                username: `@${u.username}`,
+                avatar: u.avatar_url || null,
                 initials,
                 color: COLORS[i % COLORS.length],
-                followers: AdminModel._fmt(u.so_nguoi_theo_doi),
-                videos: Number(u.tong_so_video),
-                views: AdminModel._fmt(u.tong_luot_thich),
-                status: u.hoat_dong ? 'active' : 'banned',
+                followers: AdminModel._fmt(u.followers),
+                videos: Number(u.total_videos),
+                views: AdminModel._fmt(u.total_likes),
+                status: u.is_active ? 'active' : 'banned',
             };
         });
     },
@@ -131,13 +131,13 @@ export const AdminModel = {
         const params = [];
         const wheres = [];
 
-        if (filter === 'active') wheres.push('u.hoat_dong = 1');
-        if (filter === 'banned') wheres.push('u.hoat_dong = 0');
-        if (filter === 'creator') wheres.push("u.vai_tro = 'creator'");
-        if (filter === 'admin') wheres.push("u.vai_tro = 'admin'");
+        if (filter === 'active') wheres.push('u.is_active = 1');
+        if (filter === 'banned') wheres.push('u.is_active = 0');
+        if (filter === 'creator') wheres.push("u.role = 'creator'");
+        if (filter === 'admin') wheres.push("u.role = 'admin'");
 
         if (search.trim()) {
-            wheres.push('(u.ten_dang_nhap LIKE ? OR u.ten_hien_thi LIKE ? OR u.email LIKE ?)');
+            wheres.push('(u.username LIKE ? OR u.display_name LIKE ? OR u.email LIKE ?)');
             const like = `%${search.trim()}%`;
             params.push(like, like, like);
         }
@@ -151,34 +151,34 @@ export const AdminModel = {
 
         // Data
         const [rows] = await pool.query(`
-            SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.email, u.anh_dai_dien,
-                   u.vai_tro, u.so_nguoi_theo_doi, u.tong_so_video, u.hoat_dong,
-                   u.da_xac_minh, u.ngay_tao
+            SELECT u.id, u.username, u.display_name, u.email, u.avatar_url,
+                   u.role, u.followers, u.total_videos, u.is_active,
+                   u.is_verified, u.created_at
             FROM users u
             ${whereClause}
-            ORDER BY u.ngay_tao DESC
+            ORDER BY u.created_at DESC
             LIMIT ? OFFSET ?
         `, [...params, limit, offset]);
 
         const COLORS = ['#ff2d78', '#ff6b35', '#f59e0b', '#06b6d4', '#7c3aed', '#10b981', '#ec4899', '#8b5cf6'];
 
         const users = rows.map((u, i) => {
-            const fullName = u.ten_hien_thi || u.ten_dang_nhap;
+            const fullName = u.display_name || u.username;
             const initials = fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
             return {
                 id: String(u.id),
                 name: fullName,
-                username: `@${u.ten_dang_nhap}`,
+                username: `@${u.username}`,
                 email: u.email,
-                avatar: u.anh_dai_dien || null,
+                avatar: u.avatar_url || null,
                 initials,
                 color: COLORS[i % COLORS.length],
-                joinDate: u.ngay_tao ? new Date(u.ngay_tao).toLocaleDateString('vi-VN') : '',
-                followers: Number(u.so_nguoi_theo_doi),
-                videos: Number(u.tong_so_video),
-                status: u.hoat_dong ? 'active' : 'banned',
-                role: u.vai_tro,
-                verified: Boolean(u.da_xac_minh),
+                joinDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '',
+                followers: Number(u.followers),
+                videos: Number(u.total_videos),
+                status: u.is_active ? 'active' : 'banned',
+                role: u.role,
+                verified: Boolean(u.is_verified),
             };
         });
 
@@ -193,16 +193,16 @@ export const AdminModel = {
     //  User counts (cho sidebar badges) 
     async getUserCounts() {
         const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM users');
-        const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM users WHERE hoat_dong = 1');
-        const [[{ banned }]] = await pool.query('SELECT COUNT(*) AS banned FROM users WHERE hoat_dong = 0');
-        const [[{ creator }]] = await pool.query("SELECT COUNT(*) AS creator FROM users WHERE vai_tro = 'creator' AND hoat_dong = 1");
+        const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM users WHERE is_active = 1');
+        const [[{ banned }]] = await pool.query('SELECT COUNT(*) AS banned FROM users WHERE is_active = 0');
+        const [[{ creator }]] = await pool.query("SELECT COUNT(*) AS creator FROM users WHERE role = 'creator' AND is_active = 1");
         return { all: total, active, banned, creator };
     },
 
     //  Ban / Unban 
     async banUser(userId) {
         const [result] = await pool.query(
-            'UPDATE users SET hoat_dong = 0 WHERE id = ? AND vai_tro != ?',
+            'UPDATE users SET is_active = 0 WHERE id = ? AND role != ?',
             [userId, 'admin']
         );
         return result.affectedRows > 0;
@@ -210,7 +210,7 @@ export const AdminModel = {
 
     async unbanUser(userId) {
         const [result] = await pool.query(
-            'UPDATE users SET hoat_dong = 1 WHERE id = ?',
+            'UPDATE users SET is_active = 1 WHERE id = ?',
             [userId]
         );
         return result.affectedRows > 0;
@@ -220,17 +220,17 @@ export const AdminModel = {
     async resetUserPassword(userId, newPassword) {
         // Kiểm tra user tồn tại và không phải admin
         const [users] = await pool.query(
-            'SELECT id, vai_tro FROM users WHERE id = ?',
+            'SELECT id, role FROM users WHERE id = ?',
             [userId]
         );
-        if (users.length === 0 || users[0].vai_tro === 'admin') return false;
+        if (users.length === 0 || users[0].role === 'admin') return false;
 
         const bcrypt = (await import('bcryptjs')).default;
         const salt = await bcrypt.genSalt(12);
         const hashed = await bcrypt.hash(newPassword, salt);
 
         const [result] = await pool.query(
-            'UPDATE users SET mat_khau = ? WHERE id = ? AND vai_tro != ?',
+            'UPDATE users SET password = ? WHERE id = ? AND role != ?',
             [hashed, userId, 'admin']
         );
         return result.affectedRows > 0;
@@ -242,13 +242,13 @@ export const AdminModel = {
         const params = [];
         const wheres = [];
 
-        if (status === 'active') wheres.push('v.hoat_dong = 1 AND v.la_ban_nhap = 0');
-        if (status === 'draft') wheres.push('v.la_ban_nhap = 1');
-        if (status === 'hidden') wheres.push('v.hoat_dong = 0 AND (v.trang_thai_duyet IS NULL OR v.trang_thai_duyet != \'rejected\')');
-        if (status === 'rejected') wheres.push('v.trang_thai_duyet = \'rejected\'');
+        if (status === 'active') wheres.push('v.is_active = 1 AND v.is_draft = 0');
+        if (status === 'draft') wheres.push('v.is_draft = 1');
+        if (status === 'hidden') wheres.push('v.is_active = 0 AND (v.moderation_status IS NULL OR v.moderation_status != \'rejected\')');
+        if (status === 'rejected') wheres.push('v.moderation_status = \'rejected\'');
 
         if (search.trim()) {
-            wheres.push('(v.mo_ta LIKE ? OR v.tieu_de LIKE ?)');
+            wheres.push('(v.description LIKE ? OR v.title LIKE ?)');
             const like = `%${search.trim()}%`;
             params.push(like, like);
         }
@@ -260,45 +260,45 @@ export const AdminModel = {
         );
 
         const [rows] = await pool.query(`
-            SELECT v.id, v.tieu_de, v.mo_ta, v.duong_dan_video, v.anh_thu_nho,
-                   v.thoi_luong_giay, v.quyen_rieng_tu, v.luot_xem, v.luot_thich,
-                   v.luot_binh_luan, v.hoat_dong, v.la_ban_nhap, v.ngay_tao,
-                   v.trang_thai_duyet, v.ly_do_tu_choi,
-                   u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien
+            SELECT v.id, v.title, v.description, v.video_url, v.thumbnail_url,
+                   v.duration_seconds, v.privacy, v.views_count, v.likes_count,
+                   v.comments_count, v.is_active, v.is_draft, v.created_at,
+                   v.moderation_status, v.rejection_reason,
+                   u.username, u.display_name, u.avatar_url
             FROM videos v
-            LEFT JOIN users u ON v.ma_nguoi_dung = u.id
+            LEFT JOIN users u ON v.user_id = u.id
             ${whereClause}
-            ORDER BY v.ngay_tao DESC
+            ORDER BY v.created_at DESC
             LIMIT ? OFFSET ?
         `, [...params, limit, offset]);
 
         const COLORS = ['#ff2d78', '#ff6b35', '#f59e0b', '#06b6d4', '#7c3aed', '#10b981'];
 
         const videos = rows.map((v, i) => {
-            const creatorName = v.ten_hien_thi || v.ten_dang_nhap || '';
+            const creatorName = v.display_name || v.username || '';
             const initials = creatorName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
-            const duration = v.thoi_luong_giay || 0;
+            const duration = v.duration_seconds || 0;
             const mins = Math.floor(duration / 60);
             const secs = duration % 60;
             return {
                 id: String(v.id),
-                title: v.tieu_de || v.mo_ta || 'Không có tiêu đề',
+                title: v.title || v.description || 'Không có tiêu đề',
                 creator: creatorName,
-                username: `@${v.ten_dang_nhap || ''}`,
-                avatar: v.anh_dai_dien || null,
+                username: `@${v.username || ''}`,
+                avatar: v.avatar_url || null,
                 initials,
                 color: COLORS[i % COLORS.length],
-                thumbnail: v.anh_thu_nho,
+                thumbnail: v.thumbnail_url,
                 duration: `${mins}:${String(secs).padStart(2, '0')}`,
-                views: Number(v.luot_xem),
-                likes: Number(v.luot_thich),
-                comments: Number(v.luot_binh_luan),
-                privacy: v.quyen_rieng_tu,
-                status: v.trang_thai_duyet === 'rejected' ? 'rejected' : (!v.hoat_dong ? 'hidden' : v.la_ban_nhap ? 'draft' : 'active'),
-                moderationStatus: v.trang_thai_duyet || 'approved',
-                rejectionReason: v.ly_do_tu_choi || null,
-                createdAt: v.ngay_tao ? new Date(v.ngay_tao).toLocaleDateString('vi-VN') : '',
-                submitTime: AdminModel._timeAgo(v.ngay_tao),
+                views: Number(v.views_count),
+                likes: Number(v.likes_count),
+                comments: Number(v.comments_count),
+                privacy: v.privacy,
+                status: v.moderation_status === 'rejected' ? 'rejected' : (!v.is_active ? 'hidden' : v.is_draft ? 'draft' : 'active'),
+                moderationStatus: v.moderation_status || 'approved',
+                rejectionReason: v.rejection_reason || null,
+                createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('vi-VN') : '',
+                submitTime: AdminModel._timeAgo(v.created_at),
             };
         });
 
@@ -308,17 +308,17 @@ export const AdminModel = {
     //  Video counts 
     async getVideoCounts() {
         const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM videos');
-        const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM videos WHERE hoat_dong = 1 AND la_ban_nhap = 0');
-        const [[{ draft }]] = await pool.query('SELECT COUNT(*) AS draft FROM videos WHERE la_ban_nhap = 1');
-        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE hoat_dong = 0 AND (trang_thai_duyet IS NULL OR trang_thai_duyet != \'rejected\')');
-        const [[{ rejected }]] = await pool.query('SELECT COUNT(*) AS rejected FROM videos WHERE trang_thai_duyet = \'rejected\'');
+        const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM videos WHERE is_active = 1 AND is_draft = 0');
+        const [[{ draft }]] = await pool.query('SELECT COUNT(*) AS draft FROM videos WHERE is_draft = 1');
+        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE is_active = 0 AND (moderation_status IS NULL OR moderation_status != \'rejected\')');
+        const [[{ rejected }]] = await pool.query('SELECT COUNT(*) AS rejected FROM videos WHERE moderation_status = \'rejected\'');
         return { all: total, active, draft, hidden, rejected };
     },
 
     // Admin approve video bị từ chối
     async approveVideo(videoId) {
         const [r] = await pool.query(
-            `UPDATE videos SET trang_thai_duyet = 'approved', ly_do_tu_choi = NULL, hoat_dong = 1 WHERE id = ?`,
+            `UPDATE videos SET moderation_status = 'approved', rejection_reason = NULL, is_active = 1 WHERE id = ?`,
             [videoId]
         );
         return r.affectedRows > 0;
@@ -326,26 +326,26 @@ export const AdminModel = {
 
     //  Hide / Restore video 
     async hideVideo(videoId) {
-        const [r] = await pool.query('UPDATE videos SET hoat_dong = 0 WHERE id = ?', [videoId]);
+        const [r] = await pool.query('UPDATE videos SET is_active = 0 WHERE id = ?', [videoId]);
         return r.affectedRows > 0;
     },
 
     async restoreVideo(videoId) {
-        const [r] = await pool.query('UPDATE videos SET hoat_dong = 1 WHERE id = ?', [videoId]);
+        const [r] = await pool.query('UPDATE videos SET is_active = 1 WHERE id = ?', [videoId]);
         return r.affectedRows > 0;
     },
 
     //  Analytics: views per day 
     async getViewsPerDay(days = 7) {
         const [rows] = await pool.query(`
-            SELECT DATE(ngay_tao) AS date,
-                   COALESCE(SUM(luot_xem), 0) AS views,
-                   COALESCE(SUM(luot_thich), 0) AS likes,
-                   COALESCE(SUM(luot_chia_se), 0) AS shares
+            SELECT DATE(created_at) AS date,
+                   COALESCE(SUM(views_count), 0) AS views,
+                   COALESCE(SUM(likes_count), 0) AS likes,
+                   COALESCE(SUM(shares_count), 0) AS shares
             FROM videos
-            WHERE ngay_tao >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-              AND hoat_dong = 1
-            GROUP BY DATE(ngay_tao)
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+              AND is_active = 1
+            GROUP BY DATE(created_at)
             ORDER BY date ASC
         `, [days]);
 
@@ -359,9 +359,9 @@ export const AdminModel = {
 
     //  Sidebar badge counts 
     async getSidebarCounts() {
-        const [[{ users }]] = await pool.query('SELECT COUNT(*) AS users FROM users WHERE hoat_dong = 1');
-        const [[{ videos }]] = await pool.query('SELECT COUNT(*) AS videos FROM videos WHERE hoat_dong = 1');
-        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE hoat_dong = 0');
+        const [[{ users }]] = await pool.query('SELECT COUNT(*) AS users FROM users WHERE is_active = 1');
+        const [[{ videos }]] = await pool.query('SELECT COUNT(*) AS videos FROM videos WHERE is_active = 1');
+        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE is_active = 0');
         return { users, videos, hidden };
     },
 
@@ -371,11 +371,11 @@ export const AdminModel = {
         const params = [];
         const wheres = [];
 
-        if (filter === 'trending') wheres.push('m.dang_thinh_hanh = 1');
-        if (filter === 'normal') wheres.push('m.dang_thinh_hanh = 0');
+        if (filter === 'trending') wheres.push('m.is_trending = 1');
+        if (filter === 'normal') wheres.push('m.is_trending = 0');
 
         if (search.trim()) {
-            wheres.push('(m.tieu_de LIKE ? OR m.nghe_si LIKE ?)');
+            wheres.push('(m.title LIKE ? OR m.artist LIKE ?)');
             const like = `%${search.trim()}%`;
             params.push(like, like);
         }
@@ -396,14 +396,14 @@ export const AdminModel = {
 
         const tracks = rows.map(m => ({
             id: String(m.id),
-            title: m.tieu_de,
-            artist: m.nghe_si,
-            duration: Number(m.thoi_luong_giay) || 0,
-            audioUrl: m.duong_dan_am_thanh,
-            cover: m.anh_bia || null,
-            trending: Boolean(m.dang_thinh_hanh),
-            uses: Number(m.luot_su_dung) || 0,
-            createdAt: m.ngay_tao ? new Date(m.ngay_tao).toLocaleDateString('vi-VN') : '',
+            title: m.title,
+            artist: m.artist,
+            duration: Number(m.duration_seconds) || 0,
+            audioUrl: m.audio_url,
+            cover: m.cover_url || null,
+            trending: Boolean(m.is_trending),
+            uses: Number(m.usage_count) || 0,
+            createdAt: m.created_at ? new Date(m.created_at).toLocaleDateString('vi-VN') : '',
         }));
 
         return { tracks, total, page, totalPages: Math.ceil(total / limit) };
@@ -412,7 +412,7 @@ export const AdminModel = {
     // Music counts
     async getMusicCounts() {
         const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM music');
-        const [[{ trending }]] = await pool.query('SELECT COUNT(*) AS trending FROM music WHERE dang_thinh_hanh = 1');
+        const [[{ trending }]] = await pool.query('SELECT COUNT(*) AS trending FROM music WHERE is_trending = 1');
         const normal = total - trending;
         return { all: total, trending, normal };
     },
@@ -420,7 +420,7 @@ export const AdminModel = {
     // Create music
     async createMusic({ title, artist, duration, audioUrl, cover, trending }) {
         const [result] = await pool.query(
-            `INSERT INTO music (tieu_de, nghe_si, thoi_luong_giay, duong_dan_am_thanh, anh_bia, dang_thinh_hanh, luot_su_dung)
+            `INSERT INTO music (title, artist, duration_seconds, audio_url, cover_url, is_trending, usage_count)
              VALUES (?, ?, ?, ?, ?, ?, 0)`,
             [title, artist, duration || 0, audioUrl || '', cover || null, trending ? 1 : 0]
         );
@@ -432,12 +432,12 @@ export const AdminModel = {
         const fields = [];
         const values = [];
 
-        if (title !== undefined) { fields.push('tieu_de = ?'); values.push(title); }
-        if (artist !== undefined) { fields.push('nghe_si = ?'); values.push(artist); }
-        if (duration !== undefined) { fields.push('thoi_luong_giay = ?'); values.push(duration); }
-        if (audioUrl !== undefined) { fields.push('duong_dan_am_thanh = ?'); values.push(audioUrl); }
-        if (cover !== undefined) { fields.push('anh_bia = ?'); values.push(cover); }
-        if (trending !== undefined) { fields.push('dang_thinh_hanh = ?'); values.push(trending ? 1 : 0); }
+        if (title !== undefined) { fields.push('title = ?'); values.push(title); }
+        if (artist !== undefined) { fields.push('artist = ?'); values.push(artist); }
+        if (duration !== undefined) { fields.push('duration_seconds = ?'); values.push(duration); }
+        if (audioUrl !== undefined) { fields.push('audio_url = ?'); values.push(audioUrl); }
+        if (cover !== undefined) { fields.push('cover_url = ?'); values.push(cover); }
+        if (trending !== undefined) { fields.push('is_trending = ?'); values.push(trending ? 1 : 0); }
 
         if (fields.length === 0) return false;
 
@@ -451,17 +451,17 @@ export const AdminModel = {
     // Delete music
     async deleteMusic(id) {
         // Xóa liên kết với video trước
-        await pool.query('UPDATE videos SET ma_am_nhac = NULL WHERE ma_am_nhac = ?', [id]);
+        await pool.query('UPDATE videos SET music_id = NULL WHERE music_id = ?', [id]);
         const [result] = await pool.query('DELETE FROM music WHERE id = ?', [id]);
         return result.affectedRows > 0;
     },
 
     // Toggle trending
     async toggleMusicTrending(id) {
-        const [rows] = await pool.query('SELECT dang_thinh_hanh FROM music WHERE id = ?', [id]);
+        const [rows] = await pool.query('SELECT is_trending FROM music WHERE id = ?', [id]);
         if (rows.length === 0) return null;
-        const newVal = rows[0].dang_thinh_hanh ? 0 : 1;
-        await pool.query('UPDATE music SET dang_thinh_hanh = ? WHERE id = ?', [newVal, id]);
+        const newVal = rows[0].is_trending ? 0 : 1;
+        await pool.query('UPDATE music SET is_trending = ? WHERE id = ?', [newVal, id]);
         return newVal === 1;
     },
 

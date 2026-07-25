@@ -3,27 +3,27 @@ import pool from '../config/db.js';
 // Chuyển đổi từ DB fields → frontend fields
 export const normalizeUser = (u) => {
     if (!u) return null;
-    const fullName = u.ten_hien_thi || '';
+    const fullName = u.display_name || '';
     const initials = fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
     return {
         id: String(u.id),
-        username: u.ten_dang_nhap,
+        username: u.username,
         fullName: fullName,
         email: u.email,
-        anh_dai_dien: u.anh_dai_dien,
-        vai_tro: u.vai_tro,
+        anh_dai_dien: u.avatar_url,
+        vai_tro: u.role,
         initials,
-        bio: u.tieu_su || '',
-        location: u.vi_tri || '',
-        so_dien_thoai: u.so_dien_thoai || '',
-        isCreator: u.vai_tro === 'creator' || u.vai_tro === 'admin',
-        followers: Number(u.so_nguoi_theo_doi) || 0,
-        following: Number(u.so_nguoi_dang_theo_doi) || 0,
-        likes: Number(u.tong_luot_thich) || 0,
-        videos: Number(u.tong_so_video) || 0,
-        phone: u.so_dien_thoai || null,
-        isPhoneVerified: Boolean(u.da_xac_minh_sdt),
-        createdAt: u.ngay_tao,
+        bio: u.bio || '',
+        location: u.location || '',
+        so_dien_thoai: u.phone_number || '',
+        isCreator: u.role === 'creator' || u.role === 'admin',
+        followers: Number(u.followers) || 0,
+        following: Number(u.following) || 0,
+        likes: Number(u.total_likes) || 0,
+        videos: Number(u.total_videos) || 0,
+        phone: u.phone_number || null,
+        isPhoneVerified: Boolean(u.is_phone_verified),
+        createdAt: u.created_at,
     };
 };
 
@@ -31,7 +31,7 @@ export const UserModel = {
     // Tìm user theo username
     async findByUsername(username) {
         const [rows] = await pool.query(
-            'SELECT * FROM users WHERE ten_dang_nhap = ? AND hoat_dong = 1',
+            'SELECT * FROM users WHERE username = ? AND is_active = 1',
             [username]
         );
         return rows[0] || null;
@@ -40,7 +40,7 @@ export const UserModel = {
     // Tìm user theo id
     async findById(id) {
         const [rows] = await pool.query(
-            'SELECT * FROM users WHERE id = ? AND hoat_dong = 1',
+            'SELECT * FROM users WHERE id = ? AND is_active = 1',
             [id]
         );
         return rows[0] || null;
@@ -50,7 +50,7 @@ export const UserModel = {
     async findUsersByPhones(phones, currentUserId) {
         if (!phones || phones.length === 0) return [];
         const [rows] = await pool.query(
-            "SELECT * FROM users WHERE so_dien_thoai IN (?) AND id != ? AND hoat_dong = 1 AND vai_tro != 'admin'",
+            "SELECT * FROM users WHERE phone_number IN (?) AND id != ? AND is_active = 1 AND role != 'admin'",
             [phones, currentUserId]
         );
         return rows;
@@ -59,7 +59,7 @@ export const UserModel = {
     // Cập nhật số điện thoại và đánh dấu đã xác thực
     async updatePhone(userId, phone) {
         await pool.query(
-            'UPDATE users SET so_dien_thoai = ?, da_xac_minh_sdt = 1 WHERE id = ?',
+            'UPDATE users SET phone_number = ?, is_phone_verified = 1 WHERE id = ?',
             [phone, userId]
         );
         return this.findById(userId);
@@ -74,14 +74,14 @@ export const UserModel = {
         let query, params;
         if (hideAdmins) {
             query = `SELECT * FROM users 
-                     WHERE hoat_dong = 1 AND id != ? AND vai_tro != 'admin'
-                     ORDER BY so_nguoi_theo_doi DESC
+                     WHERE is_active = 1 AND id != ? AND role != 'admin'
+                     ORDER BY followers DESC
                      LIMIT ?`;
             params = [currentUserId || 0, limit];
         } else {
             query = `SELECT * FROM users 
-                     WHERE hoat_dong = 1 AND id != ?
-                     ORDER BY so_nguoi_theo_doi DESC
+                     WHERE is_active = 1 AND id != ?
+                     ORDER BY followers DESC
                      LIMIT ?`;
             params = [currentUserId || 0, limit];
         }
@@ -89,10 +89,10 @@ export const UserModel = {
         let followingSet = new Set();
         if (currentUserId) {
             const [fRows] = await pool.query(
-                'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+                'SELECT following_id FROM follows WHERE follower_id = ?',
                 [currentUserId]
             );
-            followingSet = new Set(fRows.map(r => r.ma_nguoi_duoc_theo_doi));
+            followingSet = new Set(fRows.map(r => r.following_id));
         }
 
         const [rows] = await pool.query(query, params);
@@ -106,14 +106,14 @@ export const UserModel = {
         const hideAdmins = currentUserRole !== 'admin';
         const like = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
 
-        const adminFilter = hideAdmins ? "AND vai_tro != 'admin'" : '';
+        const adminFilter = hideAdmins ? "AND role != 'admin'" : '';
 
         const [rows] = await pool.query(
             `SELECT * FROM users 
-             WHERE hoat_dong = 1 
-               AND (ten_dang_nhap LIKE ? OR ten_hien_thi LIKE ?)
+             WHERE is_active = 1 
+               AND (username LIKE ? OR display_name LIKE ?)
                ${adminFilter}
-             ORDER BY so_nguoi_theo_doi DESC
+             ORDER BY followers DESC
              LIMIT ?`,
             [like, like, limit]
         );
@@ -125,17 +125,17 @@ export const UserModel = {
         const fields = [];
         const values = [];
 
-        if (updates.ten_hien_thi !== undefined) {
-            fields.push('ten_hien_thi = ?');
-            values.push(updates.ten_hien_thi);
+        if (updates.display_name !== undefined) {
+            fields.push('display_name = ?');
+            values.push(updates.display_name);
         }
-        if (updates.tieu_su !== undefined) {
-            fields.push('tieu_su = ?');
-            values.push(updates.tieu_su);
+        if (updates.bio !== undefined) {
+            fields.push('bio = ?');
+            values.push(updates.bio);
         }
-        if (updates.vi_tri !== undefined) {
-            fields.push('vi_tri = ?');
-            values.push(updates.vi_tri);
+        if (updates.location !== undefined) {
+            fields.push('location = ?');
+            values.push(updates.location);
         }
 
         if (fields.length > 0) {
@@ -149,14 +149,14 @@ export const UserModel = {
     },
 
     // Cập nhật ảnh đại diện
-    async updateAvatar(userId, anh_dai_dien) {
-        await pool.query('UPDATE users SET anh_dai_dien = ? WHERE id = ?', [anh_dai_dien, userId]);
+    async updateAvatar(userId, avatar_url) {
+        await pool.query('UPDATE users SET avatar_url = ? WHERE id = ?', [avatar_url, userId]);
     },
 
     // Tăng/giảm số video
     async incrementVideoCount(userId, delta = 1) {
         await pool.query(
-            'UPDATE users SET tong_so_video = GREATEST(0, tong_so_video + ?) WHERE id = ?',
+            'UPDATE users SET total_videos = GREATEST(0, total_videos + ?) WHERE id = ?',
             [delta, userId]
         );
     },
@@ -169,18 +169,18 @@ export const UserModel = {
         const excludeIds = [currentUserId];
         if (currentUserId) {
             const [followRows] = await pool.query(
-                'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+                'SELECT following_id FROM follows WHERE follower_id = ?',
                 [currentUserId]
             );
-            followRows.forEach(r => excludeIds.push(r.ma_nguoi_duoc_theo_doi));
+            followRows.forEach(r => excludeIds.push(r.following_id));
         }
 
         const [rows] = await pool.query(
             `SELECT * FROM users 
-             WHERE hoat_dong = 1 
-               AND so_dien_thoai IN (?) 
+             WHERE is_active = 1 
+               AND phone_number IN (?) 
                AND id NOT IN (?)
-               AND vai_tro != 'admin'
+               AND role != 'admin'
              LIMIT 50`,
             [phoneList, excludeIds]
         );
@@ -196,18 +196,18 @@ export const UserModel = {
         const excludeIds = [currentUserId];
         if (currentUserId) {
             const [followRows] = await pool.query(
-                'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+                'SELECT following_id FROM follows WHERE follower_id = ?',
                 [currentUserId]
             );
-            followRows.forEach(r => excludeIds.push(r.ma_nguoi_duoc_theo_doi));
+            followRows.forEach(r => excludeIds.push(r.following_id));
         }
 
         const [rows] = await pool.query(
             `SELECT * FROM users 
-             WHERE hoat_dong = 1 
+             WHERE is_active = 1 
                AND email IN (?) 
                AND id NOT IN (?)
-               AND vai_tro != 'admin'
+               AND role != 'admin'
              LIMIT 50`,
             [emailList, excludeIds]
         );
@@ -217,7 +217,7 @@ export const UserModel = {
     // Cập nhật số điện thoại (chuẩn E.164)
     async updatePhone(userId, phoneNumber) {
         await pool.query(
-            'UPDATE users SET so_dien_thoai = ? WHERE id = ?',
+            'UPDATE users SET phone_number = ? WHERE id = ?',
             [phoneNumber || null, userId]
         );
     },

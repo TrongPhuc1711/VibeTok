@@ -5,11 +5,11 @@ export const FollowModel = {
     async follow(followerId, followingId) {
         try {
             await pool.query(
-                'INSERT INTO follows (ma_nguoi_theo_doi, ma_nguoi_duoc_theo_doi) VALUES (?, ?)',
+                'INSERT INTO follows (follower_id, following_id) VALUES (?, ?)',
                 [followerId, followingId]
             );
-            await pool.query('UPDATE users SET so_nguoi_theo_doi = so_nguoi_theo_doi + 1 WHERE id = ?', [followingId]);
-            await pool.query('UPDATE users SET so_nguoi_dang_theo_doi = so_nguoi_dang_theo_doi + 1 WHERE id = ?', [followerId]);
+            await pool.query('UPDATE users SET followers = followers + 1 WHERE id = ?', [followingId]);
+            await pool.query('UPDATE users SET `following` = `following` + 1 WHERE id = ?', [followerId]);
             return true;
         } catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return false;
@@ -19,19 +19,19 @@ export const FollowModel = {
 
     async unfollow(followerId, followingId) {
         const [result] = await pool.query(
-            'DELETE FROM follows WHERE ma_nguoi_theo_doi = ? AND ma_nguoi_duoc_theo_doi = ?',
+            'DELETE FROM follows WHERE follower_id = ? AND following_id = ?',
             [followerId, followingId]
         );
         if (result.affectedRows > 0) {
-            await pool.query('UPDATE users SET so_nguoi_theo_doi = GREATEST(0, so_nguoi_theo_doi - 1) WHERE id = ?', [followingId]);
-            await pool.query('UPDATE users SET so_nguoi_dang_theo_doi = GREATEST(0, so_nguoi_dang_theo_doi - 1) WHERE id = ?', [followerId]);
+            await pool.query('UPDATE users SET followers = GREATEST(0, followers - 1) WHERE id = ?', [followingId]);
+            await pool.query('UPDATE users SET `following` = GREATEST(0, `following` - 1) WHERE id = ?', [followerId]);
         }
         return result.affectedRows > 0;
     },
 
     async isFollowing(followerId, followingId) {
         const [rows] = await pool.query(
-            'SELECT id FROM follows WHERE ma_nguoi_theo_doi = ? AND ma_nguoi_duoc_theo_doi = ?',
+            'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
             [followerId, followingId]
         );
         return rows.length > 0;
@@ -41,10 +41,10 @@ export const FollowModel = {
     async getFollowingIds(followerId) {
         if (!followerId) return [];
         const [rows] = await pool.query(
-            'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+            'SELECT following_id FROM follows WHERE follower_id = ?',
             [followerId]
         );
-        return rows.map(r => r.ma_nguoi_duoc_theo_doi);
+        return rows.map(r => r.following_id);
     },
 };
 
@@ -53,14 +53,14 @@ export const LikeModel = {
     async like(userId, videoId) {
         try {
             await pool.query(
-                'INSERT INTO likes (ma_nguoi_dung, ma_video) VALUES (?, ?)',
+                'INSERT INTO likes (user_id, video_id) VALUES (?, ?)',
                 [userId, videoId]
             );
-            await pool.query('UPDATE videos SET luot_thich = luot_thich + 1 WHERE id = ?', [videoId]);
+            await pool.query('UPDATE videos SET likes_count = likes_count + 1 WHERE id = ?', [videoId]);
             await pool.query(
                 `UPDATE users u 
-                 JOIN videos v ON v.ma_nguoi_dung = u.id 
-                 SET u.tong_luot_thich = u.tong_luot_thich + 1 
+                 JOIN videos v ON v.user_id = u.id 
+                 SET u.total_likes = u.total_likes + 1 
                  WHERE v.id = ?`,
                 [videoId]
             );
@@ -73,15 +73,15 @@ export const LikeModel = {
 
     async unlike(userId, videoId) {
         const [result] = await pool.query(
-            'DELETE FROM likes WHERE ma_nguoi_dung = ? AND ma_video = ?',
+            'DELETE FROM likes WHERE user_id = ? AND video_id = ?',
             [userId, videoId]
         );
         if (result.affectedRows > 0) {
-            await pool.query('UPDATE videos SET luot_thich = GREATEST(0, luot_thich - 1) WHERE id = ?', [videoId]);
+            await pool.query('UPDATE videos SET likes_count = GREATEST(0, likes_count - 1) WHERE id = ?', [videoId]);
             await pool.query(
                 `UPDATE users u 
-                 JOIN videos v ON v.ma_nguoi_dung = u.id 
-                 SET u.tong_luot_thich = GREATEST(0, u.tong_luot_thich - 1) 
+                 JOIN videos v ON v.user_id = u.id 
+                 SET u.total_likes = GREATEST(0, u.total_likes - 1) 
                  WHERE v.id = ?`,
                 [videoId]
             );
@@ -91,7 +91,7 @@ export const LikeModel = {
 
     async isLiked(userId, videoId) {
         const [rows] = await pool.query(
-            'SELECT id FROM likes WHERE ma_nguoi_dung = ? AND ma_video = ?',
+            'SELECT id FROM likes WHERE user_id = ? AND video_id = ?',
             [userId, videoId]
         );
         return rows.length > 0;

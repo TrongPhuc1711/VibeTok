@@ -16,7 +16,7 @@ export function initCronJobs() {
                 const views = await redis.get(key);
                 if (views !== null) {
                     // Cập nhật số lượt xem mới vào MySQL
-                    await pool.query('UPDATE videos SET luot_xem = ? WHERE id = ?', [Number(views), videoId]);
+                    await pool.query('UPDATE videos SET views_count = ? WHERE id = ?', [Number(views), videoId]);
                 }
                 // Xóa videoId khỏi danh sách dirty views sau khi đã đồng bộ thành công
                 await redis.srem('video:dirty_views', videoId);

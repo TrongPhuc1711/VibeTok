@@ -19,7 +19,7 @@ export const verifyToken = async (req, res, next) => {
 
     try {
         const verified = jwt.verify(token, getJwtSecret());
-        req.user = verified; // { id, ten_dang_nhap, vai_tro, iat, exp }
+        req.user = verified; // { id, username, role, iat, exp }
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
@@ -64,7 +64,8 @@ export const requireAdmin = (req, res, next) => {
     if (!req.user) {
         return res.status(401).json({ message: 'Cần đăng nhập!' });
     }
-    if (req.user.vai_tro !== 'admin') {
+    const role = req.user.role || req.user.vai_tro;
+    if (role !== 'admin') {
         return res.status(403).json({ message: 'Không có quyền truy cập!' });
     }
     next();

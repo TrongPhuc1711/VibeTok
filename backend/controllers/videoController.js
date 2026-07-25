@@ -261,12 +261,12 @@ export const postComment = async (req, res) => {
         if (parentId) {
             import('../models/commentModel.js').then(async () => {
                 const [rows] = await (await import('../config/db.js')).default.query(
-                    'SELECT ma_nguoi_dung FROM comments WHERE id = ?', [parentId]
+                    'SELECT user_id FROM comments WHERE id = ?', [parentId]
                 );
-                if (rows[0] && String(rows[0].ma_nguoi_dung) !== String(req.user.id)) {
+                if (rows[0] && String(rows[0].user_id) !== String(req.user.id)) {
                     const senderDb = await UserModel.findById(req.user.id);
                     const sender = senderDb ? normalizeUser(senderDb) : req.user;
-                    triggerNotification(rows[0].ma_nguoi_dung, sender, 'reply', req.params.id, comment.id).catch(() => { });
+                    triggerNotification(rows[0].user_id, sender, 'reply', req.params.id, comment.id).catch(() => { });
                 }
             }).catch(() => { });
         }
@@ -334,7 +334,7 @@ export const unlikeVideo = async (req, res) => {
 // DELETE /api/videos/:id  — owner OR admin can delete
 export const deleteVideo = async (req, res) => {
     try {
-        const isAdmin = req.user.vai_tro === 'admin';
+        const isAdmin = req.user.role === 'admin';
 
         let ok;
         if (isAdmin) {

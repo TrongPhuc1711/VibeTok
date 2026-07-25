@@ -3,14 +3,14 @@ import { FollowListModel } from "../models/follow/followListModel.js";
 // Chuẩn hoá một user row thành object trả về frontend
 const normalizeUser = (u, followingSet, followersSet) => ({
     id: String(u.id),
-    username: u.ten_dang_nhap,
-    fullName: u.ten_hien_thi || '',
-    anh_dai_dien: u.anh_dai_dien || null,
-    followers: Number(u.so_nguoi_theo_doi) || 0,
-    isCreator: u.vai_tro === 'creator' || u.vai_tro === 'admin',
+    username: u.username,
+    fullName: u.display_name || '',
+    anh_dai_dien: u.avatar_url || null,
+    followers: Number(u.followers) || 0,
+    isCreator: u.role === 'creator' || u.role === 'admin',
     isFollowing: followingSet.has(u.id),
     isMutual: followingSet.has(u.id) && followersSet.has(u.id),
-    initials: (u.ten_hien_thi || '')
+    initials: (u.display_name || '')
         .trim()
         .split(/\s+/)
         .map(w => w[0]?.toUpperCase() ?? '')

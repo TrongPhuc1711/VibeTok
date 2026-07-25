@@ -31,28 +31,28 @@ const buildInitials = (name = '') =>
 // ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
-        const { ten_dang_nhap, email, mat_khau, ten_hien_thi } = req.body;
+        const { username, email, password, display_name } = req.body;
 
-        if (!email || !mat_khau || !ten_hien_thi || !ten_dang_nhap) {
+        if (!email || !password || !display_name || !username) {
             return res.status(400).json({
                 message: 'Vui lòng điền đầy đủ thông tin!'
             });
         }
 
         // Basic validation
-        if (mat_khau.length < 8) {
+        if (password.length < 8) {
             return res.status(400).json({ message: 'Mật khẩu tối thiểu 8 ký tự!' });
         }
         if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/.test(email)) {
             return res.status(400).json({ message: 'Email không hợp lệ!' });
         }
-        if (!/^[a-zA-Z0-9_.]{3,30}$/.test(ten_dang_nhap)) {
+        if (!/^[a-zA-Z0-9_.]{3,30}$/.test(username)) {
             return res.status(400).json({ message: 'Tên đăng nhập 3-30 ký tự, chỉ dùng a-z, 0-9, _ .' });
         }
 
         const [existingUsers] = await pool.query(
-            'SELECT id FROM users WHERE email = ? OR ten_dang_nhap = ?',
-            [email.toLowerCase(), ten_dang_nhap]
+            'SELECT id FROM users WHERE email = ? OR username = ?',
+            [email.toLowerCase(), username]
         );
 
         if (existingUsers.length > 0) {
@@ -60,11 +60,11 @@ export const register = async (req, res) => {
         }
 
         const salt = await bcrypt.genSalt(12); // 12 rounds for better security
-        const hashedPassword = await bcrypt.hash(mat_khau, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         const [result] = await pool.query(
-            'INSERT INTO users (ten_dang_nhap, email, mat_khau, ten_hien_thi) VALUES (?, ?, ?, ?)',
-            [ten_dang_nhap, email.toLowerCase(), hashedPassword, ten_hien_thi]
+            'INSERT INTO users (username, email, password, display_name) VALUES (?, ?, ?, ?)',
+            [username, email.toLowerCase(), hashedPassword, display_name]
         );
 
         res.status(201).json({
@@ -81,13 +81,13 @@ export const register = async (req, res) => {
 // ĐĂNG NHẬP
 export const login = async (req, res) => {
     try {
-        const { email, mat_khau } = req.body;
+        const { email, password } = req.body;
 
-        if (!email || !mat_khau) {
+        if (!email || !password) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ email và mật khẩu!' });
         }
 
-        // Tìm user không cần check hoat_dong để phân biệt banned vs sai thông tin
+        // Tìm user không cần check is_active để phân biệt banned vs sai thông tin
         const [users] = await pool.query(
             'SELECT * FROM users WHERE email = ?',
             [email.toLowerCase()]
@@ -100,17 +100,17 @@ export const login = async (req, res) => {
         const user = users[0];
 
         // User đăng nhập qua Google không có mật khẩu
-        if (!user.mat_khau) {
+        if (!user.password) {
             return res.status(400).json({ message: 'Tài khoản này sử dụng đăng nhập Google. Vui lòng đăng nhập bằng Google!' });
         }
 
-        const isMatch = await bcrypt.compare(mat_khau, user.mat_khau);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Email hoặc mật khẩu không chính xác!' });
         }
 
         // Kiểm tra tài khoản bị ban SAU KHI xác thực mật khẩu đúng
-        if (!user.hoat_dong) {
+        if (!user.is_active) {
             return res.status(403).json({
                 message: 'Tài khoản của bạn đã bị ban. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
                 banned: true
@@ -118,12 +118,12 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, ten_dang_nhap: user.ten_dang_nhap, vai_tro: user.vai_tro },
+            { id: user.id, username: user.username, role: user.role },
             getJwtSecret(),
             { expiresIn: '7d' }
         );
 
-        const fullName = user.ten_hien_thi || '';
+        const fullName = user.display_name || '';
         const initials = buildInitials(fullName);
 
         res.json({
@@ -131,13 +131,11 @@ export const login = async (req, res) => {
             token,
             user: {
                 id:            String(user.id),
-                ten_dang_nhap: user.ten_dang_nhap,
-                username:      user.ten_dang_nhap,
-                ten_hien_thi:  user.ten_hien_thi,
-                fullName:      user.ten_hien_thi,
+                username:      user.username,
+                fullName:      user.display_name,
                 email:         user.email,
-                anh_dai_dien:  user.anh_dai_dien,
-                vai_tro:       user.vai_tro,
+                anh_dai_dien:  user.avatar_url,
+                vai_tro:       user.role,
                 initials,
             }
         });
@@ -152,7 +150,7 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
     try {
         const [users] = await pool.query(
-            'SELECT id, ten_dang_nhap, ten_hien_thi, email, anh_dai_dien, vai_tro, ngay_tao FROM users WHERE id = ? AND hoat_dong = 1',
+            'SELECT id, username, display_name, email, avatar_url, role, created_at FROM users WHERE id = ? AND is_active = 1',
             [req.user.id]
         );
 
@@ -161,21 +159,19 @@ export const getMe = async (req, res) => {
         }
 
         const u = users[0];
-        const fullName = u.ten_hien_thi || '';
+        const fullName = u.display_name || '';
 
         res.json({
             message: 'Chào mừng bạn trở lại!',
             user: {
                 id:            String(u.id),
-                ten_dang_nhap: u.ten_dang_nhap,
-                username:      u.ten_dang_nhap,
-                ten_hien_thi:  u.ten_hien_thi,
-                fullName:      u.ten_hien_thi,
+                username:      u.username,
+                fullName:      u.display_name,
                 email:         u.email,
-                anh_dai_dien:  u.anh_dai_dien,
-                vai_tro:       u.vai_tro,
+                anh_dai_dien:  u.avatar_url,
+                vai_tro:       u.role,
                 initials:      buildInitials(fullName),
-                createdAt:     u.ngay_tao,
+                createdAt:     u.created_at,
             }
         });
 
@@ -188,17 +184,17 @@ export const getMe = async (req, res) => {
 // ĐỔI MẬT KHẨU
 export const changePassword = async (req, res) => {
     try {
-        const { mat_khau_cu, mat_khau_moi } = req.body;
+        const { current_password, new_password } = req.body;
 
-        if (!mat_khau_cu || !mat_khau_moi) {
+        if (!current_password || !new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới!' });
         }
 
-        if (mat_khau_moi.length < 8) {
+        if (new_password.length < 8) {
             return res.status(400).json({ message: 'Mật khẩu mới tối thiểu 8 ký tự!' });
         }
 
-        const [users] = await pool.query('SELECT * FROM users WHERE id = ? AND hoat_dong = 1', [req.user.id]);
+        const [users] = await pool.query('SELECT * FROM users WHERE id = ? AND is_active = 1', [req.user.id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
         }
@@ -206,23 +202,23 @@ export const changePassword = async (req, res) => {
         const user = users[0];
 
         // User Google không có mật khẩu -> không cần đổi
-        if (!user.mat_khau) {
+        if (!user.password) {
             return res.status(400).json({ message: 'Tài khoản của bạn sử dụng đăng nhập Google, không cần mật khẩu.' });
         }
 
-        const isMatch = await bcrypt.compare(mat_khau_cu, user.mat_khau);
+        const isMatch = await bcrypt.compare(current_password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
         }
 
-        if (mat_khau_cu === mat_khau_moi) {
+        if (current_password === new_password) {
             return res.status(400).json({ message: 'Mật khẩu mới phải khác mật khẩu hiện tại!' });
         }
 
         const salt = await bcrypt.genSalt(12);
-        const hashedNew = await bcrypt.hash(mat_khau_moi, salt);
+        const hashedNew = await bcrypt.hash(new_password, salt);
 
-        await pool.query('UPDATE users SET mat_khau = ? WHERE id = ?', [hashedNew, req.user.id]);
+        await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedNew, req.user.id]);
 
         res.json({ message: 'Đổi mật khẩu thành công!' });
     } catch (error) {
@@ -251,7 +247,7 @@ export const forgotPassword = async (req, res) => {
         }
 
         const [users] = await pool.query(
-            'SELECT * FROM users WHERE email = ? AND hoat_dong = 1',
+            'SELECT * FROM users WHERE email = ? AND is_active = 1',
             [normalizedEmail]
         );
 
@@ -318,9 +314,9 @@ export const forgotPassword = async (req, res) => {
 // ĐẶT LẠI MẬT KHẨU VỚI OTP
 export const resetPasswordWithOTP = async (req, res) => {
     try {
-        const { email, otp, mat_khau_moi } = req.body;
+        const { email, otp, new_password } = req.body;
 
-        if (!email || !otp || !mat_khau_moi) {
+        if (!email || !otp || !new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin!' });
         }
 
@@ -328,7 +324,7 @@ export const resetPasswordWithOTP = async (req, res) => {
             return res.status(400).json({ message: 'Email không đúng định dạng!' });
         }
 
-        if (mat_khau_moi.length < 8) {
+        if (new_password.length < 8) {
             return res.status(400).json({ message: 'Mật khẩu mới tối thiểu 8 ký tự!' });
         }
 
@@ -348,10 +344,10 @@ export const resetPasswordWithOTP = async (req, res) => {
         }
 
         const salt = await bcrypt.genSalt(12);
-        const hashedNew = await bcrypt.hash(mat_khau_moi, salt);
+        const hashedNew = await bcrypt.hash(new_password, salt);
 
         await pool.query(
-            'UPDATE users SET mat_khau = ? WHERE email = ? AND hoat_dong = 1',
+            'UPDATE users SET password = ? WHERE email = ? AND is_active = 1',
             [hashedNew, normalizedEmail]
         );
 

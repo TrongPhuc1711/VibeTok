@@ -10,8 +10,8 @@ export const getUserProfile = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'Người dùng không tồn tại' });
 
         // Ẩn profile admin khỏi user thường và khách chưa đăng nhập
-        const currentUserRole = req.user?.vai_tro || null;
-        if (user.vai_tro === 'admin' && currentUserRole !== 'admin') {
+        const currentUserRole = req.user?.role || null;
+        if (user.role === 'admin' && currentUserRole !== 'admin') {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
 
@@ -31,7 +31,7 @@ export const getSuggestions = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 50;
         const currentId = req.user?.id || 0;
-        const currentUserRole = req.user?.vai_tro || null;
+        const currentUserRole = req.user?.role || null;
 
         // Truyền role để lọc admin nếu cần
         const users = await UserModel.getSuggestions(currentId, limit, currentUserRole);
@@ -60,7 +60,7 @@ export const searchUsers = async (req, res) => {
         const { q = '', limit = 10 } = req.query;
         if (!q.trim()) return res.json({ users: [] });
 
-        const currentUserRole = req.user?.vai_tro ?? null;
+        const currentUserRole = req.user?.role ?? null;
         const rows = await UserModel.search(
             q.trim(),
             Math.min(50, parseInt(limit) || 10),
@@ -81,13 +81,13 @@ export const followUser = async (req, res) => {
         if (target.id === req.user.id) return res.status(400).json({ message: 'Không thể follow chính mình' });
 
         // Không cho phép follow admin (nếu người dùng hiện tại không phải admin)
-        if (target.vai_tro === 'admin' && req.user.vai_tro !== 'admin') {
+        if (target.role === 'admin' && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Không thể follow người dùng này' });
         }
 
         await FollowModel.follow(req.user.id, target.id);
         const updated = await UserModel.findById(target.id);
-        res.json({ message: 'Đã follow', followers: updated.so_nguoi_theo_doi });
+        res.json({ message: 'Đã follow', followers: updated.followers });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi follow', error: e.message });
     }
@@ -101,7 +101,7 @@ export const unfollowUser = async (req, res) => {
 
         await FollowModel.unfollow(req.user.id, target.id);
         const updated = await UserModel.findById(target.id);
-        res.json({ message: 'Đã unfollow', followers: updated.so_nguoi_theo_doi });
+        res.json({ message: 'Đã unfollow', followers: updated.followers });
     } catch (e) {
         res.status(500).json({ message: 'Lỗi unfollow', error: e.message });
     }
@@ -110,12 +110,12 @@ export const unfollowUser = async (req, res) => {
 // PATCH /api/users/me
 export const updateMyProfile = async (req, res) => {
     try {
-        const { ten_hien_thi, tieu_su, vi_tri, so_dien_thoai } = req.body;
+        const { display_name, bio, location, phone_number } = req.body;
 
         const updates = {};
-        if (ten_hien_thi !== undefined) updates.ten_hien_thi = ten_hien_thi;
-        if (tieu_su !== undefined) updates.tieu_su = tieu_su;
-        if (vi_tri !== undefined) updates.vi_tri = vi_tri;
+        if (display_name !== undefined) updates.display_name = display_name;
+        if (bio !== undefined) updates.bio = bio;
+        if (location !== undefined) updates.location = location;
 
         const updated = await UserModel.updateProfile(req.user.id, updates);
 
@@ -124,9 +124,9 @@ export const updateMyProfile = async (req, res) => {
         }
 
         // Cập nhật số điện thoại nếu có gửi lên
-        if (so_dien_thoai !== undefined) {
+        if (phone_number !== undefined) {
             // Chuẩn hóa số điện thoại sang E.164
-            let phone = so_dien_thoai.replace(/[\s\-().]/g, '');
+            let phone = phone_number.replace(/[\s\-().]/g, '');
             if (phone && phone.startsWith('0')) {
                 phone = '+84' + phone.substring(1);
             } else if (phone && !phone.startsWith('+')) {
@@ -141,13 +141,13 @@ export const updateMyProfile = async (req, res) => {
             message: 'Cập nhật thành công',
             user: {
                 ...normalized,
-                username: normalized.username || normalized.ten_dang_nhap,
-                fullName: normalized.fullName || normalized.ten_hien_thi,
+                username: normalized.username,
+                fullName: normalized.fullName,
             }
         });
     } catch (e) {
         // Lỗi UNIQUE constraint khi SĐT đã được dùng
-        if (e.code === 'ER_DUP_ENTRY' && e.message?.includes('so_dien_thoai')) {
+        if (e.code === 'ER_DUP_ENTRY' && e.message?.includes('phone_number')) {
             return res.status(400).json({ message: 'Số điện thoại này đã được sử dụng bởi tài khoản khác' });
         }
         res.status(500).json({ message: 'Lỗi cập nhật profile', error: e.message });
@@ -293,24 +293,24 @@ export const searchMentionUsers = async (req, res) => {
 
         // Tìm trong danh sách đang follow trước, check xem có mutual không (Bạn bè)
         const [followingRows] = await pool.query(
-            `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
-                    (SELECT 1 FROM follows f2 WHERE f2.ma_nguoi_theo_doi = u.id AND f2.ma_nguoi_duoc_theo_doi = ?) AS is_mutual
+            `SELECT u.id, u.username, u.display_name, u.avatar_url,
+                    (SELECT 1 FROM follows f2 WHERE f2.follower_id = u.id AND f2.following_id = ?) AS is_mutual
              FROM follows f
-             JOIN users u ON f.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f.ma_nguoi_theo_doi = ?
-               AND u.hoat_dong = 1
-               AND u.vai_tro != 'admin'
-               AND (u.ten_dang_nhap LIKE ? OR u.ten_hien_thi LIKE ?)
-             ORDER BY is_mutual DESC, u.ten_dang_nhap ASC
+             JOIN users u ON f.following_id = u.id
+             WHERE f.follower_id = ?
+               AND u.is_active = 1
+               AND u.role != 'admin'
+               AND (u.username LIKE ? OR u.display_name LIKE ?)
+             ORDER BY is_mutual DESC, u.username ASC
              LIMIT ?`,
             [currentUserId, currentUserId, like, like, limit]
         );
 
         const formatUser = (u) => ({
             id: String(u.id),
-            username: u.ten_dang_nhap,
-            fullName: u.ten_hien_thi || '',
-            anh_dai_dien: u.anh_dai_dien || null,
+            username: u.username,
+            fullName: u.display_name || '',
+            anh_dai_dien: u.avatar_url || null,
             isFollowing: true,
             isMutual: Boolean(u.is_mutual)
         });
@@ -337,7 +337,7 @@ export const updateUserPhone = async (req, res) => {
 
         // Kiểm tra xem số điện thoại đã được đăng ký bởi user khác chưa
         const [existing] = await pool.query(
-            'SELECT id FROM users WHERE so_dien_thoai = ? AND id != ? AND hoat_dong = 1',
+            'SELECT id FROM users WHERE phone_number = ? AND id != ? AND is_active = 1',
             [cleanPhone, req.user.id]
         );
 
