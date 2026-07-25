@@ -31,7 +31,10 @@ const buildInitials = (name = '') =>
 // ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
-        const { username, email, password, display_name } = req.body;
+        const email = req.body.email;
+        const password = req.body.password || req.body.mat_khau;
+        const display_name = req.body.display_name || req.body.ten_hien_thi;
+        const username = req.body.username || req.body.ten_dang_nhap;
 
         if (!email || !password || !display_name || !username) {
             return res.status(400).json({
@@ -81,7 +84,8 @@ export const register = async (req, res) => {
 // ĐĂNG NHẬP
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = req.body.email;
+        const password = req.body.password || req.body.mat_khau;
 
         if (!email || !password) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ email và mật khẩu!' });
@@ -184,7 +188,8 @@ export const getMe = async (req, res) => {
 // ĐỔI MẬT KHẨU
 export const changePassword = async (req, res) => {
     try {
-        const { current_password, new_password } = req.body;
+        const current_password = req.body.current_password || req.body.mat_khau_cu;
+        const new_password = req.body.new_password || req.body.mat_khau_moi;
 
         if (!current_password || !new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới!' });
@@ -314,7 +319,8 @@ export const forgotPassword = async (req, res) => {
 // ĐẶT LẠI MẬT KHẨU VỚI OTP
 export const resetPasswordWithOTP = async (req, res) => {
     try {
-        const { email, otp, new_password } = req.body;
+        const { email, otp } = req.body;
+        const new_password = req.body.new_password || req.body.mat_khau_moi;
 
         if (!email || !otp || !new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin!' });

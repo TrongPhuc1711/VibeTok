@@ -55,8 +55,8 @@ export default function ChangePasswordPage() {
         setLoading(true);
         try {
             await api.patch('/auth/change-password', {
-                mat_khau_cu: form.currentPassword,
-                mat_khau_moi: form.newPassword,
+                current_password: form.currentPassword,
+                new_password: form.newPassword,
             });
             showSuccess('Đổi mật khẩu thành công!', 'Mật khẩu của bạn đã được cập nhật');
             setTimeout(() => navigate(ROUTES.PROFILE), 1000);

@@ -191,7 +191,7 @@ export const getSidebarCounts = async (req, res) => {
 // PATCH /api/admin/users/:id/reset-password
 export const resetUserPassword = async (req, res) => {
     try {
-        const { new_password } = req.body;
+        const new_password = req.body.new_password || req.body.mat_khau_moi;
         const userId = req.params.id;
 
         if (!new_password) {
