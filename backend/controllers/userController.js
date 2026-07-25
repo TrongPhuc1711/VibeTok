@@ -117,7 +117,7 @@ export const updateMyProfile = async (req, res) => {
         if (bio !== undefined) updates.bio = bio;
         if (location !== undefined) updates.location = location;
 
-        const updated = await UserModel.updateProfile(req.user.id, updates);
+        await UserModel.updateProfile(req.user.id, updates);
 
         if (req.file) {
             await UserModel.updateAvatar(req.user.id, req.file.path);
@@ -135,7 +135,9 @@ export const updateMyProfile = async (req, res) => {
             await UserModel.updatePhone(req.user.id, phone || null);
         }
 
-        const normalized = normalizeUser(updated);
+        // Lấy dữ liệu mới nhất SAU KHI tất cả cập nhật hoàn tất
+        const freshUser = await UserModel.findById(req.user.id);
+        const normalized = normalizeUser(freshUser);
 
         res.json({
             message: 'Cập nhật thành công',
@@ -154,7 +156,7 @@ export const updateMyProfile = async (req, res) => {
     }
 };
 
-// POST /api/users/sync-google-contacts — Đồng bộ danh bạ Google để gợi ý bạn bè
+// POST /api/users/me/sync-google-contacts — Đồng bộ danh bạ Google để gợi ý bạn bè
 export const syncGoogleContacts = async (req, res) => {
     try {
         const { access_token } = req.body;
@@ -332,8 +334,13 @@ export const updateUserPhone = async (req, res) => {
             return res.status(400).json({ message: 'Số điện thoại không được để trống' });
         }
 
-        // Chuẩn hóa số điện thoại: Loại bỏ khoảng trắng, dấu cộng, hoặc chuyển đổi định dạng
-        const cleanPhone = phone.trim().replace(/[\s\-\(\)\+]/g, '');
+        // Chuẩn hóa số điện thoại sang E.164 (thống nhất với syncContacts & syncGoogleContacts)
+        let cleanPhone = phone.trim().replace(/[\s\-()]/g, '');
+        if (cleanPhone.startsWith('0')) {
+            cleanPhone = '+84' + cleanPhone.substring(1);
+        } else if (!cleanPhone.startsWith('+')) {
+            cleanPhone = '+' + cleanPhone;
+        }
 
         // Kiểm tra xem số điện thoại đã được đăng ký bởi user khác chưa
         const [existing] = await pool.query(

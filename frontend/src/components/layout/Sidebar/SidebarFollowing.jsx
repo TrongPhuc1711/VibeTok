@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../api/api';
 import { getStoredUser } from '../../../utils/helpers';
@@ -121,9 +122,10 @@ export default function SidebarFollowing() {
                 </button>
             </div>
 
-            {/* Modal */}
-            {showFindFriends && (
-                <FindFriendsModal onClose={() => setShowFindFriends(false)} />
+            {/* Modal — render qua Portal để thoát khỏi stacking context của Sidebar */}
+            {showFindFriends && ReactDOM.createPortal(
+                <FindFriendsModal onClose={() => setShowFindFriends(false)} />,
+                document.body
             )}
         </div>
     );
