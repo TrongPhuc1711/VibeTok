@@ -5,15 +5,15 @@ export const NotificationModel = {
     getNotifications: async (userId, limit = 20, offset = 0) => {
         const query = `
             SELECT 
-                    n.id, n.loai_thong_bao as type, n.da_doc as \`read\`, n.ngay_tao as createdAt,
-                    n.ma_video as videoId, n.ma_binh_luan as commentId,
-                    u.id as actorId, u.ten_dang_nhap as username, u.ten_hien_thi as fullName, u.anh_dai_dien,
-                    v.anh_thu_nho as videoThumb
+                    n.id, n.notification_type as type, n.is_read as \`read\`, n.created_at as createdAt,
+                    n.video_id as videoId, n.comment_id as commentId,
+                    u.id as actorId, u.username as username, u.display_name as fullName, u.avatar_url,
+                    v.thumbnail_url as videoThumb
             FROM notifications n
-            LEFT JOIN users u ON n.ma_nguoi_gui = u.id
-            LEFT JOIN videos v ON n.ma_video = v.id
-            WHERE n.ma_nguoi_nhan = ?
-            ORDER BY n.ngay_tao DESC
+            LEFT JOIN users u ON n.sender_id = u.id
+            LEFT JOIN videos v ON n.video_id = v.id
+            WHERE n.receiver_id = ?
+            ORDER BY n.created_at DESC
             LIMIT ? OFFSET ?
         `;
         const [rows] = await db.execute(query, [userId, limit.toString(), offset.toString()]);
@@ -26,7 +26,7 @@ export const NotificationModel = {
         if (receiverId === senderId) return null;
 
         const query = `
-            INSERT INTO notifications (ma_nguoi_nhan, ma_nguoi_gui, loai_thong_bao, ma_video, ma_binh_luan)
+            INSERT INTO notifications (receiver_id, sender_id, notification_type, video_id, comment_id)
             VALUES (?, ?, ?, ?, ?)
         `;
         const [result] = await db.execute(query, [receiverId, senderId, type, videoId, commentId]);
@@ -35,14 +35,14 @@ export const NotificationModel = {
 
     // 3. Đánh dấu 1 thông báo là đã đọc
     markAsRead: async (notificationId, userId) => {
-        const query = `UPDATE notifications SET da_doc = 1 WHERE id = ? AND ma_nguoi_nhan = ?`;
+        const query = `UPDATE notifications SET is_read = 1 WHERE id = ? AND receiver_id = ?`;
         const [result] = await db.execute(query, [notificationId, userId]);
         return result.affectedRows > 0;
     },
 
     // 4. Đánh dấu tất cả là đã đọc
     markAllAsRead: async (userId) => {
-        const query = `UPDATE notifications SET da_doc = 1 WHERE ma_nguoi_nhan = ? AND da_doc = 0`;
+        const query = `UPDATE notifications SET is_read = 1 WHERE receiver_id = ? AND is_read = 0`;
         const [result] = await db.execute(query, [userId]);
         return result.affectedRows;
     }

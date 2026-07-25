@@ -191,19 +191,19 @@ export const getSidebarCounts = async (req, res) => {
 // PATCH /api/admin/users/:id/reset-password
 export const resetUserPassword = async (req, res) => {
     try {
-        const { mat_khau_moi } = req.body;
+        const { new_password } = req.body;
         const userId = req.params.id;
 
-        if (!mat_khau_moi) {
+        if (!new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập mật khẩu mới!' });
         }
 
-        if (mat_khau_moi.length < 8) {
+        if (new_password.length < 8) {
             return res.status(400).json({ message: 'Mật khẩu mới tối thiểu 8 ký tự!' });
         }
 
         // Không cho đổi mật khẩu của admin khác
-        const ok = await AdminModel.resetUserPassword(userId, mat_khau_moi);
+        const ok = await AdminModel.resetUserPassword(userId, new_password);
         if (!ok) {
             return res.status(404).json({ message: 'Người dùng không tồn tại hoặc là admin' });
         }

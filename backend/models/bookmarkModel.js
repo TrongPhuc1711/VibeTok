@@ -3,18 +3,18 @@ import pool from '../config/db.js';
 export const BookmarkModel = {
     async toggle(userId, videoId) {
         const [existing] = await pool.query(
-            'SELECT id FROM bookmarks WHERE ma_nguoi_dung = ? AND ma_video = ?',
+            'SELECT id FROM bookmarks WHERE user_id = ? AND video_id = ?',
             [userId, videoId]
         );
         if (existing.length > 0) {
             await pool.query(
-                'DELETE FROM bookmarks WHERE ma_nguoi_dung = ? AND ma_video = ?',
+                'DELETE FROM bookmarks WHERE user_id = ? AND video_id = ?',
                 [userId, videoId]
             );
             return false; // removed
         }
         await pool.query(
-            'INSERT INTO bookmarks (ma_nguoi_dung, ma_video) VALUES (?, ?)',
+            'INSERT INTO bookmarks (user_id, video_id) VALUES (?, ?)',
             [userId, videoId]
         );
         return true; // added
@@ -22,7 +22,7 @@ export const BookmarkModel = {
 
     async isBookmarked(userId, videoId) {
         const [rows] = await pool.query(
-            'SELECT id FROM bookmarks WHERE ma_nguoi_dung = ? AND ma_video = ?',
+            'SELECT id FROM bookmarks WHERE user_id = ? AND video_id = ?',
             [userId, videoId]
         );
         return rows.length > 0;
@@ -32,21 +32,21 @@ export const BookmarkModel = {
         const offset = (page - 1) * limit;
         const [rows] = await pool.query(
             `SELECT v.*,
-              u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
-              m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
-              b.ngay_tao as bookmarked_at,
-              (SELECT COUNT(*) FROM bookmarks WHERE ma_video = v.id) AS bookmark_count
+              u.id AS user_id, u.username, u.display_name, u.avatar_url, u.role,
+              m.id AS music_id, m.title AS music_title, m.artist AS music_artist, m.audio_url, m.cover_url,
+              b.created_at as bookmarked_at,
+              (SELECT COUNT(*) FROM bookmarks WHERE video_id = v.id) AS bookmark_count
        FROM bookmarks b
-       JOIN videos v ON b.ma_video = v.id
-       JOIN users u ON v.ma_nguoi_dung = u.id
-       LEFT JOIN music m ON v.ma_am_nhac = m.id
-       WHERE b.ma_nguoi_dung = ? AND v.hoat_dong = 1
-       ORDER BY b.ngay_tao DESC
+       JOIN videos v ON b.video_id = v.id
+       JOIN users u ON v.user_id = u.id
+       LEFT JOIN music m ON v.music_id = m.id
+       WHERE b.user_id = ? AND v.is_active = 1
+       ORDER BY b.created_at DESC
        LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
         const [[{ total }]] = await pool.query(
-            'SELECT COUNT(*) AS total FROM bookmarks WHERE ma_nguoi_dung = ?',
+            'SELECT COUNT(*) AS total FROM bookmarks WHERE user_id = ?',
             [userId]
         );
         return { rows, total };
@@ -55,9 +55,9 @@ export const BookmarkModel = {
     async getBookmarkedIds(userId, videoIds) {
         if (!videoIds.length) return new Set();
         const [rows] = await pool.query(
-            'SELECT ma_video FROM bookmarks WHERE ma_nguoi_dung = ? AND ma_video IN (?)',
+            'SELECT video_id FROM bookmarks WHERE user_id = ? AND video_id IN (?)',
             [userId, videoIds]
         );
-        return new Set(rows.map(r => String(r.ma_video)));
+        return new Set(rows.map(r => String(r.video_id)));
     },
 };

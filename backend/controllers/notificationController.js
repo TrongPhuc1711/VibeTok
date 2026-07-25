@@ -21,7 +21,7 @@ export const getNotifications = async (req, res) => {
                 id: row.actorId,
                 username: row.username,
                 fullName: row.fullName,
-                anh_dai_dien: row.anh_dai_dien,
+                anh_dai_dien: row.avatar_url,
                 initials: row.fullName ? row.fullName.charAt(0).toUpperCase() : 'U'
             },
             meta: {

@@ -2,20 +2,20 @@ import pool from '../config/db.js';
 
 export const normalizeComment = (c) => {
     if (!c) return null;
-    const fullName = c.ten_hien_thi || '';
+    const fullName = c.display_name || '';
     return {
         id:        String(c.id),
-        videoId:   String(c.ma_video),
-        userId:    String(c.ma_nguoi_dung),
-        parentId:  c.ma_binh_luan_goc ? String(c.ma_binh_luan_goc) : null,
-        content:   c.noi_dung,
-        likes:     Number(c.luot_thich)   || 0,
-        replies:   Number(c.luot_tra_loi) || 0,
-        createdAt: c.ngay_tao,
-        username:  c.ten_dang_nhap || 'user',
+        videoId:   String(c.video_id),
+        userId:    String(c.user_id),
+        parentId:  c.parent_comment_id ? String(c.parent_comment_id) : null,
+        content:   c.content,
+        likes:     Number(c.likes_count)   || 0,
+        replies:   Number(c.replies_count) || 0,
+        createdAt: c.created_at,
+        username:  c.username || 'user',
         fullName,
         initials: fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U',
-        anh_dai_dien: c.anh_dai_dien || null,
+        anh_dai_dien: c.avatar_url || null,
         mentions: (() => {
             try {
                 if (!c.mentions) return [];
@@ -35,7 +35,7 @@ export const CommentModel = {
         let likeJoin = '';
         let likeSelect = ', 0 AS isLiked';
         if (currentUserId) {
-            likeJoin = 'LEFT JOIN comment_likes cl ON cl.ma_binh_luan = c.id AND cl.ma_nguoi_dung = ?';
+            likeJoin = 'LEFT JOIN comment_likes cl ON cl.comment_id = c.id AND cl.user_id = ?';
             likeSelect = ', IF(cl.id IS NOT NULL, 1, 0) AS isLiked';
         }
 
@@ -44,12 +44,12 @@ export const CommentModel = {
             : [videoId, limit, offset];
 
         const [rows] = await pool.query(
-            `SELECT c.*, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien ${likeSelect}
+            `SELECT c.*, u.username, u.display_name, u.avatar_url ${likeSelect}
              FROM comments c
-             LEFT JOIN users u ON c.ma_nguoi_dung = u.id
+             LEFT JOIN users u ON c.user_id = u.id
              ${likeJoin}
-             WHERE c.ma_video = ? AND c.ma_binh_luan_goc IS NULL AND c.hoat_dong = 1
-             ORDER BY c.ngay_tao DESC
+             WHERE c.video_id = ? AND c.parent_comment_id IS NULL AND c.is_active = 1
+             ORDER BY c.created_at DESC
              LIMIT ? OFFSET ?`,
             params
         );
@@ -63,7 +63,7 @@ export const CommentModel = {
         let likeJoin = '';
         let likeSelect = ', 0 AS isLiked';
         if (currentUserId) {
-            likeJoin = 'LEFT JOIN comment_likes cl ON cl.ma_binh_luan = c.id AND cl.ma_nguoi_dung = ?';
+            likeJoin = 'LEFT JOIN comment_likes cl ON cl.comment_id = c.id AND cl.user_id = ?';
             likeSelect = ', IF(cl.id IS NOT NULL, 1, 0) AS isLiked';
         }
 
@@ -72,19 +72,19 @@ export const CommentModel = {
             : [parentId, limit, offset];
 
         const [rows] = await pool.query(
-            `SELECT c.*, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien ${likeSelect}
+            `SELECT c.*, u.username, u.display_name, u.avatar_url ${likeSelect}
              FROM comments c
-             LEFT JOIN users u ON c.ma_nguoi_dung = u.id
+             LEFT JOIN users u ON c.user_id = u.id
              ${likeJoin}
-             WHERE c.ma_binh_luan_goc = ? AND c.hoat_dong = 1
-             ORDER BY c.ngay_tao ASC
+             WHERE c.parent_comment_id = ? AND c.is_active = 1
+             ORDER BY c.created_at ASC
              LIMIT ? OFFSET ?`,
             params
         );
 
         // Count total replies
         const [[{ total }]] = await pool.query(
-            'SELECT COUNT(*) AS total FROM comments WHERE ma_binh_luan_goc = ? AND hoat_dong = 1',
+            'SELECT COUNT(*) AS total FROM comments WHERE parent_comment_id = ? AND is_active = 1',
             [parentId]
         );
 
@@ -96,20 +96,20 @@ export const CommentModel = {
         const mentionsJson = mentions && mentions.length > 0 ? JSON.stringify(mentions) : null;
 
         const [result] = await pool.query(
-            'INSERT INTO comments (ma_video, ma_nguoi_dung, ma_binh_luan_goc, noi_dung, mentions) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO comments (video_id, user_id, parent_comment_id, content, mentions) VALUES (?, ?, ?, ?, ?)',
             [videoId, userId, parentId, content, mentionsJson]
         );
-        // Nếu là reply thì tăng luot_tra_loi của comment gốc
+        // Nếu là reply thì tăng replies_count của comment gốc
         if (parentId) {
             await pool.query(
-                'UPDATE comments SET luot_tra_loi = luot_tra_loi + 1 WHERE id = ?',
+                'UPDATE comments SET replies_count = replies_count + 1 WHERE id = ?',
                 [parentId]
             );
         }
         const [rows] = await pool.query(
-            `SELECT c.*, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien
+            `SELECT c.*, u.username, u.display_name, u.avatar_url
              FROM comments c
-             LEFT JOIN users u ON c.ma_nguoi_dung = u.id
+             LEFT JOIN users u ON c.user_id = u.id
              WHERE c.id = ?`,
             [result.insertId]
         );
@@ -120,11 +120,11 @@ export const CommentModel = {
     async likeComment(commentId, userId) {
         try {
             await pool.query(
-                'INSERT INTO comment_likes (ma_binh_luan, ma_nguoi_dung) VALUES (?, ?)',
+                'INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)',
                 [commentId, userId]
             );
             await pool.query(
-                'UPDATE comments SET luot_thich = luot_thich + 1 WHERE id = ?',
+                'UPDATE comments SET likes_count = likes_count + 1 WHERE id = ?',
                 [commentId]
             );
             return true;
@@ -137,12 +137,12 @@ export const CommentModel = {
     // Unlike comment
     async unlikeComment(commentId, userId) {
         const [result] = await pool.query(
-            'DELETE FROM comment_likes WHERE ma_binh_luan = ? AND ma_nguoi_dung = ?',
+            'DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?',
             [commentId, userId]
         );
         if (result.affectedRows > 0) {
             await pool.query(
-                'UPDATE comments SET luot_thich = GREATEST(0, luot_thich - 1) WHERE id = ?',
+                'UPDATE comments SET likes_count = GREATEST(0, likes_count - 1) WHERE id = ?',
                 [commentId]
             );
         }
@@ -152,7 +152,7 @@ export const CommentModel = {
     // Xóa comment
     async softDelete(commentId, userId) {
         const [result] = await pool.query(
-            'UPDATE comments SET hoat_dong = 0 WHERE id = ? AND ma_nguoi_dung = ?',
+            'UPDATE comments SET is_active = 0 WHERE id = ? AND user_id = ?',
             [commentId, userId]
         );
         return result.affectedRows > 0;

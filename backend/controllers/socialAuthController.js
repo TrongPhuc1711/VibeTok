@@ -25,7 +25,7 @@ export const googleLogin = async (req, res) => {
 
         if (linkedAccount) {
             // Đã liên kết trước đó
-            userId = linkedAccount.ma_nguoi_dung;
+            userId = linkedAccount.user_id;
         } else {
             // Chưa liên kết, tìm user theo email
             const existingUser = await socialAuthModel.findByEmail(email);
@@ -49,7 +49,7 @@ export const googleLogin = async (req, res) => {
 
         // 4. Tạo JWT và gửi về client như login thông thường
         const token = jwt.sign(
-            { id: userRow.id, ten_dang_nhap: userRow.ten_dang_nhap, vai_tro: userRow.vai_tro },
+            { id: userRow.id, username: userRow.username, role: userRow.role },
             getJwtSecret(),
             { expiresIn: '7d' }
         );

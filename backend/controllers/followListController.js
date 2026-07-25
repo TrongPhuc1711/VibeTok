@@ -11,7 +11,7 @@ export const getFollowers = async (req, res) => {
             page,
             limit,
             currentUserId:   req.user?.id       ?? null,
-            currentUserRole: req.user?.vai_tro   ?? null,
+            currentUserRole: req.user?.role   ?? null,
         });
 
         if (!result) {
@@ -36,7 +36,7 @@ export const getFollowing = async (req, res) => {
             page,
             limit,
             currentUserId:   req.user?.id       ?? null,
-            currentUserRole: req.user?.vai_tro   ?? null,
+            currentUserRole: req.user?.role   ?? null,
         });
 
         if (!result) {
@@ -61,7 +61,7 @@ export const getFriends = async (req, res) => {
             page,
             limit,
             currentUserId:   req.user?.id       ?? null,
-            currentUserRole: req.user?.vai_tro   ?? null,
+            currentUserRole: req.user?.role   ?? null,
         });
 
         if (!result) {

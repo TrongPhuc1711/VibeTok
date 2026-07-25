@@ -6,18 +6,18 @@ import { normalizeVideo } from './videoModel.js';
 export const MusicModel = {
     async getAll({ limit = 20 } = {}) {
         const [rows] = await pool.query(
-            'SELECT * FROM music ORDER BY dang_thinh_hanh DESC, luot_su_dung DESC LIMIT ?',
+            'SELECT * FROM music ORDER BY is_trending DESC, usage_count DESC LIMIT ?',
             [limit]
         );
         return rows.map(m => ({
             id:       String(m.id),
-            title:    m.tieu_de,
-            artist:   m.nghe_si,
-            duration: Number(m.thoi_luong_giay),
-            audioUrl: m.duong_dan_am_thanh,
-            cover:    m.anh_bia || null,
-            trending: Boolean(m.dang_thinh_hanh),
-            uses:     Number(m.luot_su_dung),
+            title:    m.title,
+            artist:   m.artist,
+            duration: Number(m.duration_seconds),
+            audioUrl: m.audio_url,
+            cover:    m.cover_url || null,
+            trending: Boolean(m.is_trending),
+            uses:     Number(m.usage_count),
         }));
     },
 
@@ -25,7 +25,7 @@ export const MusicModel = {
         const [rows] = await pool.query('SELECT * FROM music WHERE id = ?', [id]);
         if (!rows[0]) return null;
         const m = rows[0];
-        return { id: String(m.id), title: m.tieu_de, artist: m.nghe_si, duration: Number(m.thoi_luong_giay) };
+        return { id: String(m.id), title: m.title, artist: m.artist, duration: Number(m.duration_seconds) };
     },
 };
 
@@ -33,14 +33,14 @@ export const MusicModel = {
 export const HashtagModel = {
     async getTrending({ limit = 7 } = {}) {
         const [rows] = await pool.query(
-            'SELECT * FROM hashtags ORDER BY tong_so_video DESC, dang_thinh_hanh DESC LIMIT ?',
+            'SELECT * FROM hashtags ORDER BY total_videos DESC, is_trending DESC LIMIT ?',
             [limit]
         );
         return rows.map(h => ({
             id:       String(h.id),
-            tag:      `#${h.ten_hashtag}`,
-            videos:   Number(h.tong_so_video),
-            trending: Boolean(h.dang_thinh_hanh),
+            tag:      `#${h.name}`,
+            videos:   Number(h.total_videos),
+            trending: Boolean(h.is_trending),
         }));
     },
 
@@ -48,27 +48,27 @@ export const HashtagModel = {
     async findByName(tagName) {
         const clean = tagName.replace(/^#/, '').toLowerCase();
         const [rows] = await pool.query(
-            'SELECT * FROM hashtags WHERE ten_hashtag LIKE ? ORDER BY tong_so_video DESC',
+            'SELECT * FROM hashtags WHERE name LIKE ? ORDER BY total_videos DESC',
             [`%${clean}%`]
         );
         if (rows.length === 0) return null;
 
         // Tổng video từ tất cả hashtag liên quan
-        const totalVideos = rows.reduce((sum, h) => sum + Number(h.tong_so_video), 0);
+        const totalVideos = rows.reduce((sum, h) => sum + Number(h.total_videos), 0);
         // Hashtag chính (nhiều video nhất)
         const primary = rows[0];
         // Danh sách hashtag liên quan
         const relatedTags = rows.map(h => ({
             id: String(h.id),
-            tag: `#${h.ten_hashtag}`,
-            videos: Number(h.tong_so_video),
+            tag: `#${h.name}`,
+            videos: Number(h.total_videos),
         }));
 
         return {
             id: String(primary.id),
             tag: `#${clean}`,
             videos: totalVideos,
-            trending: Boolean(primary.dang_thinh_hanh),
+            trending: Boolean(primary.is_trending),
             relatedTags,
         };
     },
@@ -87,7 +87,7 @@ export const HashtagModel = {
         // Bước 1: Tìm TẤT CẢ hashtag liên quan bằng LIKE (fuzzy match)
         // vd: "dance" → #dance, #dancing, #dancefloor, #dancelove...
         const [hashRows] = await pool.query(
-            'SELECT id, ten_hashtag, tong_so_video FROM hashtags WHERE ten_hashtag LIKE ? ORDER BY tong_so_video DESC',
+            'SELECT id, name, total_videos FROM hashtags WHERE name LIKE ? ORDER BY total_videos DESC',
             [`%${clean}%`]
         );
 
@@ -95,7 +95,7 @@ export const HashtagModel = {
         const tagNamesToMatch = new Set();
         tagNamesToMatch.add(`#${clean}`);
         hashRows.forEach(h => {
-            tagNamesToMatch.add(`#${h.ten_hashtag.toLowerCase()}`);
+            tagNamesToMatch.add(`#${h.name.toLowerCase()}`);
         });
 
         const hashtagIds = hashRows.map(h => h.id);
@@ -105,12 +105,12 @@ export const HashtagModel = {
 
         if (hashtagIds.length > 0) {
             const placeholders = hashtagIds.map(() => '?').join(',');
-            matchConditions.push(`vh.ma_hashtag IN (${placeholders})`);
+            matchConditions.push(`vh.hashtag_id IN (${placeholders})`);
             queryParams.push(...hashtagIds);
         }
 
         for (const tag of tagNamesToMatch) {
-            matchConditions.push(`v.mo_ta LIKE ?`);
+            matchConditions.push(`v.description LIKE ?`);
             queryParams.push(`%${tag}%`);
         }
 
@@ -122,21 +122,21 @@ export const HashtagModel = {
 
         // Bước 2: Subqueries is_following / is_liked dùng EXISTS (short-circuit)
         const followingExpr = currentUserId
-            ? `EXISTS(SELECT 1 FROM follows WHERE ma_nguoi_theo_doi = ${pool.escape(currentUserId)} AND ma_nguoi_duoc_theo_doi = v.ma_nguoi_dung LIMIT 1)`
+            ? `EXISTS(SELECT 1 FROM follows WHERE follower_id = ${pool.escape(currentUserId)} AND following_id = v.user_id LIMIT 1)`
             : `0`;
 
         const likedExpr = currentUserId
-            ? `EXISTS(SELECT 1 FROM likes WHERE ma_nguoi_dung = ${pool.escape(currentUserId)} AND ma_video = v.id LIMIT 1)`
+            ? `EXISTS(SELECT 1 FROM likes WHERE user_id = ${pool.escape(currentUserId)} AND video_id = v.id LIMIT 1)`
             : `0`;
 
         // Bước 3: Lấy tổng số lượng video chính xác qua count query
         const [countRows] = await pool.query(`
             SELECT COUNT(DISTINCT v.id) AS total
             FROM videos v
-            LEFT JOIN video_hashtags vh ON v.id = vh.ma_video
-            WHERE v.quyen_rieng_tu = 'public'
-                AND v.hoat_dong = 1
-                AND v.la_ban_nhap = 0
+            LEFT JOIN video_hashtags vh ON v.id = vh.video_id
+            WHERE v.privacy = 'public'
+                AND v.is_active = 1
+                AND v.is_draft = 0
                 AND (${matchClause})
         `, queryParams);
         const total = countRows[0]?.total || 0;
@@ -148,19 +148,19 @@ export const HashtagModel = {
         // Bước 4: Main query lấy danh sách video
         const [rows] = await pool.query(`
             SELECT DISTINCT v.*,
-                u.id AS user_id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien, u.vai_tro,
-                m.id AS music_id, m.tieu_de AS tieu_de_nhac, m.nghe_si, m.duong_dan_am_thanh, m.anh_bia,
+                u.id AS user_id, u.username, u.display_name, u.avatar_url, u.role,
+                m.id AS music_id, m.title AS music_title, m.artist AS music_artist, m.audio_url, m.cover_url,
                 (${followingExpr}) AS is_following,
                 (${likedExpr}) AS is_liked
             FROM videos v
-            LEFT JOIN video_hashtags vh ON v.id = vh.ma_video
-            LEFT JOIN users u ON u.id = v.ma_nguoi_dung
-            LEFT JOIN music m ON m.id = v.ma_am_nhac
-            WHERE v.quyen_rieng_tu = 'public'
-                AND v.hoat_dong = 1
-                AND v.la_ban_nhap = 0
+            LEFT JOIN video_hashtags vh ON v.id = vh.video_id
+            LEFT JOIN users u ON u.id = v.user_id
+            LEFT JOIN music m ON m.id = v.music_id
+            WHERE v.privacy = 'public'
+                AND v.is_active = 1
+                AND v.is_draft = 0
                 AND (${matchClause})
-            ORDER BY v.ngay_tao DESC
+            ORDER BY v.created_at DESC
             LIMIT ? OFFSET ?
         `, [...queryParams, limit, offset]);
 
@@ -186,10 +186,10 @@ export const HashtagModel = {
     // Tìm hoặc tạo hashtag, trả về id
     async findOrCreate(tagName) {
         const clean = tagName.replace(/^#/, '').toLowerCase();
-        const [rows] = await pool.query('SELECT id FROM hashtags WHERE ten_hashtag = ?', [clean]);
+        const [rows] = await pool.query('SELECT id FROM hashtags WHERE name = ?', [clean]);
         if (rows[0]) return rows[0].id;
         const [result] = await pool.query(
-            'INSERT INTO hashtags (ten_hashtag) VALUES (?)',
+            'INSERT INTO hashtags (name) VALUES (?)',
             [clean]
         );
         return result.insertId;
@@ -201,11 +201,11 @@ export const HashtagModel = {
             const hashtagId = await this.findOrCreate(tag);
             try {
                 await pool.query(
-                    'INSERT INTO video_hashtags (ma_video, ma_hashtag) VALUES (?, ?)',
+                    'INSERT INTO video_hashtags (video_id, hashtag_id) VALUES (?, ?)',
                     [videoId, hashtagId]
                 );
                 await pool.query(
-                    'UPDATE hashtags SET tong_so_video = tong_so_video + 1 WHERE id = ?',
+                    'UPDATE hashtags SET total_videos = total_videos + 1 WHERE id = ?',
                     [hashtagId]
                 );
             } catch (e) { /* ignore dup */ }
@@ -216,13 +216,13 @@ export const HashtagModel = {
     async search(q, limit = 5) {
         const clean = q.replace(/^#/, '').toLowerCase().trim();
         const [rows] = await pool.query(
-            'SELECT * FROM hashtags WHERE ten_hashtag LIKE ? ORDER BY tong_so_video DESC LIMIT ?',
+            'SELECT * FROM hashtags WHERE name LIKE ? ORDER BY total_videos DESC LIMIT ?',
             [`%${clean}%`, limit]
         );
         return rows.map(h => ({
             id:     String(h.id),
-            tag:    `#${h.ten_hashtag}`,
-            videos: Number(h.tong_so_video),
+            tag:    `#${h.name}`,
+            videos: Number(h.total_videos),
         }));
     },
 };
@@ -233,8 +233,8 @@ export const CategoryModel = {
         const [rows] = await pool.query('SELECT * FROM categories ORDER BY id');
         return rows.map(c => ({
             id:    String(c.id),
-            label: c.ten_danh_muc,
-            value: c.duong_dan_tinh,
+            label: c.name,
+            value: c.slug,
         }));
     },
 };

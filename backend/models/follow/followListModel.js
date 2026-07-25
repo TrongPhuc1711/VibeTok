@@ -6,15 +6,15 @@ export const FollowListModel = {
     // hideAdmins: true nếu người xem không phải admin
     async getFollowers(userId, { page = 1, limit = 20 } = {}, hideAdmins = true) {
         const offset = (page - 1) * limit;
-        const adminFilter = hideAdmins ? "AND u.vai_tro != 'admin'" : '';
+        const adminFilter = hideAdmins ? "AND u.role != 'admin'" : '';
 
         const [rows] = await pool.query(
-            `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
-                    u.so_nguoi_theo_doi, u.vai_tro
+            `SELECT u.id, u.username, u.display_name, u.avatar_url,
+                    u.followers, u.role
              FROM follows f
-             JOIN users u ON f.ma_nguoi_theo_doi = u.id
-             WHERE f.ma_nguoi_duoc_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}
-             ORDER BY f.ngay_tao DESC
+             JOIN users u ON f.follower_id = u.id
+             WHERE f.following_id = ? AND u.is_active = 1 ${adminFilter}
+             ORDER BY f.created_at DESC
              LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
@@ -22,8 +22,8 @@ export const FollowListModel = {
         const [[{ total }]] = await pool.query(
             `SELECT COUNT(*) AS total
              FROM follows f
-             JOIN users u ON f.ma_nguoi_theo_doi = u.id
-             WHERE f.ma_nguoi_duoc_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}`,
+             JOIN users u ON f.follower_id = u.id
+             WHERE f.following_id = ? AND u.is_active = 1 ${adminFilter}`,
             [userId]
         );
 
@@ -33,15 +33,15 @@ export const FollowListModel = {
     // Lấy danh sách user này đang follow
     async getFollowing(userId, { page = 1, limit = 20 } = {}, hideAdmins = true) {
         const offset = (page - 1) * limit;
-        const adminFilter = hideAdmins ? "AND u.vai_tro != 'admin'" : '';
+        const adminFilter = hideAdmins ? "AND u.role != 'admin'" : '';
 
         const [rows] = await pool.query(
-            `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
-                    u.so_nguoi_theo_doi, u.vai_tro
+            `SELECT u.id, u.username, u.display_name, u.avatar_url,
+                    u.followers, u.role
              FROM follows f
-             JOIN users u ON f.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}
-             ORDER BY f.ngay_tao DESC
+             JOIN users u ON f.following_id = u.id
+             WHERE f.follower_id = ? AND u.is_active = 1 ${adminFilter}
+             ORDER BY f.created_at DESC
              LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
@@ -49,8 +49,8 @@ export const FollowListModel = {
         const [[{ total }]] = await pool.query(
             `SELECT COUNT(*) AS total
              FROM follows f
-             JOIN users u ON f.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}`,
+             JOIN users u ON f.following_id = u.id
+             WHERE f.follower_id = ? AND u.is_active = 1 ${adminFilter}`,
             [userId]
         );
 
@@ -60,17 +60,17 @@ export const FollowListModel = {
     // Lấy danh sách bạn bè (mutual follow)
     async getFriends(userId, { page = 1, limit = 20 } = {}, hideAdmins = true) {
         const offset = (page - 1) * limit;
-        const adminFilter = hideAdmins ? "AND u.vai_tro != 'admin'" : '';
+        const adminFilter = hideAdmins ? "AND u.role != 'admin'" : '';
 
         const [rows] = await pool.query(
-            `SELECT u.id, u.ten_dang_nhap, u.ten_hien_thi, u.anh_dai_dien,
-                    u.so_nguoi_theo_doi, u.vai_tro
+            `SELECT u.id, u.username, u.display_name, u.avatar_url,
+                    u.followers, u.role
              FROM follows f1
-             JOIN follows f2 ON f1.ma_nguoi_duoc_theo_doi = f2.ma_nguoi_theo_doi 
-                             AND f1.ma_nguoi_theo_doi = f2.ma_nguoi_duoc_theo_doi
-             JOIN users u ON f1.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f1.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}
-             ORDER BY f1.ngay_tao DESC
+             JOIN follows f2 ON f1.following_id = f2.follower_id 
+                             AND f1.follower_id = f2.following_id
+             JOIN users u ON f1.following_id = u.id
+             WHERE f1.follower_id = ? AND u.is_active = 1 ${adminFilter}
+             ORDER BY f1.created_at DESC
              LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
@@ -78,10 +78,10 @@ export const FollowListModel = {
         const [[{ total }]] = await pool.query(
             `SELECT COUNT(*) AS total
              FROM follows f1
-             JOIN follows f2 ON f1.ma_nguoi_duoc_theo_doi = f2.ma_nguoi_theo_doi 
-                             AND f1.ma_nguoi_theo_doi = f2.ma_nguoi_duoc_theo_doi
-             JOIN users u ON f1.ma_nguoi_duoc_theo_doi = u.id
-             WHERE f1.ma_nguoi_theo_doi = ? AND u.hoat_dong = 1 ${adminFilter}`,
+             JOIN follows f2 ON f1.following_id = f2.follower_id 
+                             AND f1.follower_id = f2.following_id
+             JOIN users u ON f1.following_id = u.id
+             WHERE f1.follower_id = ? AND u.is_active = 1 ${adminFilter}`,
             [userId]
         );
 
@@ -92,26 +92,26 @@ export const FollowListModel = {
     async getMyFollowingSet(currentUserId) {
         if (!currentUserId) return new Set();
         const [rows] = await pool.query(
-            'SELECT ma_nguoi_duoc_theo_doi FROM follows WHERE ma_nguoi_theo_doi = ?',
+            'SELECT following_id FROM follows WHERE follower_id = ?',
             [currentUserId]
         );
-        return new Set(rows.map(r => r.ma_nguoi_duoc_theo_doi));
+        return new Set(rows.map(r => r.following_id));
     },
 
     // Lấy tập hợp id đang follow currentUser (dùng để check isMutual)
     async getMyFollowersSet(currentUserId) {
         if (!currentUserId) return new Set();
         const [rows] = await pool.query(
-            'SELECT ma_nguoi_theo_doi FROM follows WHERE ma_nguoi_duoc_theo_doi = ?',
+            'SELECT follower_id FROM follows WHERE following_id = ?',
             [currentUserId]
         );
-        return new Set(rows.map(r => r.ma_nguoi_theo_doi));
+        return new Set(rows.map(r => r.follower_id));
     },
 
     // Tìm user theo username, trả về id
     async findUserIdByUsername(username) {
         const [rows] = await pool.query(
-            'SELECT id FROM users WHERE ten_dang_nhap = ? AND hoat_dong = 1',
+            'SELECT id FROM users WHERE username = ? AND is_active = 1',
             [username]
         );
         return rows[0]?.id ?? null;

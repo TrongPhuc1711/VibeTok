@@ -28,14 +28,14 @@ export const syncTrendingMusicFromAudius = async () => {
 
             // 3. Kiểm tra xem bài hát này đã có trong DB chưa (tránh bị trùng lặp)
             const [existing] = await pool.query(
-                'SELECT id FROM music WHERE tieu_de = ? AND nghe_si = ?', 
+                'SELECT id FROM music WHERE title = ? AND artist = ?', 
                 [title, artist]
             );
 
             // 4. Nếu chưa có thì lưu vào bảng `music`
             if (existing.length === 0) {
                 await pool.query(
-                    `INSERT INTO music (tieu_de, nghe_si, thoi_luong_giay, duong_dan_am_thanh, anh_bia, dang_thinh_hanh, luot_su_dung) 
+                    `INSERT INTO music (title, artist, duration_seconds, audio_url, cover_url, is_trending, usage_count) 
                      VALUES (?, ?, ?, ?, ?, 1, 0)`,
                     [title, artist, duration, audioUrl, cover]
                 );
@@ -44,7 +44,7 @@ export const syncTrendingMusicFromAudius = async () => {
             }
         }
 
-        console.log(`✅ Đồng bộ hoàn tất! Đã thêm ${addedCount} bài hát mới vào Database.`);
+        console.log(`Đồng bộ hoàn tất! Đã thêm ${addedCount} bài hát mới vào Database.`);
         return { success: true, added: addedCount };
 
     } catch (error) {
