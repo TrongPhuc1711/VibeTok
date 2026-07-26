@@ -6,7 +6,7 @@ export const login = async ({ email, password }) => {
     try {
         const response = await api.post('/auth/login', {
             email,
-            mat_khau: password,
+            password,
         });
 
         const { token, user } = response.data;
@@ -36,9 +36,9 @@ export const register = async ({ fullName, email, password }) => {
     try {
         const payload = {
             email,
-            mat_khau:      password,
-            ten_hien_thi:  fullName,
-            ten_dang_nhap: email.split('@')[0] + Math.floor(Math.random() * 1000),
+            password,
+            display_name:  fullName,
+            username:      email.split('@')[0] + Math.floor(Math.random() * 1000),
         };
         const response = await api.post('/auth/register', payload);
         return response.data;

@@ -8,9 +8,10 @@ import {
   SearchIcon, CloseIcon, CheckIcon,
   LinkIcon, WhatsAppIcon,
   FacebookIcon, TelegramIcon, TwitterIcon,
+  RepostIcon,
 } from '../../../icons/ShareIcons';
 
-export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDone }) {
+export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDone, onRepost, isReposted }) {
   const me = getStoredUser();
   const { showSuccess, showError, showInfo } = useToast();
 
@@ -125,6 +126,11 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
   const handleShareWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareUrl)}`, '_blank'); onShareDone?.(); };
   const handleShareTelegram = () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}`, '_blank'); onShareDone?.(); };
   const handleShareTwitter = () => { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400'); onShareDone?.(); };
+
+  const handleRepost = () => {
+    onRepost?.();
+    handleClose();
+  };
 
   if (!open && !closing) return null;
 
@@ -252,6 +258,13 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
             <div className="h-px bg-[var(--vt-divider)] mx-4" />
             <div className="py-2 pb-4">
               <div className="flex gap-1 overflow-x-auto px-3 no-scrollbar">
+                <ShareActionBtn
+                  icon={<RepostIcon />}
+                  label={isReposted ? 'Bỏ đăng lại' : 'Đăng lại'}
+                  color={isReposted ? '#ff4757' : '#00C853'}
+                  onClick={handleRepost}
+                  active={isReposted}
+                />
                 <ShareActionBtn icon={<LinkIcon />} label="Copy" color="#7c7c7c" onClick={handleCopyLink} />
                 <ShareActionBtn icon={<WhatsAppIcon />} label="WhatsApp" color="#25D366" onClick={handleShareWhatsApp} />
                 <ShareActionBtn icon={<FacebookIcon />} label="Facebook" color="#1877F2" onClick={handleShareFacebook} />
@@ -267,7 +280,7 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
 }
 
 /* ── Sub-component ── */
-function ShareActionBtn({ icon, label, color, onClick }) {
+function ShareActionBtn({ icon, label, color, onClick, active }) {
   return (
     <button
       onClick={onClick}
@@ -275,12 +288,16 @@ function ShareActionBtn({ icon, label, color, onClick }) {
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <div
-        className="w-[50px] h-[50px] rounded-full flex items-center justify-center hover:scale-[1.08] hover:shadow-lg transition-all"
+        className={`w-[50px] h-[50px] rounded-full flex items-center justify-center hover:scale-[1.08] hover:shadow-lg transition-all ${
+          active ? 'ring-2 ring-white/30 ring-offset-2 ring-offset-[var(--vt-surface)]' : ''
+        }`}
         style={{ background: color }}
       >
         {icon}
       </div>
-      <span className="font-body text-[11px] text-text-secondary whitespace-nowrap">{label}</span>
+      <span className={`font-body text-[11px] text-center whitespace-nowrap ${
+        active ? 'text-text-primary font-semibold' : 'text-text-secondary'
+      }`}>{label}</span>
     </button>
   );
 }

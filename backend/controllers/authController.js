@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import { sendOTPEmail } from '../utils/emailService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -10,7 +11,7 @@ const getJwtSecret = () => JWT_SECRET || 'vibetok_secret_key_default';
 
 // Simple in-memory rate limiter for OTP requests
 const otpRateLimit = new Map(); // email -> { count, resetAt }
-const OTP_MAX_PER_HOUR = 3;
+const OTP_MAX_PER_HOUR = 10;
 
 const checkOtpRateLimit = (email) => {
     const now = Date.now();
@@ -31,7 +32,10 @@ const buildInitials = (name = '') =>
 // ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
-        const { username, email, password, display_name } = req.body;
+        const email = req.body.email;
+        const password = req.body.password || req.body.mat_khau;
+        const display_name = req.body.display_name || req.body.ten_hien_thi;
+        const username = req.body.username || req.body.ten_dang_nhap;
 
         if (!email || !password || !display_name || !username) {
             return res.status(400).json({
@@ -81,7 +85,8 @@ export const register = async (req, res) => {
 // ĐĂNG NHẬP
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = req.body.email;
+        const password = req.body.password || req.body.mat_khau;
 
         if (!email || !password) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ email và mật khẩu!' });
@@ -184,7 +189,8 @@ export const getMe = async (req, res) => {
 // ĐỔI MẬT KHẨU
 export const changePassword = async (req, res) => {
     try {
-        const { current_password, new_password } = req.body;
+        const current_password = req.body.current_password || req.body.mat_khau_cu;
+        const new_password = req.body.new_password || req.body.mat_khau_moi;
 
         if (!current_password || !new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới!' });
@@ -239,10 +245,10 @@ export const forgotPassword = async (req, res) => {
 
         const normalizedEmail = email.toLowerCase().trim();
 
-        // Rate limit: max 3 OTP requests per hour per email
+        // Rate limit: max 10 OTP requests per hour per email
         if (!checkOtpRateLimit(normalizedEmail)) {
             return res.status(429).json({
-                message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau 1 giờ.'
+                message: 'Quá nhiều yêu cầu gửi mã OTP. Vui lòng thử lại sau 1 giờ.'
             });
         }
 
@@ -251,46 +257,20 @@ export const forgotPassword = async (req, res) => {
             [normalizedEmail]
         );
 
-        // Always return success to prevent email enumeration
         if (users.length === 0) {
-            return res.json({ message: 'Nếu email tồn tại, mã OTP sẽ được gửi đến!' });
+            return res.status(404).json({ message: 'Email này chưa được đăng ký tài khoản trong hệ thống!' });
+        }
+
+        const user = users[0];
+        if (!user.password) {
+            return res.status(400).json({ message: 'Tài khoản này đăng nhập bằng Google, không có mật khẩu để đặt lại!' });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = new Date(Date.now() + 10 * 60000);
 
         try {
-            const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'api-key': process.env.BREVO_API_KEY
-                },
-                body: JSON.stringify({
-                    sender: {
-                        name: 'VibeTok Support',
-                        email: process.env.BREVO_SENDER_EMAIL
-                    },
-                    to: [{ email: normalizedEmail }],
-                    subject: 'Mã OTP Đặt Lại Mật Khẩu - VibeTok',
-                    htmlContent: `
-                        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto;">
-                            <h2 style="color: #ff2d78;">Đặt Lại Mật Khẩu - VibeTok</h2>
-                            <p>Mã OTP của bạn:</p>
-                            <h1 style="color: #ff2d78; letter-spacing: 8px; font-size: 36px;">${otp}</h1>
-                            <p>Mã có hiệu lực trong <strong>10 phút</strong>.</p>
-                            <p style="color: #666; font-size: 12px;">Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.</p>
-                        </div>
-                    `
-                })
-            });
-
-            if (!brevoResponse.ok) {
-                const errorData = await brevoResponse.json();
-                console.error('❌ Brevo error:', errorData);
-                throw new Error('Gửi mail thất bại từ phía Brevo');
-            }
+            await sendOTPEmail(normalizedEmail, otp);
 
             // Save OTP only after successful email send
             await pool.query('DELETE FROM password_resets WHERE email = ?', [normalizedEmail]);
@@ -302,7 +282,7 @@ export const forgotPassword = async (req, res) => {
             res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
         } catch (emailError) {
             console.error('❌ Lỗi gửi email:', emailError.message);
-            return res.status(500).json({ message: 'Không thể gửi email. Vui lòng thử lại sau.' });
+            return res.status(500).json({ message: `Không thể gửi email: ${emailError.message || 'Vui lòng thử lại sau.'}` });
         }
 
     } catch (error) {
@@ -314,7 +294,8 @@ export const forgotPassword = async (req, res) => {
 // ĐẶT LẠI MẬT KHẨU VỚI OTP
 export const resetPasswordWithOTP = async (req, res) => {
     try {
-        const { email, otp, new_password } = req.body;
+        const { email, otp } = req.body;
+        const new_password = req.body.new_password || req.body.mat_khau_moi;
 
         if (!email || !otp || !new_password) {
             return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin!' });

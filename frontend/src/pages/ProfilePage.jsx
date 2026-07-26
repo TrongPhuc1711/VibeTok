@@ -25,7 +25,7 @@ import { getFollowingSet } from '../utils/following';
 
 import VideoThumb from '../components/profile/VideoThumb';
 
-const ALL_TABS = ['Videos', 'Liked', 'Bookmarks'];
+const ALL_TABS = ['Videos', 'Reposts', 'Liked', 'Bookmarks'];
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -35,7 +35,7 @@ export default function ProfilePage() {
   const { isDark } = useTheme();
 
   const target = username || me?.username || me?.ten_dang_nhap;
-  const { profile, videos, loading, following, toggleFollow, setProfile, likedVideos, likedLoading, fetchLikedVideos } = useProfile(target || '');
+  const { profile, videos, loading, following, toggleFollow, setProfile, likedVideos, likedLoading, fetchLikedVideos, repostedVideos, repostedLoading, fetchRepostedVideos } = useProfile(target || '');
 
 
   const [activeTab, setActiveTab] = useState('Videos');
@@ -47,6 +47,7 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [findFriendsOpen, setFindFriendsOpen] = useState(false);
   const [likedFetched, setLikedFetched] = useState(false);
+  const [repostedFetched, setRepostedFetched] = useState(false);
   const [bookmarkedVideos, setBookmarkedVideos] = useState([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(false);
   const [bookmarksFetched, setBookmarksFetched] = useState(false);
@@ -87,6 +88,7 @@ export default function ProfilePage() {
   useEffect(() => {
     setBookmarksFetched(false);
     setBookmarkedVideos([]);
+    setRepostedFetched(false);
   }, [target]);
 
   useEffect(() => {
@@ -370,6 +372,10 @@ export default function ProfilePage() {
                   setLikedFetched(true);
                   fetchLikedVideos();
                 }
+                if (tab === 'Reposts' && !repostedFetched) {
+                  setRepostedFetched(true);
+                  fetchRepostedVideos();
+                }
               }}
               className={`flex-1 md:flex-none bg-transparent border-none px-3 md:px-5 py-3 text-[13px] font-body cursor-pointer transition-all border-b-2
                 ${activeTab === tab
@@ -403,6 +409,33 @@ export default function ProfilePage() {
                 )}
               </div>
             )
+          ) : activeTab === 'Reposts' ? (
+            repostedLoading ? (
+              <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+                <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <p className="text-sm">Đang tải video đã đăng lại...</p>
+              </div>
+            ) : repostedVideos.length > 0 ? (
+              repostedVideos.map((v, idx) => (
+                <VideoThumb
+                  key={v.id}
+                  video={v}
+                  isOwner={false}
+                  onClick={() => setFeedModalIndex(idx)}
+                  onDelete={() => { }}
+                />
+              ))
+            ) : (
+              <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-30">
+                  <polyline points="17 1 21 5 17 9" />
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                  <polyline points="7 23 3 19 7 15" />
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                </svg>
+                <p className="text-sm">{isMyProfile ? 'Bạn chưa đăng lại video nào' : 'Người dùng chưa đăng lại video nào'}</p>
+              </div>
+            )
           ) : activeTab === 'Liked' ? (
             likedLoading ? (
               <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
@@ -416,7 +449,7 @@ export default function ProfilePage() {
                   video={v}
                   isOwner={false}
                   onClick={() => setLikedFeedModalIndex(idx)}
-                  onDelete={() => {}}
+                  onDelete={() => { }}
                 />
               ))
             ) : (
@@ -440,7 +473,7 @@ export default function ProfilePage() {
                   video={v}
                   isOwner={false}
                   onClick={() => setFeedModalIndex(idx)}
-                  onDelete={() => {}}
+                  onDelete={() => { }}
                 />
               ))
             ) : (
@@ -462,7 +495,11 @@ export default function ProfilePage() {
 
       {feedModalIndex !== null && (
         <ProfileVideoFeedModal
-          videos={activeTab === 'Bookmarks' ? bookmarkedVideos : localVideos}
+          videos={
+            activeTab === 'Bookmarks' ? bookmarkedVideos :
+              activeTab === 'Reposts' ? repostedVideos :
+                localVideos
+          }
           initialIndex={feedModalIndex}
           onClose={() => setFeedModalIndex(null)}
         />
