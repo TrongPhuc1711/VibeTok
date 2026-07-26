@@ -35,7 +35,7 @@ export default function ProfilePage() {
   const { isDark } = useTheme();
 
   const target = username || me?.username || me?.ten_dang_nhap;
-  const { profile, videos, loading, following, toggleFollow, setProfile, likedVideos, likedLoading, fetchLikedVideos } = useProfile(target || '');
+  const { profile, videos, loading, following, toggleFollow, setProfile, likedVideos, likedLoading, fetchLikedVideos, repostedVideos, repostedLoading, fetchRepostedVideos } = useProfile(target || '');
 
 
   const [activeTab, setActiveTab] = useState('Videos');
@@ -47,6 +47,7 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [findFriendsOpen, setFindFriendsOpen] = useState(false);
   const [likedFetched, setLikedFetched] = useState(false);
+  const [repostedFetched, setRepostedFetched] = useState(false);
   const [bookmarkedVideos, setBookmarkedVideos] = useState([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(false);
   const [bookmarksFetched, setBookmarksFetched] = useState(false);
@@ -87,6 +88,7 @@ export default function ProfilePage() {
   useEffect(() => {
     setBookmarksFetched(false);
     setBookmarkedVideos([]);
+    setRepostedFetched(false);
   }, [target]);
 
   useEffect(() => {
