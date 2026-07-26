@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import { sendOTPEmail } from '../utils/emailService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -265,37 +266,7 @@ export const forgotPassword = async (req, res) => {
         const otpExpires = new Date(Date.now() + 10 * 60000);
 
         try {
-            const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'api-key': process.env.BREVO_API_KEY
-                },
-                body: JSON.stringify({
-                    sender: {
-                        name: 'VibeTok Support',
-                        email: process.env.BREVO_SENDER_EMAIL
-                    },
-                    to: [{ email: normalizedEmail }],
-                    subject: 'Mã OTP Đặt Lại Mật Khẩu - VibeTok',
-                    htmlContent: `
-                        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto;">
-                            <h2 style="color: #ff2d78;">Đặt Lại Mật Khẩu - VibeTok</h2>
-                            <p>Mã OTP của bạn:</p>
-                            <h1 style="color: #ff2d78; letter-spacing: 8px; font-size: 36px;">${otp}</h1>
-                            <p>Mã có hiệu lực trong <strong>10 phút</strong>.</p>
-                            <p style="color: #666; font-size: 12px;">Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.</p>
-                        </div>
-                    `
-                })
-            });
-
-            if (!brevoResponse.ok) {
-                const errorData = await brevoResponse.json();
-                console.error('❌ Brevo error:', errorData);
-                throw new Error('Gửi mail thất bại từ phía Brevo');
-            }
+            await sendOTPEmail(normalizedEmail, otp);
 
             // Save OTP only after successful email send
             await pool.query('DELETE FROM password_resets WHERE email = ?', [normalizedEmail]);
