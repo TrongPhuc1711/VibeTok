@@ -372,7 +372,7 @@ export default function ProfilePage() {
                   setLikedFetched(true);
                   fetchLikedVideos();
                 }
-                if (tab === 'Đăng lại' && !repostedFetched) {
+                if (tab === 'Reposts' && !repostedFetched) {
                   setRepostedFetched(true);
                   fetchRepostedVideos();
                 }
