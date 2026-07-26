@@ -11,7 +11,7 @@ const getJwtSecret = () => JWT_SECRET || 'vibetok_secret_key_default';
 
 // Simple in-memory rate limiter for OTP requests
 const otpRateLimit = new Map(); // email -> { count, resetAt }
-const OTP_MAX_PER_HOUR = 3;
+const OTP_MAX_PER_HOUR = 10;
 
 const checkOtpRateLimit = (email) => {
     const now = Date.now();
@@ -245,10 +245,10 @@ export const forgotPassword = async (req, res) => {
 
         const normalizedEmail = email.toLowerCase().trim();
 
-        // Rate limit: max 3 OTP requests per hour per email
+        // Rate limit: max 10 OTP requests per hour per email
         if (!checkOtpRateLimit(normalizedEmail)) {
             return res.status(429).json({
-                message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau 1 giờ.'
+                message: 'Quá nhiều yêu cầu gửi mã OTP. Vui lòng thử lại sau 1 giờ.'
             });
         }
 
@@ -257,9 +257,13 @@ export const forgotPassword = async (req, res) => {
             [normalizedEmail]
         );
 
-        // Always return success to prevent email enumeration
         if (users.length === 0) {
-            return res.json({ message: 'Nếu email tồn tại, mã OTP sẽ được gửi đến!' });
+            return res.status(404).json({ message: 'Email này chưa được đăng ký tài khoản trong hệ thống!' });
+        }
+
+        const user = users[0];
+        if (!user.password) {
+            return res.status(400).json({ message: 'Tài khoản này đăng nhập bằng Google, không có mật khẩu để đặt lại!' });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -278,7 +282,7 @@ export const forgotPassword = async (req, res) => {
             res.json({ message: 'Mã OTP đã được gửi đến email của bạn!' });
         } catch (emailError) {
             console.error('❌ Lỗi gửi email:', emailError.message);
-            return res.status(500).json({ message: 'Không thể gửi email. Vui lòng thử lại sau.' });
+            return res.status(500).json({ message: `Không thể gửi email: ${emailError.message || 'Vui lòng thử lại sau.'}` });
         }
 
     } catch (error) {
