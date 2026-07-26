@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
             await api.post('/auth/reset-password', {
                 email,
                 otp,
-                mat_khau_moi: newPassword
+                new_password: newPassword
             });
             showSuccess('Thành công', 'Mật khẩu đã được đặt lại!');
             setTimeout(() => navigate(ROUTES.LOGIN), 1500);
