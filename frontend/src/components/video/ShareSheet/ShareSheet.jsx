@@ -261,7 +261,7 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
                 <ShareActionBtn
                   icon={<RepostIcon />}
                   label={isReposted ? 'Bỏ đăng lại' : 'Đăng lại'}
-                  color={isReposted ? '#ff4757' : '#00C853'}
+                  color={isReposted ? '#ff4757' : '#d9ff00ff'}
                   onClick={handleRepost}
                   active={isReposted}
                 />

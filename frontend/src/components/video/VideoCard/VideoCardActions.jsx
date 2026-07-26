@@ -121,7 +121,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
       const res = await repostVideoApi(videoId);
       setReposted(res.data.reposted);
       if (res.data.reposted) {
-        showSuccess('Đã đăng lại! 🔄', `Video của @${video?.user?.username}`);
+        showSuccess('Đã đăng lại!', `Video của @${video?.user?.username}`);
       } else {
         showInfo('Đã bỏ đăng lại', 'Xóa khỏi danh sách đăng lại');
       }

@@ -23,7 +23,7 @@ export default function LoginPage() {
     const { isDark, toggleTheme } = useTheme();
     // Dùng AuthContext để update state reactive - sidebar tự reload
     const { login: contextLogin } = useAuthContext();
-    const { loading: socialLoading, handleGoogleSuccess, handleGoogleError } = useSocialAuth();
+    const { loading: socialLoading, handleGoogleSuccess, handleGoogleError, handleFacebookLogin } = useSocialAuth();
 
     const googleLoginBtn = useGoogleLogin({
         onSuccess: handleGoogleSuccess,
@@ -164,7 +164,8 @@ export default function LoginPage() {
 
                 <div className="flex gap-2.5">
                     <button 
-                        onClick={() => showError('Chưa hỗ trợ', 'Đăng nhập bằng Facebook sẽ sớm được cập nhật!')}
+                        onClick={handleFacebookLogin}
+                        disabled={loading || socialLoading}
                         className={`flex-1 rounded-lg py-2.5 text-[13px] font-body cursor-pointer flex items-center justify-center gap-2 transition-colors border
                             ${isDark
                                 ? 'bg-elevated border-border2 text-text-secondary hover:border-primary/40'

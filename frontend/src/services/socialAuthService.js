@@ -23,3 +23,25 @@ export const googleLoginService = async (access_token) => {
         throw new Error(error.response?.data?.message || 'Đăng nhập Google thất bại');
     }
 };
+
+export const facebookLoginService = async (access_token) => {
+    try {
+        const response = await api.post('/auth/social/facebook', { access_token });
+        const { token, user } = response.data;
+        
+        const normalizedUser = {
+            ...user,
+            id:       String(user.id),
+            username: user.username || user.ten_dang_nhap,
+            fullName: user.fullName || user.ten_hien_thi || '',
+        };
+
+        setToken(token);
+        setStoredUser(normalizedUser);
+
+        return { user: normalizedUser, token };
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Đăng nhập Facebook thất bại');
+    }
+};
+

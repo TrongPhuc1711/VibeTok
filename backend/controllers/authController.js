@@ -106,7 +106,7 @@ export const login = async (req, res) => {
 
         // User đăng nhập qua Google không có mật khẩu
         if (!user.password) {
-            return res.status(400).json({ message: 'Tài khoản này sử dụng đăng nhập Google. Vui lòng đăng nhập bằng Google!' });
+            return res.status(400).json({ message: 'Tài khoản này sử dụng đăng nhập mạng xã hội (Google/Facebook). Vui lòng đăng nhập bằng Google hoặc Facebook!' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -209,7 +209,7 @@ export const changePassword = async (req, res) => {
 
         // User Google không có mật khẩu -> không cần đổi
         if (!user.password) {
-            return res.status(400).json({ message: 'Tài khoản của bạn sử dụng đăng nhập Google, không cần mật khẩu.' });
+            return res.status(400).json({ message: 'Tài khoản của bạn sử dụng đăng nhập mạng xã hội (Google/Facebook), không cần mật khẩu.' });
         }
 
         const isMatch = await bcrypt.compare(current_password, user.password);
@@ -263,7 +263,7 @@ export const forgotPassword = async (req, res) => {
 
         const user = users[0];
         if (!user.password) {
-            return res.status(400).json({ message: 'Tài khoản này đăng nhập bằng Google, không có mật khẩu để đặt lại!' });
+            return res.status(400).json({ message: 'Tài khoản này đăng nhập bằng mạng xã hội (Google/Facebook), không có mật khẩu để đặt lại!' });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();

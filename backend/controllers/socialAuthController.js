@@ -65,3 +65,81 @@ export const googleLogin = async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi đăng nhập Google', error: error.message });
     }
 };
+
+export const facebookLogin = async (req, res) => {
+    try {
+        const { access_token } = req.body;
+        if (!access_token) {
+            return res.status(400).json({ message: 'Missing access_token' });
+        }
+
+        // 1. Lấy thông tin user từ Facebook Graph API
+        const fbResponse = await axios.get('https://graph.facebook.com/me', {
+            params: {
+                fields: 'id,name,email,picture.type(large)',
+                access_token,
+            }
+        });
+
+        const { id: fbId, email, name, picture } = fbResponse.data;
+        const pictureUrl = picture?.data?.url || null;
+
+        // Facebook có thể không trả email nếu user không cấp quyền
+        if (!email) {
+            return res.status(400).json({
+                message: 'Không thể lấy email từ Facebook. Vui lòng cấp quyền truy cập email khi đăng nhập.'
+            });
+        }
+
+        // 2. Tìm liên kết
+        let linkedAccount = await socialAuthModel.findByProvider('facebook', fbId);
+        let userId;
+
+        if (linkedAccount) {
+            // Đã liên kết trước đó
+            userId = linkedAccount.user_id;
+        } else {
+            // Chưa liên kết, tìm user theo email
+            const existingUser = await socialAuthModel.findByEmail(email);
+
+            if (existingUser) {
+                // Email đã có -> Liên kết
+                userId = existingUser.id;
+                await socialAuthModel.linkProvider(userId, 'facebook', fbId);
+            } else {
+                // Email chưa có -> Tạo tài khoản mới hoàn toàn
+                userId = await socialAuthModel.createUser({ email, name, picture: pictureUrl });
+                await socialAuthModel.linkProvider(userId, 'facebook', fbId);
+            }
+        }
+
+        // 3. Lấy thông tin user cuối cùng
+        const userRow = await UserModel.findById(userId);
+        if (!userRow) {
+            return res.status(404).json({ message: 'User not found after link/create' });
+        }
+
+        // 4. Tạo JWT và gửi về client
+        const token = jwt.sign(
+            { id: userRow.id, username: userRow.username, role: userRow.role },
+            getJwtSecret(),
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            message: 'Đăng nhập Facebook thành công!',
+            token,
+            user: normalizeUser(userRow),
+        });
+
+    } catch (error) {
+        console.error('Lỗi Facebook Login:', error);
+        // Trả lỗi rõ ràng nếu token Facebook hết hạn hoặc không hợp lệ
+        if (error.response?.status === 400 || error.response?.data?.error) {
+            return res.status(401).json({
+                message: 'Token Facebook không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.'
+            });
+        }
+        res.status(500).json({ message: 'Lỗi server khi đăng nhập Facebook', error: error.message });
+    }
+};
