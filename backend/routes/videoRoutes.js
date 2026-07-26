@@ -6,7 +6,7 @@ import {
     uploadVideo, getComments, postComment, getReplies,
     likeVideo, unlikeVideo, deleteVideo,
     likeComment, unlikeComment, viewVideo, getLikedVideos,
-    shareVideo,
+    shareVideo, repostVideo, getRepostedVideos,
 } from '../controllers/videoController.js';
 
 const router = express.Router();
@@ -16,6 +16,7 @@ router.get('/feed', optionalAuth, getFeed);
 router.get('/search', searchVideos);
 // Thêm optionalAuth để backend biết currentUserId → tính is_liked, is_following từ DB
 router.get('/user/:userId/liked', optionalAuth, getLikedVideos);
+router.get('/user/:userId/reposts', optionalAuth, getRepostedVideos);
 router.get('/user/:userId', optionalAuth, getVideosByUser);
 router.get('/:id/comments/:commentId/replies', optionalAuth, getReplies);
 router.get('/:id/comments', optionalAuth, getComments);
@@ -30,6 +31,7 @@ router.post('/:id/comments/:commentId/like', verifyToken, likeComment);
 router.delete('/:id/comments/:commentId/like', verifyToken, unlikeComment);
 router.post('/:id/like', verifyToken, likeVideo);
 router.delete('/:id/like', verifyToken, unlikeVideo);
+router.post('/:id/repost', verifyToken, repostVideo);
 router.delete('/:id', verifyToken, deleteVideo);
 
 export default router;

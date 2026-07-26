@@ -16,6 +16,7 @@ export const normalizeVideo = (v) => {
         comments: Number(v.comments_count) || 0,
         shares: Number(v.shares_count) || 0,
         bookmarks: Number(v.bookmark_count) || 0,
+        reposts: Number(v.reposts_count) || 0,
         privacy: v.privacy,
         allowDuet: Boolean(v.allow_duet),
         allowStitch: Boolean(v.allow_stitch),
@@ -27,6 +28,11 @@ export const normalizeVideo = (v) => {
         isLiked: Boolean(v.is_liked),
         isFollowing: Boolean(v.is_following),
         isBookmarked: Boolean(v.is_bookmarked),
+        isReposted: Boolean(v.is_reposted),
+        repostedByFriend: v.reposted_by_friend_username ? {
+            username: v.reposted_by_friend_username,
+            fullName: v.reposted_by_friend_name || v.reposted_by_friend_username,
+        } : null,
         user: v.user_id ? {
             id: String(v.user_id),
             username: v.username,
@@ -49,25 +55,51 @@ export const normalizeVideo = (v) => {
 };
 
 const buildVideoQuery = (currentUserId = null) => {
-    const followingSubquery = currentUserId
+    const escapedId = currentUserId ? pool.escape(currentUserId) : null;
+
+    const followingSubquery = escapedId
         ? `(SELECT COUNT(*) FROM follows 
-           WHERE follower_id = ${pool.escape(currentUserId)} 
+           WHERE follower_id = ${escapedId} 
            AND following_id = v.user_id) > 0`
         : `0`;
 
-    const likedSubquery = currentUserId
+    const likedSubquery = escapedId
         ? `(SELECT COUNT(*) FROM likes 
-           WHERE user_id = ${pool.escape(currentUserId)} 
+           WHERE user_id = ${escapedId} 
            AND video_id = v.id) > 0`
         : `0`;
 
-    const bookmarkedSubquery = currentUserId
+    const bookmarkedSubquery = escapedId
         ? `(SELECT COUNT(*) FROM bookmarks 
-           WHERE user_id = ${pool.escape(currentUserId)} 
+           WHERE user_id = ${escapedId} 
+           AND video_id = v.id) > 0`
+        : `0`;
+
+    const repostedSubquery = escapedId
+        ? `(SELECT COUNT(*) FROM video_reposts 
+           WHERE user_id = ${escapedId} 
            AND video_id = v.id) > 0`
         : `0`;
 
     const bookmarkCountSubquery = `(SELECT COUNT(*) FROM bookmarks WHERE video_id = v.id)`;
+    const repostCountSubquery = `(SELECT COUNT(*) FROM video_reposts WHERE video_id = v.id)`;
+
+    // Subquery: tìm 1 bạn bè (người mà currentUser đang follow) đã repost video này
+    const repostedByFriendUsername = escapedId
+        ? `(SELECT u2.username FROM video_reposts vr2
+           JOIN users u2 ON vr2.user_id = u2.id
+           JOIN follows f2 ON f2.follower_id = ${escapedId} AND f2.following_id = vr2.user_id
+           WHERE vr2.video_id = v.id AND vr2.user_id != ${escapedId}
+           ORDER BY vr2.created_at DESC LIMIT 1)`
+        : `NULL`;
+
+    const repostedByFriendName = escapedId
+        ? `(SELECT u2.display_name FROM video_reposts vr2
+           JOIN users u2 ON vr2.user_id = u2.id
+           JOIN follows f2 ON f2.follower_id = ${escapedId} AND f2.following_id = vr2.user_id
+           WHERE vr2.video_id = v.id AND vr2.user_id != ${escapedId}
+           ORDER BY vr2.created_at DESC LIMIT 1)`
+        : `NULL`;
 
     return `
         SELECT v.*,
@@ -76,7 +108,11 @@ const buildVideoQuery = (currentUserId = null) => {
             (${followingSubquery}) AS is_following,
             (${likedSubquery}) AS is_liked,
             (${bookmarkedSubquery}) AS is_bookmarked,
-            (${bookmarkCountSubquery}) AS bookmark_count
+            (${repostedSubquery}) AS is_reposted,
+            (${bookmarkCountSubquery}) AS bookmark_count,
+            (${repostCountSubquery}) AS reposts_count,
+            (${repostedByFriendUsername}) AS reposted_by_friend_username,
+            (${repostedByFriendName}) AS reposted_by_friend_name
         FROM videos v
         LEFT JOIN users u ON v.user_id = u.id
         LEFT JOIN music m ON v.music_id = m.id
@@ -330,6 +366,60 @@ export const VideoModel = {
             'UPDATE videos SET shares_count = GREATEST(0, shares_count + ?) WHERE id = ?',
             [delta, videoId]
         );
+    },
+
+    // ── Repost ──
+
+    async repost(userId, videoId) {
+        const [result] = await pool.query(
+            'INSERT IGNORE INTO video_reposts (user_id, video_id) VALUES (?, ?)',
+            [userId, videoId]
+        );
+        return result.affectedRows > 0; // true = mới repost, false = đã repost rồi
+    },
+
+    async unrepost(userId, videoId) {
+        const [result] = await pool.query(
+            'DELETE FROM video_reposts WHERE user_id = ? AND video_id = ?',
+            [userId, videoId]
+        );
+        return result.affectedRows > 0;
+    },
+
+    async isReposted(userId, videoId) {
+        const [[row]] = await pool.query(
+            'SELECT COUNT(*) AS cnt FROM video_reposts WHERE user_id = ? AND video_id = ?',
+            [userId, videoId]
+        );
+        return row.cnt > 0;
+    },
+
+    async getRepostsByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
+        const offset = (page - 1) * limit;
+        const query = buildVideoQuery(currentUserId || userId);
+        const [rows] = await pool.query(
+            `${query}
+             INNER JOIN video_reposts vr ON vr.video_id = v.id AND vr.user_id = ?
+             WHERE v.is_active = 1 AND v.is_draft = 0
+             ORDER BY vr.created_at DESC LIMIT ? OFFSET ?`,
+            [userId, limit, offset]
+        );
+        const videos = rows.map(normalizeVideo);
+        if (videos.length > 0) {
+            const keys = videos.map(v => `video:${v.id}:views`);
+            try {
+                const cachedViews = await redis.mget(keys);
+                videos.forEach((video, idx) => {
+                    const views = cachedViews[idx];
+                    if (views !== null) {
+                        video.views = Number(views);
+                    }
+                });
+            } catch (err) {
+                console.error('Error fetching batch views from Redis:', err);
+            }
+        }
+        return videos;
     },
 
     /**

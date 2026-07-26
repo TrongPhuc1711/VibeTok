@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCount } from '../../../utils/formatters';
 import { followUser, unfollowUser } from '../../../services/userService';
-import { likeVideo, unlikeVideo, shareVideo as shareVideoApi } from '../../../services/videoService';
+import { likeVideo, unlikeVideo, shareVideo as shareVideoApi, repostVideo as repostVideoApi } from '../../../services/videoService';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
 import { HeartIcon, CommentIcon, ShareIcon, BookmarkIcon } from '../../../icons/ActionIcons';
 import { PlusIcon } from '../../../icons/NavIcons';
@@ -46,13 +46,18 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   // Share state
   const [localShares, setLocalShares] = useState(video?.shares ?? 0);
 
+  // Repost state
+  const [reposted, setReposted] = useState(Boolean(video?.isReposted));
+  const [repostLoading, setRepostLoading] = useState(false);
+
   useEffect(() => {
     setLiked(Boolean(video?.isLiked));
     setLocalLikes(video?.likes ?? 0);
     setLocalBookmarks(video?.bookmarks ?? 0);
     setFollowing(Boolean(video?.user?.isFollowing));
     setLocalShares(video?.shares ?? 0);
-  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.bookmarks, video?.shares]);
+    setReposted(Boolean(video?.isReposted));
+  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.bookmarks, video?.shares, video?.isReposted]);
 
   const promptLogin = (action) => setLoginPrompt({ open: true, action });
 
@@ -104,6 +109,28 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
       setLocalShares(n => Math.max(0, n - 1));
     });
     onShare?.(videoId);
+  };
+
+  const handleRepost = async () => {
+    if (!isLoggedIn()) { promptLogin('repost'); return; }
+    if (repostLoading) return;
+    const was = reposted;
+    setReposted(!was);
+    setRepostLoading(true);
+    try {
+      const res = await repostVideoApi(videoId);
+      setReposted(res.data.reposted);
+      if (res.data.reposted) {
+        showSuccess('Đã đăng lại! 🔄', `Video của @${video?.user?.username}`);
+      } else {
+        showInfo('Đã bỏ đăng lại', 'Xóa khỏi danh sách đăng lại');
+      }
+    } catch {
+      setReposted(was);
+      showError('Lỗi', 'Không thể đăng lại video này');
+    } finally {
+      setRepostLoading(false);
+    }
   };
 
   const handleFollow = async (e) => {
@@ -177,6 +204,8 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
         onClose={() => setShareOpen(false)}
         videoId={videoId}
         onShareDone={handleShareDone}
+        onRepost={handleRepost}
+        isReposted={reposted}
       />
     </>
   );
