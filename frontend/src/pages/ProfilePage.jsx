@@ -25,7 +25,7 @@ import { getFollowingSet } from '../utils/following';
 
 import VideoThumb from '../components/profile/VideoThumb';
 
-const ALL_TABS = ['Videos', 'Đăng lại', 'Liked', 'Bookmarks'];
+const ALL_TABS = ['Videos', 'Reposts', 'Liked', 'Bookmarks'];
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -370,7 +370,7 @@ export default function ProfilePage() {
                   setLikedFetched(true);
                   fetchLikedVideos();
                 }
-                if (tab === 'Đăng lại' && !repostedFetched) {
+                if (tab === 'Reposts' && !repostedFetched) {
                   setRepostedFetched(true);
                   fetchRepostedVideos();
                 }
@@ -407,7 +407,7 @@ export default function ProfilePage() {
                 )}
               </div>
             )
-          ) : activeTab === 'Đăng lại' ? (
+          ) : activeTab === 'Reposts' ? (
             repostedLoading ? (
               <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
                 <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -420,7 +420,7 @@ export default function ProfilePage() {
                   video={v}
                   isOwner={false}
                   onClick={() => setFeedModalIndex(idx)}
-                  onDelete={() => {}}
+                  onDelete={() => { }}
                 />
               ))
             ) : (
@@ -495,8 +495,8 @@ export default function ProfilePage() {
         <ProfileVideoFeedModal
           videos={
             activeTab === 'Bookmarks' ? bookmarkedVideos :
-            activeTab === 'Đăng lại' ? repostedVideos :
-            localVideos
+              activeTab === 'Reposts' ? repostedVideos :
+                localVideos
           }
           initialIndex={feedModalIndex}
           onClose={() => setFeedModalIndex(null)}
