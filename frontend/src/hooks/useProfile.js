@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUserProfile, followUser, unfollowUser } from '../services/userService';
-import { getUserVideosByUserId, getLikedVideosByUserId, getRepostedVideosByUserId } from '../services/videoService';
+import { getUserVideosByUserId, getLikedVideosByUserId } from '../services/videoService';
 
 export function useProfile(username) {
     const [profile, setProfile] = useState(null);
     const [videos, setVideos] = useState([]);
     const [likedVideos, setLikedVideos] = useState([]);
     const [likedLoading, setLikedLoading] = useState(false);
-    const [repostedVideos, setRepostedVideos] = useState([]);
-    const [repostedLoading, setRepostedLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [following, setFollowing] = useState(false);
@@ -20,7 +18,6 @@ export function useProfile(username) {
         setProfile(null);
         setVideos([]);
         setLikedVideos([]);
-        setRepostedVideos([]);
 
         getUserProfile(username)
             .then(async (pRes) => {
@@ -53,20 +50,6 @@ export function useProfile(username) {
         }
     }, [profile?.id, likedLoading]);
 
-    // Fetch reposted videos separately (lazy)
-    const fetchRepostedVideos = useCallback(async () => {
-        if (!profile?.id || repostedLoading) return;
-        setRepostedLoading(true);
-        try {
-            const res = await getRepostedVideosByUserId(profile.id, { limit: 30 });
-            setRepostedVideos(res.data.videos ?? []);
-        } catch {
-            setRepostedVideos([]);
-        } finally {
-            setRepostedLoading(false);
-        }
-    }, [profile?.id, repostedLoading]);
-
     const toggleFollow = useCallback(async () => {
         if (!profile) return;
         const wasFollowing = following;
@@ -92,5 +75,5 @@ export function useProfile(username) {
         }
     }, [following, profile]);
 
-    return { profile, videos, likedVideos, likedLoading, fetchLikedVideos, repostedVideos, repostedLoading, fetchRepostedVideos, loading, error, following, toggleFollow, setProfile };
+    return { profile, videos, likedVideos, likedLoading, fetchLikedVideos, loading, error, following, toggleFollow, setProfile };
 }

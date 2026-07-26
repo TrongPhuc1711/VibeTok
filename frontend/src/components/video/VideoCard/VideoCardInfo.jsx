@@ -27,27 +27,6 @@ export default function VideoCardInfo({ video }) {
       className="absolute bottom-0 left-0 w-full px-4 pt-24 pb-20 md:pb-6 z-10 flex flex-col gap-1.5 pointer-events-none"
       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)' }}
     >
-      {/* Badge "bạn bè đã đăng lại" */}
-      {video?.repostedByFriend && (
-        <div className="flex items-center gap-1.5 pointer-events-auto mb-0.5 animate-[fadeSlideUp_0.3s_ease-out]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="17 1 21 5 17 9" />
-            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-            <polyline points="7 23 3 19 7 15" />
-            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-          </svg>
-          <span className="text-white/70 text-[13px] font-body drop-shadow-md">
-            <span
-              className="font-semibold text-white/90 hover:underline cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); navigate(`/profile/${video.repostedByFriend.username}`); }}
-            >
-              {video.repostedByFriend.fullName}
-            </span>
-            {' '}đã đăng lại
-          </span>
-        </div>
-      )}
-
       {/* Tên người dùng */}
       {/* Phục hồi pointer-events-auto để user có thể click vào tên */}
       <h3 

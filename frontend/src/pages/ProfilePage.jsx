@@ -25,7 +25,7 @@ import { getFollowingSet } from '../utils/following';
 
 import VideoThumb from '../components/profile/VideoThumb';
 
-const ALL_TABS = ['Videos', 'Repost', 'Liked', 'Bookmarks'];
+const ALL_TABS = ['Videos', 'Đăng lại', 'Liked', 'Bookmarks'];
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -35,7 +35,7 @@ export default function ProfilePage() {
   const { isDark } = useTheme();
 
   const target = username || me?.username || me?.ten_dang_nhap;
-  const { profile, videos, loading, following, toggleFollow, setProfile, likedVideos, likedLoading, fetchLikedVideos, repostedVideos, repostedLoading, fetchRepostedVideos } = useProfile(target || '');
+  const { profile, videos, loading, following, toggleFollow, setProfile, likedVideos, likedLoading, fetchLikedVideos } = useProfile(target || '');
 
 
   const [activeTab, setActiveTab] = useState('Videos');
@@ -47,7 +47,6 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [findFriendsOpen, setFindFriendsOpen] = useState(false);
   const [likedFetched, setLikedFetched] = useState(false);
-  const [repostedFetched, setRepostedFetched] = useState(false);
   const [bookmarkedVideos, setBookmarkedVideos] = useState([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(false);
   const [bookmarksFetched, setBookmarksFetched] = useState(false);
@@ -88,7 +87,6 @@ export default function ProfilePage() {
   useEffect(() => {
     setBookmarksFetched(false);
     setBookmarkedVideos([]);
-    setRepostedFetched(false);
   }, [target]);
 
   useEffect(() => {
@@ -372,7 +370,7 @@ export default function ProfilePage() {
                   setLikedFetched(true);
                   fetchLikedVideos();
                 }
-                if (tab === 'Reposts' && !repostedFetched) {
+                if (tab === 'Đăng lại' && !repostedFetched) {
                   setRepostedFetched(true);
                   fetchRepostedVideos();
                 }
@@ -409,7 +407,7 @@ export default function ProfilePage() {
                 )}
               </div>
             )
-          ) : activeTab === 'Reposts' ? (
+          ) : activeTab === 'Đăng lại' ? (
             repostedLoading ? (
               <div className="col-span-3 md:col-span-5 flex flex-col items-center justify-center py-16 gap-3 text-text-subtle font-body">
                 <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -422,7 +420,7 @@ export default function ProfilePage() {
                   video={v}
                   isOwner={false}
                   onClick={() => setFeedModalIndex(idx)}
-                  onDelete={() => { }}
+                  onDelete={() => {}}
                 />
               ))
             ) : (
@@ -497,8 +495,8 @@ export default function ProfilePage() {
         <ProfileVideoFeedModal
           videos={
             activeTab === 'Bookmarks' ? bookmarkedVideos :
-              activeTab === 'Reposts' ? repostedVideos :
-                localVideos
+            activeTab === 'Đăng lại' ? repostedVideos :
+            localVideos
           }
           initialIndex={feedModalIndex}
           onClose={() => setFeedModalIndex(null)}

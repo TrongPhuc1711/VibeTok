@@ -91,18 +91,6 @@ export const shareVideo = async (videoId) => {
     return { data: res.data };
 };
 
-// POST /api/videos/:id/repost — Toggle repost (đăng lại / bỏ đăng lại)
-export const repostVideo = async (videoId) => {
-    const res = await api.post(`/videos/${videoId}/repost`);
-    return { data: res.data };
-};
-
-// GET /api/videos/user/:userId/reposts
-export const getRepostedVideosByUserId = async (userId, { page = 1, limit = 30 } = {}) => {
-    const res = await api.get(`/videos/user/${userId}/reposts`, { params: { page, limit } });
-    return { data: res.data };
-};
-
 // POST /api/videos/upload — multipart/form-data
 export const uploadVideo = async (formData) => {
     const { caption, privacy, allowDuet, allowStitch, location, music, isDraft, file } = formData;
