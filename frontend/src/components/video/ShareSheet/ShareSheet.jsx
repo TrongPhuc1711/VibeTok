@@ -13,6 +13,7 @@ import {
 
 export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDone, onRepost, isReposted }) {
   const me = getStoredUser();
+  const loggedIn = isLoggedIn();
   const { showSuccess, showError, showInfo } = useToast();
 
   const [users, setUsers] = useState([]);
@@ -31,7 +32,7 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
 
   // Fetch friends/following users
   useEffect(() => {
-    if (!open || !isLoggedIn() || !me?.username) return;
+    if (!open || !loggedIn || !me?.username) return;
 
     const fetchUsers = async () => {
       setLoading(true);
@@ -128,6 +129,10 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
   const handleShareTwitter = () => { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400'); onShareDone?.(); };
 
   const handleRepost = () => {
+    if (!loggedIn) {
+      handleClose();
+      return;
+    }
     onRepost?.();
     handleClose();
   };
@@ -160,72 +165,77 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
           </button>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center gap-2 mx-4 mb-3 px-3 py-2 bg-[var(--vt-input)] rounded-[10px] border border-transparent focus-within:border-primary transition-colors">
-          <SearchIcon size={16} className="text-text-muted shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Tìm kiếm bạn bè..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent border-none outline-none text-text-primary text-sm font-body p-0 placeholder:text-text-muted"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 border-none text-text-secondary cursor-pointer hover:bg-white/15 p-0">
-              <CloseIcon size={14} />
-            </button>
-          )}
-        </div>
+        {/* Search + Users row — chỉ hiện khi đã đăng nhập */}
+        {loggedIn && (
+          <>
+            {/* Search */}
+            <div className="flex items-center gap-2 mx-4 mb-3 px-3 py-2 bg-[var(--vt-input)] rounded-[10px] border border-transparent focus-within:border-primary transition-colors">
+              <SearchIcon size={16} className="text-text-muted shrink-0" />
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Tìm kiếm bạn bè..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-text-primary text-sm font-body p-0 placeholder:text-text-muted"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 border-none text-text-secondary cursor-pointer hover:bg-white/15 p-0">
+                  <CloseIcon size={14} />
+                </button>
+              )}
+            </div>
 
-        {/* Users row */}
-        <div className="py-1">
-          <div ref={usersRowRef} className="flex gap-1 overflow-x-auto px-3 no-scrollbar min-h-[94px]" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {loading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5 px-2 min-w-[72px]">
-                  <div className="w-[52px] h-[52px] rounded-full bg-elevated animate-pulse" />
-                  <div className="w-12 h-2.5 rounded bg-elevated animate-pulse" />
-                </div>
-              ))
-            ) : filteredUsers.length === 0 ? (
-              <div className="flex items-center justify-center w-full text-text-muted text-[13px] font-body py-5">
-                {searchQuery ? 'Không tìm thấy' : 'Chưa follow ai'}
-              </div>
-            ) : (
-              filteredUsers.map((user) => {
-                const username = user.username || user.ten_dang_nhap;
-                const displayName = user.fullName || user.ten_hien_thi || username;
-                const selected = isSelected(user);
-
-                return (
-                  <button
-                    key={username}
-                    onClick={() => toggleUser(user)}
-                    className="flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer px-2 py-1 min-w-[72px] max-w-[80px] active:scale-[0.93] transition-transform"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <div className="relative w-[52px] h-[52px]">
-                      <Avatar
-                        user={user}
-                        size="md"
-                        className={`!w-[52px] !h-[52px] transition-opacity ${selected ? 'opacity-70' : ''}`}
-                      />
-                      {selected && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center border-2 border-surface animate-[badgePop_0.2s_cubic-bezier(0.34,1.56,0.64,1)]">
-                          <CheckIcon />
-                        </div>
-                      )}
+            {/* Users row */}
+            <div className="py-1">
+              <div ref={usersRowRef} className="flex gap-1 overflow-x-auto px-3 no-scrollbar min-h-[94px]" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {loading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1.5 px-2 min-w-[72px]">
+                      <div className="w-[52px] h-[52px] rounded-full bg-elevated animate-pulse" />
+                      <div className="w-12 h-2.5 rounded bg-elevated animate-pulse" />
                     </div>
-                    <span className={`font-body text-[11px] text-center leading-tight max-w-[72px] overflow-hidden line-clamp-2 break-words ${selected ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      {displayName}
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
+                  ))
+                ) : filteredUsers.length === 0 ? (
+                  <div className="flex items-center justify-center w-full text-text-muted text-[13px] font-body py-5">
+                    {searchQuery ? 'Không tìm thấy' : 'Chưa follow ai'}
+                  </div>
+                ) : (
+                  filteredUsers.map((user) => {
+                    const username = user.username || user.ten_dang_nhap;
+                    const displayName = user.fullName || user.ten_hien_thi || username;
+                    const selected = isSelected(user);
+
+                    return (
+                      <button
+                        key={username}
+                        onClick={() => toggleUser(user)}
+                        className="flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer px-2 py-1 min-w-[72px] max-w-[80px] active:scale-[0.93] transition-transform"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        <div className="relative w-[52px] h-[52px]">
+                          <Avatar
+                            user={user}
+                            size="md"
+                            className={`!w-[52px] !h-[52px] transition-opacity ${selected ? 'opacity-70' : ''}`}
+                          />
+                          {selected && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center border-2 border-surface animate-[badgePop_0.2s_cubic-bezier(0.34,1.56,0.64,1)]">
+                              <CheckIcon />
+                            </div>
+                          )}
+                        </div>
+                        <span className={`font-body text-[11px] text-center leading-tight max-w-[72px] overflow-hidden line-clamp-2 break-words ${selected ? 'text-text-primary' : 'text-text-secondary'}`}>
+                          {displayName}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Message input (visible when user selected) */}
         {hasSelection && (
@@ -252,7 +262,7 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
           </div>
         )}
 
-        {/* Divider + Actions (hidden when user selected) */}
+        {/* Divider + Actions — luôn hiển thị */}
         {!hasSelection && (
           <>
             <div className="h-px bg-[var(--vt-divider)] mx-4" />

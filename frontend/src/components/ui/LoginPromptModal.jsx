@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FacebookIcon, GoogleIcon } from '../../icons/CommonIcons'; 
+import { useSocialAuth } from '../../hooks/useSocialAuth';
+import { useGoogleLogin } from '@react-oauth/google';
 
 export default function LoginPromptModal({ open, onClose, action = 'like' }) {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
+  const { loading: socialLoading, handleGoogleSuccess, handleGoogleError, handleFacebookLogin } = useSocialAuth();
+
+  const googleLoginBtn = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
+  });
 
   useEffect(() => {
     if (open) {
@@ -127,7 +135,9 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
             <div className="w-full flex flex-col gap-3">
               {/* Facebook */}
               <button
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors"
+                onClick={() => { handleClose(); setTimeout(handleFacebookLogin, 250); }}
+                disabled={socialLoading}
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ border: '1px solid var(--vt-divider)', background: 'var(--vt-hover)' }}
               >
                 <div className="w-6 h-6 flex items-center justify-center shrink-0">
@@ -138,7 +148,9 @@ export default function LoginPromptModal({ open, onClose, action = 'like' }) {
 
               {/* Google */}
               <button
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors"
+                onClick={() => { handleClose(); setTimeout(() => googleLoginBtn(), 250); }}
+                disabled={socialLoading}
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ border: '1px solid var(--vt-divider)', background: 'var(--vt-hover)' }}
               >
                 <div className="w-6 h-6 flex items-center justify-center shrink-0">

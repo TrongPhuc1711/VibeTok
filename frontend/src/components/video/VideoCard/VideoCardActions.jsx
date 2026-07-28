@@ -80,7 +80,6 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   };
 
   const handleComment = () => {
-    if (!isLoggedIn()) { promptLogin('comment'); return; }
     onComment?.(videoId);
   };
 
@@ -99,7 +98,6 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
   };
 
   const handleShare = () => {
-    if (!isLoggedIn()) { promptLogin('share'); return; }
     setShareOpen(true);
   };
 

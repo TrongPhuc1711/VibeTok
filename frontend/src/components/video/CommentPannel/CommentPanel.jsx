@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getComments, postComment, getReplies, likeComment as likeCommentApi, unlikeComment as unlikeCommentApi } from '../../../services/videoService';
 import { searchMentionUsers } from '../../../services/userService';
 import { formatCount, formatTimeAgo } from '../../../utils/formatters';
 import { isNotEmpty, hasMaxLength } from '../../../utils/validators';
 import { SendIcon } from '../../../icons/ActionIcons';
-import { getStoredUser } from '../../../utils/helpers';
+import { getStoredUser, isLoggedIn } from '../../../utils/helpers';
 import EmojiPickerButton from '../../ui/EmojiPickerButton';
 import MentionDropdown from './MentionDropdown';
 import Avatar from '../../common/Avatar/avatar';
@@ -12,6 +13,8 @@ import Avatar from '../../common/Avatar/avatar';
 
 export default function CommentPanel({ videoId, totalComments, onClose }) {
   const me = getStoredUser();
+  const navigate = useNavigate();
+  const loggedIn = isLoggedIn();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
@@ -134,6 +137,10 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
   // ── Submit ──
   const handleSubmit = async () => {
     if (submittingRef.current) return;
+    if (!isLoggedIn()) {
+      setError('Vui lòng đăng nhập để bình luận');
+      return;
+    }
     if (!isNotEmpty(input)) { setError('Vui lòng nhập bình luận'); return; }
     if (!hasMaxLength(input, 300)) { setError('Bình luận tối đa 300 ký tự'); return; }
 
@@ -270,109 +277,128 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
           className="px-4 py-4 shrink-0"
           style={{ borderTop: '1px solid var(--vt-comment-border)', position: 'relative' }}
         >
-          {/* Reply indicator */}
-          {replyTo && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 12px',
-              marginBottom: 8,
-              background: 'rgba(255, 45, 120, 0.08)',
-              borderRadius: 10,
-              border: '1px solid rgba(255, 45, 120, 0.15)',
-            }}>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
-                Đang trả lời
-              </span>
-              <span style={{ fontSize: 12, color: '#ff2d78', fontWeight: 600, fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
-                @{replyTo.username}
-              </span>
+          {!loggedIn ? (
+            /* Chưa đăng nhập: hiện nút đăng nhập */
+            <div className="flex flex-col items-center gap-3 py-2">
+              <p className="text-[13px] font-body text-center" style={{ color: 'var(--vt-text-hint)' }}>
+                Đăng nhập để bình luận
+              </p>
               <button
-                onClick={cancelReply}
-                style={{
-                  marginLeft: 'auto',
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255,255,255,0.4)',
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  padding: '0 2px',
-                  lineHeight: 1,
-                }}
+                onClick={() => navigate('/login')}
+                className="px-6 py-2.5 rounded-full border-none cursor-pointer text-[13px] font-semibold font-body text-white transition-all hover:opacity-90 active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #ff2d78, #ff6b35)' }}
               >
-                ✕
+                Đăng nhập
               </button>
             </div>
+          ) : (
+            /* Đã đăng nhập: form bình luận */
+            <>
+              {/* Reply indicator */}
+              {replyTo && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 12px',
+                  marginBottom: 8,
+                  background: 'rgba(255, 45, 120, 0.08)',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255, 45, 120, 0.15)',
+                }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
+                    Đang trả lời
+                  </span>
+                  <span style={{ fontSize: 12, color: '#ff2d78', fontWeight: 600, fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
+                    @{replyTo.username}
+                  </span>
+                  <button
+                    onClick={cancelReply}
+                    style={{
+                      marginLeft: 'auto',
+                      background: 'none',
+                      border: 'none',
+                      color: 'rgba(255,255,255,0.4)',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      padding: '0 2px',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {error && (
+                <p className="text-[#ff2d78] text-xs font-body mb-2 px-1">{error}</p>
+              )}
+
+              {/* Mention dropdown */}
+              <div style={{ position: 'relative' }}>
+                <MentionDropdown
+                  users={mentionUsers}
+                  loading={mentionLoading}
+                  visible={mentionVisible}
+                  onSelect={handleMentionSelect}
+                  onClose={() => setMentionVisible(false)}
+                  query={mentionQuery}
+                />
+
+                <div
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{ background: 'var(--vt-hover)', border: '1px solid var(--vt-divider)' }}
+                >
+                  {/* Avatar mini */}
+                  <Avatar
+                    user={me}
+                    className="!w-8 !h-8 !text-[11px]"
+                  />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey && !mentionVisible) handleSubmit();
+                    }}
+                    placeholder={replyTo ? `Trả lời @${replyTo.username}...` : 'Thêm bình luận...'}
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] font-body"
+                    style={{ color: 'var(--vt-text-bright)' }}
+                  />
+                  <EmojiPickerButton
+                    onSelect={(emoji) => setInput((p) => p + emoji)}
+                    position="top"
+                    size={17}
+                  />
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting || !input.trim()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{
+                      background: input.trim() ? 'linear-gradient(135deg,#ff2d78,#ff6b35)' : 'rgba(255,255,255,0.05)',
+                      transform: submitting ? 'scale(0.9)' : 'scale(1)',
+                    }}
+                  >
+                    <SendIcon active={!!input.trim()} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Gợi ý emoji nhanh */}
+              <div className="flex gap-2 mt-2.5 px-1">
+                {['😂', '❤️', '🔥', '👏', '😮', '💯', '😍', '😢'].map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => setInput(p => p + emoji)}
+                    className="text-[18px] hover:scale-125 transition-transform cursor-pointer bg-transparent border-none"
+                  >
+                  {emoji}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
-
-          {error && (
-            <p className="text-[#ff2d78] text-xs font-body mb-2 px-1">{error}</p>
-          )}
-
-          {/* Mention dropdown */}
-          <div style={{ position: 'relative' }}>
-            <MentionDropdown
-              users={mentionUsers}
-              loading={mentionLoading}
-              visible={mentionVisible}
-              onSelect={handleMentionSelect}
-              onClose={() => setMentionVisible(false)}
-              query={mentionQuery}
-            />
-
-            <div
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-              style={{ background: 'var(--vt-hover)', border: '1px solid var(--vt-divider)' }}
-            >
-              {/* Avatar mini */}
-              <Avatar
-                user={me}
-                className="!w-8 !h-8 !text-[11px]"
-              />
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !mentionVisible) handleSubmit();
-                }}
-                placeholder={replyTo ? `Trả lời @${replyTo.username}...` : 'Thêm bình luận...'}
-                className="flex-1 bg-transparent border-none outline-none text-[14px] font-body"
-                style={{ color: 'var(--vt-text-bright)' }}
-              />
-              <EmojiPickerButton
-                onSelect={(emoji) => setInput((p) => p + emoji)}
-                position="top"
-                size={17}
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !input.trim()}
-                className="w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{
-                  background: input.trim() ? 'linear-gradient(135deg,#ff2d78,#ff6b35)' : 'rgba(255,255,255,0.05)',
-                  transform: submitting ? 'scale(0.9)' : 'scale(1)',
-                }}
-              >
-                <SendIcon active={!!input.trim()} />
-              </button>
-            </div>
-          </div>
-
-          {/* Gợi ý emoji nhanh */}
-          <div className="flex gap-2 mt-2.5 px-1">
-            {['😂', '❤️', '🔥', '👏', '😮', '💯', '😍', '😢'].map(emoji => (
-              <button
-                key={emoji}
-                onClick={() => setInput(p => p + emoji)}
-                className="text-[18px] hover:scale-125 transition-transform cursor-pointer bg-transparent border-none"
-              >
-              {emoji}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </>
