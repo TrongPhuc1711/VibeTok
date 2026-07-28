@@ -280,13 +280,13 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
           {!loggedIn ? (
             /* Chưa đăng nhập: hiện nút đăng nhập */
             <div className="flex flex-col items-center gap-3 py-2">
-              <p className="text-[13px] font-body text-center" style={{ color: 'var(--vt-text-hint)' }}>
+              <p className="text-[13px] font-body text-center" style={{ color: 'var(--vt-text-faint)' }}>
                 Đăng nhập để bình luận
               </p>
               <button
                 onClick={() => navigate('/login')}
                 className="px-6 py-2.5 rounded-full border-none cursor-pointer text-[13px] font-semibold font-body text-white transition-all hover:opacity-90 active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #ff2d78, #ff6b35)' }}
+                style={{ background: '#ff2d78' }}
               >
                 Đăng nhập
               </button>
@@ -472,7 +472,7 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
             <span className="font-body" style={{ color: 'var(--vt-text-bright)', fontSize: 13, fontWeight: 600 }}>
               {comment.username}
             </span>
-            <span className="text-[11px] font-body" style={{ color: 'var(--vt-text-ghost)' }}>
+            <span className="text-[12px] font-body" style={{ color: 'var(--vt-text-disabled)' }}>
               {formatTimeAgo(comment.createdAt)}
             </span>
           </div>
@@ -485,7 +485,7 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
           <div className="flex items-center gap-4">
             <button
               onClick={() => onReply(comment)}
-              className="bg-transparent border-none text-[12px] font-body cursor-pointer hover:text-[#888] transition-colors p-0"
+              className="bg-transparent border-none text-[14px] font-body cursor-pointer hover:!text-white transition-colors p-0"
               style={{ color: 'var(--vt-text-disabled)' }}
             >
               Trả lời
@@ -494,7 +494,7 @@ function CommentItemFull({ comment, videoId, onReply, onLike }) {
             {comment.replies > 0 && (
               <button
                 onClick={handleToggleReplies}
-                className="bg-transparent border-none text-[12px] font-body cursor-pointer hover:text-[#888] transition-colors p-0"
+                className="bg-transparent border-none text-[14px] font-body cursor-pointer hover:!text-white transition-colors p-0"
                 style={{ color: 'var(--vt-text-disabled)' }}
               >
                 — Xem {comment.replies} trả lời {showReplies ? '▲' : '▼'}

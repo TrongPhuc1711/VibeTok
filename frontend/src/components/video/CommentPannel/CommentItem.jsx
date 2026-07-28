@@ -40,12 +40,12 @@ export default function CommentItem({ comment }) {
             {formatTimeAgo(comment.createdAt)}
           </span>
 
-          <button className="bg-transparent border-none text-text-faint text-xs cursor-pointer font-body hover:text-text-secondary transition-colors">
+          <button className="bg-transparent border-none text-text-faint text-xs cursor-pointer font-body hover:!text-white transition-colors">
             Trả lời
           </button>
 
           {comment.replies > 0 && (
-            <span className="text-text-faint text-xs font-body cursor-pointer hover:text-text-secondary transition-colors">
+            <span className="text-text-faint text-xs font-body cursor-pointer hover:!text-white transition-colors">
               — Xem {comment.replies} trả lời ∨
             </span>
           )}
