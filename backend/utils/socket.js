@@ -149,49 +149,29 @@ export const initSocket = (server) => {
                 from: socket.userId,
                 to: targetId,
                 targetOnline,
-                onlineUsersKeys: [...onlineUsers.keys()],  // THÊM để debug
+                onlineUsersKeys: [...onlineUsers.keys()],
             });
 
-            if (!targetOnline) {
-                // THÊM: thử emit trực tiếp vào room thay vì báo offline ngay
-                // Có thể user đang online nhưng chưa được track
-                const roomName = `user_${targetId}`;
-                const roomSockets = io.sockets.adapter.rooms.get(roomName);
-                
-                if (roomSockets && roomSockets.size > 0) {
-                    // User có trong room nhưng chưa trong onlineUsers map → emit vẫn được
-                    io.to(roomName).emit('call_incoming', {
-                        fromUserId: socket.userId,
-                        offer,
-                        callType: ct || 'voice',
-                        callerInfo,
-                    });
-                    return;
-                }
-
-                socket.emit('call_user_offline', {
-                    toUserId: targetId,
-                    lastSeen: lastSeenMap.get(targetId) || null,
-                });
-                return;
-            }
-
-            // Emit cả 2 cách để chắc chắn
+            // Luôn emit call_incoming bất kể online hay offline
+            // Nếu user offline thì offer sẽ chờ trong room, khi user online lại sẽ nhận được
             io.to(`user_${targetId}`).emit('call_incoming', {
                 fromUserId: socket.userId,
                 offer,
                 callType: ct || 'voice',
                 callerInfo,
             });
-            
-            targetSockets.forEach(targetSid => {
-                io.to(targetSid).emit('call_incoming', {
-                    fromUserId: socket.userId,
-                    offer,
-                    callType: ct || 'voice',
-                    callerInfo,
+
+            // Emit trực tiếp vào từng socket nếu có (đảm bảo nhận được)
+            if (targetSockets) {
+                targetSockets.forEach(targetSid => {
+                    io.to(targetSid).emit('call_incoming', {
+                        fromUserId: socket.userId,
+                        offer,
+                        callType: ct || 'voice',
+                        callerInfo,
+                    });
                 });
-            });
+            }
         });
 
         /**

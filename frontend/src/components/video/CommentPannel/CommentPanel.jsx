@@ -252,9 +252,9 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
               {[1, 2, 3].map(i => <CommentSkeleton key={i} />)}
             </div>
           ) : comments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <p className="text-[13px] font-body text-center" style={{ color: 'var(--vt-text-disabled)' }}>
-                Chưa có bình luận nào.<br />Hãy là người đầu tiên!
+            <div className="flex flex-col items-center justify-center py-50 gap-3">
+              <p className="text-[18px] font-body text-center" style={{ color: 'var(--vt-text-faint)' }}>
+                Chưa có bình luận nào.<br />Hãy là người đầu tiên nào! <br  />ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
               </p>
             </div>
           ) : (
@@ -281,7 +281,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
             /* Chưa đăng nhập: hiện nút đăng nhập */
             <div className="flex flex-col items-center gap-3 py-2">
               <p className="text-[13px] font-body text-center" style={{ color: 'var(--vt-text-faint)' }}>
-                Đăng nhập để bình luận
+                Đăng nhập để bình luận đi bạn gì đó ơi（づ￣3￣）づ╭❤️～
               </p>
               <button
                 onClick={() => navigate('/login')}

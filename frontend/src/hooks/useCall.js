@@ -166,13 +166,8 @@ export function useCall() {
 
         const onUserOffline = ({ toUserId, lastSeen }) => {
             if (!mountedRef.current) return;
-            console.warn('[Call][Socket] call_user_offline', { toUserId, lastSeen });
-            toast?.showError?.('Người dùng đang offline', 'Không thể thực hiện cuộc gọi lúc này.');
-            cleanup();
-            setCallState('idle');
-            setCurrentPartnerId(null);
-            setCurrentPartnerInfo(null);
-            onCallLogRef.current?.('Người nhận đang offline', 'call');
+            // Chỉ log thông tin, không ngắt cuộc gọi — cho phép gọi khi offline
+            console.log('[Call][Socket] call_user_offline (ignored, call continues)', { toUserId, lastSeen });
         };
 
         const onRejected = () => {
