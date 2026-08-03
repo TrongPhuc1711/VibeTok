@@ -119,10 +119,16 @@ function VideoRow({ video, isOwner, onDelete }) {
   const handleLike = async () => {
     if (!isLoggedIn() || likeLoading) return;
     const was = liked;
+    const nextState = !was;
+    const nextCount = was ? Math.max(0, likeCount - 1) : likeCount + 1;
     
     // Cập nhật giao diện ngay lập tức (Optimistic UI)
-    setLiked(!was);
-    setLikeCount(n => was ? Math.max(0, n - 1) : n + 1);
+    setLiked(nextState);
+    setLikeCount(nextCount);
+    if (video) {
+      video.isLiked = nextState;
+      video.likes = nextCount;
+    }
     setLikeLoading(true);
     
     try {
@@ -131,7 +137,11 @@ function VideoRow({ video, isOwner, onDelete }) {
     } catch {
       // Hoàn tác nếu gọi API thất bại
       setLiked(was);
-      setLikeCount(n => was ? n + 1 : Math.max(0, n - 1));
+      setLikeCount(likeCount);
+      if (video) {
+        video.isLiked = was;
+        video.likes = likeCount;
+      }
     } finally { 
       setLikeLoading(false); 
     }

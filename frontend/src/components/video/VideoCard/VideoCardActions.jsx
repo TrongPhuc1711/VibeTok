@@ -13,7 +13,7 @@ import { useBookmark } from '../../../hooks/useBookmark';
 import Avatar from '../../common/Avatar/avatar';
 import ShareSheet from '../ShareSheet/ShareSheet';
 
-export default function VideoCardActions({ video, onComment, onShare, onBookmark, inline = false }) {
+export default function VideoCardActions({ video, onComment, onLike, onShare, onBookmark, inline = false }) {
   const navigate = useNavigate();
   const me = getStoredUser();
   const { showSuccess, showInfo, showError } = useToast();
@@ -65,15 +65,28 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
     if (!isLoggedIn()) { promptLogin('like'); return; }
     if (likeLoading) return;
     const was = liked;
-    setLiked(!was);
-    setLocalLikes(n => was ? Math.max(0, n - 1) : n + 1);
+    const nextState = !was;
+    const nextCount = was ? Math.max(0, localLikes - 1) : localLikes + 1;
+
+    setLiked(nextState);
+    setLocalLikes(nextCount);
+    if (video) {
+      video.isLiked = nextState;
+      video.likes = nextCount;
+    }
     setLikeLoading(true);
+
     try {
       if (was) await unlikeVideo(videoId);
       else { await likeVideo(videoId); showSuccess('Đã thích video ❤️', `@${video?.user?.username}`); }
+      onLike?.(videoId, nextState);
     } catch {
       setLiked(was);
-      setLocalLikes(n => was ? n + 1 : Math.max(0, n - 1));
+      setLocalLikes(localLikes);
+      if (video) {
+        video.isLiked = was;
+        video.likes = localLikes;
+      }
     } finally {
       setLikeLoading(false);
     }
