@@ -119,6 +119,40 @@ const buildVideoQuery = (currentUserId = null) => {
     `;
 };
 
+const enrichVideosWithRedis = async (videos, currentUserId = null) => {
+    if (!videos || videos.length === 0) return;
+    try {
+        const viewKeys = videos.map(v => `video:${v.id}:views`);
+        const likeKeys = videos.map(v => `video:${v.id}:likes_count`);
+
+        const [cachedViews, cachedLikes] = await Promise.all([
+            redis.mget(viewKeys),
+            redis.mget(likeKeys),
+        ]);
+
+        let userLikes = [];
+        if (currentUserId) {
+            userLikes = await Promise.all(
+                videos.map(v => redis.sismember(`video:${v.id}:likes`, String(currentUserId)))
+            );
+        }
+
+        videos.forEach((video, idx) => {
+            if (cachedViews[idx] !== null) {
+                video.views = Number(cachedViews[idx]);
+            }
+            if (cachedLikes[idx] !== null) {
+                video.likes = Number(cachedLikes[idx]);
+            }
+            if (currentUserId && userLikes[idx] === 1) {
+                video.isLiked = true;
+            }
+        });
+    } catch (err) {
+        console.error('Error enriching videos with Redis:', err);
+    }
+};
+
 export const VideoModel = {
     async getFeed({ page = 1, limit = 5, currentUserId = null, type = 'forYou' } = {}) {
         const offset = (page - 1) * limit;
@@ -148,20 +182,7 @@ export const VideoModel = {
         );
 
         const videos = rows.map(normalizeVideo);
-        if (videos.length > 0) {
-            const keys = videos.map(v => `video:${v.id}:views`);
-            try {
-                const cachedViews = await redis.mget(keys);
-                videos.forEach((video, idx) => {
-                    const views = cachedViews[idx];
-                    if (views !== null) {
-                        video.views = Number(views);
-                    }
-                });
-            } catch (err) {
-                console.error('Error fetching batch views from Redis:', err);
-            }
-        }
+        await enrichVideosWithRedis(videos, currentUserId);
 
         return {
             videos,
@@ -180,20 +201,7 @@ export const VideoModel = {
             [userId, limit, offset]
         );
         const videos = rows.map(normalizeVideo);
-        if (videos.length > 0) {
-            const keys = videos.map(v => `video:${v.id}:views`);
-            try {
-                const cachedViews = await redis.mget(keys);
-                videos.forEach((video, idx) => {
-                    const views = cachedViews[idx];
-                    if (views !== null) {
-                        video.views = Number(views);
-                    }
-                });
-            } catch (err) {
-                console.error('Error fetching batch views from Redis:', err);
-            }
-        }
+        await enrichVideosWithRedis(videos, currentUserId);
         return videos;
     },
 
@@ -204,10 +212,7 @@ export const VideoModel = {
         );
         const video = normalizeVideo(rows[0]) || null;
         if (video) {
-            const redisViews = await redis.get(`video:${id}:views`);
-            if (redisViews !== null) {
-                video.views = Number(redisViews);
-            }
+            await enrichVideosWithRedis([video], null);
         }
         return video;
     },
@@ -220,10 +225,7 @@ export const VideoModel = {
         );
         const video = normalizeVideo(rows[0]) || null;
         if (video) {
-            const redisViews = await redis.get(`video:${id}:views`);
-            if (redisViews !== null) {
-                video.views = Number(redisViews);
-            }
+            await enrichVideosWithRedis([video], null);
         }
         return video;
     },
@@ -235,10 +237,7 @@ export const VideoModel = {
         );
         const video = normalizeVideo(rows[0]) || null;
         if (video) {
-            const redisViews = await redis.get(`video:${id}:views`);
-            if (redisViews !== null) {
-                video.views = Number(redisViews);
-            }
+            await enrichVideosWithRedis([video], currentUserId);
         }
         return video;
     },
@@ -247,24 +246,28 @@ export const VideoModel = {
         const offset = (page - 1) * limit;
         const query = buildVideoQuery(null);
 
+        let rows = [];
         if (!q.trim()) {
-            const [rows] = await pool.query(
+            const [result] = await pool.query(
                 `${query}
                  WHERE v.privacy = 'public' AND v.is_active = 1 AND v.is_draft = 0 AND v.moderation_status = 'approved'
                  ORDER BY v.views_count DESC LIMIT ? OFFSET ?`,
                 [limit, offset]
             );
-            return rows.map(normalizeVideo);
+            rows = result;
+        } else {
+            const [result] = await pool.query(
+                `${query}
+                 WHERE v.privacy = 'public' AND v.is_active = 1 AND v.is_draft = 0 AND v.moderation_status = 'approved'
+                   AND MATCH(v.title, v.description) AGAINST(? IN NATURAL LANGUAGE MODE)
+                 LIMIT ? OFFSET ?`,
+                [q.trim(), limit, offset]
+            );
+            rows = result;
         }
-
-        const [rows] = await pool.query(
-            `${query}
-             WHERE v.privacy = 'public' AND v.is_active = 1 AND v.is_draft = 0 AND v.moderation_status = 'approved'
-               AND MATCH(v.title, v.description) AGAINST(? IN NATURAL LANGUAGE MODE)
-             LIMIT ? OFFSET ?`,
-            [q.trim(), limit, offset]
-        );
-        return rows.map(normalizeVideo);
+        const videos = rows.map(normalizeVideo);
+        await enrichVideosWithRedis(videos, null);
+        return videos;
     },
 
     async create({ userId, musicId, originalVolume, musicVolume, caption, videoUrl, thumbnail, duration, privacy, allowDuet, allowStitch, location, isDraft, scheduleAt, moderationStatus = 'approved', rejectionReason = null }) {
@@ -337,20 +340,7 @@ export const VideoModel = {
             [userId, limit, offset]
         );
         const videos = rows.map(normalizeVideo);
-        if (videos.length > 0) {
-            const keys = videos.map(v => `video:${v.id}:views`);
-            try {
-                const cachedViews = await redis.mget(keys);
-                videos.forEach((video, idx) => {
-                    const views = cachedViews[idx];
-                    if (views !== null) {
-                        video.views = Number(views);
-                    }
-                });
-            } catch (err) {
-                console.error('Error fetching batch views from Redis:', err);
-            }
-        }
+        await enrichVideosWithRedis(videos, currentUserId || userId);
         return videos;
     },
 
@@ -405,20 +395,7 @@ export const VideoModel = {
             [userId, limit, offset]
         );
         const videos = rows.map(normalizeVideo);
-        if (videos.length > 0) {
-            const keys = videos.map(v => `video:${v.id}:views`);
-            try {
-                const cachedViews = await redis.mget(keys);
-                videos.forEach((video, idx) => {
-                    const views = cachedViews[idx];
-                    if (views !== null) {
-                        video.views = Number(views);
-                    }
-                });
-            } catch (err) {
-                console.error('Error fetching batch views from Redis:', err);
-            }
-        }
+        await enrichVideosWithRedis(videos, currentUserId || userId);
         return videos;
     },
 
