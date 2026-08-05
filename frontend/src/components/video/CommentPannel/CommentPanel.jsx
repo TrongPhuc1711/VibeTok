@@ -254,7 +254,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
           ) : comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-50 gap-3">
               <p className="text-[18px] font-body text-center" style={{ color: 'var(--vt-text-faint)' }}>
-                Chưa có bình luận nào.<br />Hãy là người đầu tiên nào! <br  />ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
+                Chưa có bình luận nào.<br />Hãy là người đầu tiên nào! <br />ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
               </p>
             </div>
           ) : (
@@ -393,7 +393,7 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
                     onClick={() => setInput(p => p + emoji)}
                     className="text-[18px] hover:scale-125 transition-transform cursor-pointer bg-transparent border-none"
                   >
-                  {emoji}
+                    {emoji}
                   </button>
                 ))}
               </div>

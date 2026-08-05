@@ -174,7 +174,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
 
         {/* Like */}
         <ActionBtn icon={<HeartIcon filled={liked} />} count={formatCount(localLikes)} active={liked}
-          onClick={handleLike} loading={likeLoading} inline={inline} animateOnClick ariaLabel={liked ? 'Bỏ thích' : 'Thích'} />
+          onClick={handleLike} inline={inline} animateOnClick ariaLabel={liked ? 'Bỏ thích' : 'Thích'} />
 
         {/* Comment */}
         <ActionBtn icon={<CommentIcon />} count={formatCount(video?.comments)}
@@ -186,7 +186,7 @@ export default function VideoCardActions({ video, onComment, onShare, onBookmark
 
         {/* Bookmark - DB */}
         <ActionBtn icon={<BookmarkIcon filled={bookmarked} />} count={formatCount(localBookmarks)} active={bookmarked} activeColor="#fff82d"
-          onClick={handleBookmark} loading={bookmarkLoading} inline={inline} ariaLabel={bookmarked ? 'Bỏ lưu' : 'Lưu video'} />
+          onClick={handleBookmark} inline={inline} ariaLabel={bookmarked ? 'Bỏ lưu' : 'Lưu video'} />
 
         <MusicDisc track={video?.music} />
       </div>

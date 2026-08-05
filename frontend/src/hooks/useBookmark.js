@@ -20,7 +20,7 @@ export function useBookmark(videoId, initialBookmarked = false) {
             .then(val => {
                 if (isMounted) setBookmarked(val);
             })
-            .catch(() => {});
+            .catch(() => { });
 
         return () => {
             isMounted = false;
