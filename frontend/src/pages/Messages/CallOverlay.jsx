@@ -30,6 +30,100 @@ function CallBtn({ onClick, children, variant = 'default', label, extraContent }
     );
 }
 
+/* ── Watch Invite Banner ── */
+function WatchInviteBanner({ invite, partnerName, onAccept, onDecline }) {
+    const [countdown, setCountdown] = useState(30);
+    const timerRef = useRef(null);
+
+    // Auto-decline after 30s
+    useEffect(() => {
+        setCountdown(30);
+        timerRef.current = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current);
+                    onDecline();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timerRef.current);
+    }, [invite, onDecline]);
+
+    // Detect platform label
+    const getPlatform = (url) => {
+        if (!url) return { label: '🎬 Video', color: '#ccc' };
+        try {
+            const host = new URL(url).hostname.replace('www.', '').replace('m.', '');
+            if (host.includes('youtube') || host.includes('youtu.be')) return { label: '▶ YouTube', color: '#ff0000' };
+            if (host.includes('tiktok')) return { label: '♪ TikTok', color: '#69c9d0' };
+            if (host.includes('facebook') || host.includes('fb.watch')) return { label: 'f Facebook', color: '#1877f2' };
+            if (host.includes('vimeo')) return { label: '▷ Vimeo', color: '#1ab7ea' };
+        } catch { /* */ }
+        return { label: '🎬 Video', color: '#ccc' };
+    };
+
+    const platform = getPlatform(invite?.videoUrl);
+    const shortUrl = invite?.videoUrl?.replace(/^https?:\/\/(www\.)?/, '').substring(0, 45) || 'Video';
+
+    return (
+        <div className="w-full max-w-sm animate-fade-in">
+            <div className="bg-black/80 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,.5)] overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center gap-2 px-4 pt-3.5 pb-1">
+                    <WatchTogetherIcon size={16} color="#ff2d78" />
+                    <span className="text-white text-sm font-semibold font-body flex-1">
+                        Mời xem video cùng nhau
+                    </span>
+                    <span className="text-[10px] text-white/30 font-mono tabular-nums">
+                        {countdown}s
+                    </span>
+                </div>
+
+                {/* Info */}
+                <div className="px-4 py-2">
+                    <p className="text-white/50 text-xs font-body m-0 mb-1.5">
+                        <span className="text-white/80 font-medium">{partnerName || 'Đối phương'}</span>
+                        {' '}mời bạn xem video cùng:
+                    </p>
+                    <div className="flex items-center gap-2 bg-white/[.06] rounded-lg px-3 py-2 border border-white/[.04]">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md shrink-0"
+                            style={{ background: `${platform.color}20`, color: platform.color }}>
+                            {platform.label}
+                        </span>
+                        <span className="text-white/40 text-[11px] font-body truncate">{shortUrl}</span>
+                    </div>
+                </div>
+
+                {/* Countdown bar */}
+                <div className="h-[2px] bg-white/[.04] mx-4">
+                    <div
+                        className="h-full bg-gradient-to-r from-[#ff2d78] to-[#ff6b35] rounded-full transition-all duration-1000 ease-linear"
+                        style={{ width: `${(countdown / 30) * 100}%` }}
+                    />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-2 px-4 py-3">
+                    <button
+                        onClick={onDecline}
+                        className="flex-1 px-4 py-2.5 bg-white/[.08] hover:bg-white/[.12] text-white/60 hover:text-white/80 text-sm font-semibold font-body rounded-xl border border-white/[.06] cursor-pointer transition-all duration-200"
+                    >
+                        Từ chối
+                    </button>
+                    <button
+                        onClick={onAccept}
+                        className="flex-1 px-4 py-2.5 bg-brand-gradient text-white text-sm font-semibold font-body rounded-xl border-none cursor-pointer hover:opacity-85 transition-all duration-200 shadow-[0_4px_16px_rgba(255,45,120,.25)]"
+                    >
+                        🎬 Tham gia xem
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /* ── CallOverlay ── */
 export default function CallOverlay({
     callState,   // 'calling' | 'ringing' | 'connected' | 'ended'
@@ -52,6 +146,10 @@ export default function CallOverlay({
     watchVideoRef,
     localVideoElementRef,
     remoteVideoElementRef,
+    /* Watch invite (opt-in) */
+    watchInvite,
+    onAcceptWatchInvite,
+    onDeclineWatchInvite,
 }) {
     const [showWatchInput, setShowWatchInput] = useState(false);
     const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -183,6 +281,18 @@ export default function CallOverlay({
                         watchVideoRef={watchVideoRef}
                         localVideoRef={localVideoElementRef}
                         remoteVideoRef={remoteVideoElementRef}
+                    />
+                </div>
+            )}
+
+            {/* ── Watch Invite Banner ── */}
+            {watchInvite && !watchTogether && isConnected && (
+                <div className="relative z-20 w-full flex justify-center px-4">
+                    <WatchInviteBanner
+                        invite={watchInvite}
+                        partnerName={partnerInfo?.partnerFullname || partnerInfo?.fullName || partnerInfo?.username}
+                        onAccept={onAcceptWatchInvite}
+                        onDecline={onDeclineWatchInvite}
                     />
                 </div>
             )}

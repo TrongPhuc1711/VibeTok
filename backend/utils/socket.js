@@ -231,13 +231,31 @@ export const initSocket = (server) => {
 
         /**
          * Watch Together — Xem video cùng nhau trong cuộc gọi
+         * Flow: A start → B nhận invite → B accept/decline
          */
         socket.on('watch_together_start', ({ toUserId, videoUrl }) => {
             if (!socket.userId) return;
             const targetId = String(toUserId);
-            io.to(`user_${targetId}`).emit('watch_together_start', { fromUserId: socket.userId, videoUrl });
+            // Gửi lời mời cho đối phương (không tự động bật video)
+            io.to(`user_${targetId}`).emit('watch_together_invite', { fromUserId: socket.userId, videoUrl });
             const targetSockets = onlineUsers.get(targetId);
-            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_start', { fromUserId: socket.userId, videoUrl }));
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_invite', { fromUserId: socket.userId, videoUrl }));
+        });
+
+        socket.on('watch_together_accept', ({ toUserId }) => {
+            if (!socket.userId) return;
+            const targetId = String(toUserId);
+            io.to(`user_${targetId}`).emit('watch_together_accepted', { fromUserId: socket.userId });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_accepted', { fromUserId: socket.userId }));
+        });
+
+        socket.on('watch_together_decline', ({ toUserId }) => {
+            if (!socket.userId) return;
+            const targetId = String(toUserId);
+            io.to(`user_${targetId}`).emit('watch_together_declined', { fromUserId: socket.userId });
+            const targetSockets = onlineUsers.get(targetId);
+            if (targetSockets) targetSockets.forEach(sid => io.to(sid).emit('watch_together_declined', { fromUserId: socket.userId }));
         });
 
         socket.on('watch_together_sync', ({ toUserId, action, currentTime, videoUrl }) => {

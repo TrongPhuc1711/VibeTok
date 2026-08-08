@@ -82,6 +82,10 @@ export const CallProvider = ({ children }) => {
                     /* Video element refs for Watch Together expanded PiP */
                     localVideoElementRef={call.localVideoElementRef}
                     remoteVideoElementRef={call.remoteVideoElementRef}
+                    /* Watch invite (opt-in) */
+                    watchInvite={call.watchInvite}
+                    onAcceptWatchInvite={call.acceptWatchInvite}
+                    onDeclineWatchInvite={call.declineWatchInvite}
                 />
             )}
         </CallContext.Provider>
