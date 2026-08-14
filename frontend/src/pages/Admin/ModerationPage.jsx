@@ -316,6 +316,11 @@ export default function ModerationPage() {
         pathname.includes('/admin/videos') ? 'videos' : 'reports'
     ); // 'videos' | 'reports'
 
+    // Đồng bộ tab khi URL thay đổi (click sidebar)
+    useEffect(() => {
+        setActiveTab(pathname.includes('/admin/videos') ? 'videos' : 'reports');
+    }, [pathname]);
+
     // Video State
     const [videos, setVideos] = useState([]);
     const [videoCounts, setVideoCounts] = useState({ all: 0, active: 0, draft: 0, hidden: 0, rejected: 0 });
