@@ -227,7 +227,7 @@ export function useCall() {
         const onWatchEnd = () => {
             if (!mountedRef.current) return;
             console.log('[Call][Socket] watch_together_end');
-            setWatchTogether(null);
+            setWatchTogether(videoUrl);
         };
 
         socket.on('call_incoming', onIncoming);
