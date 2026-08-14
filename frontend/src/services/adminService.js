@@ -19,8 +19,9 @@ export const resetUserPassword = (id, new_password) => api.patch(`${BASE}/users/
 // Videos 
 export const getAdminVideos = (params) => api.get(`${BASE}/videos`, { params }).then(r => r.data);
 export const getVideoCounts = () => api.get(`${BASE}/video-counts`).then(r => r.data.counts);
-export const hideVideo = (id) => api.patch(`${BASE}/videos/${id}/hide`);
+export const hideVideo = (id, reason = null) => api.patch(`${BASE}/videos/${id}/hide`, { reason });
 export const restoreVideo = (id) => api.patch(`${BASE}/videos/${id}/restore`);
+export const approveVideo = (id) => api.patch(`${BASE}/videos/${id}/approve`);
 
 // Music
 export const getAdminMusic = (params) => api.get(`${BASE}/music`, { params }).then(r => r.data);
