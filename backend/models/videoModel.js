@@ -194,9 +194,23 @@ export const VideoModel = {
     async getByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
         const offset = (page - 1) * limit;
         const query = buildVideoQuery(currentUserId);
+        const isOwner = currentUserId && String(currentUserId) === String(userId);
+
+        let privacyClause = '';
+        if (!isOwner) {
+            if (currentUserId) {
+                const escapedId = pool.escape(currentUserId);
+                privacyClause = `AND (v.privacy = 'public' OR (v.privacy = 'friends' AND 
+                    (SELECT COUNT(*) FROM follows WHERE follower_id = ${escapedId} AND following_id = v.user_id) > 0 AND
+                    (SELECT COUNT(*) FROM follows WHERE follower_id = v.user_id AND following_id = ${escapedId}) > 0))`;
+            } else {
+                privacyClause = `AND v.privacy = 'public'`;
+            }
+        }
+
         const [rows] = await pool.query(
             `${query}
-             WHERE v.user_id = ? AND v.is_active = 1 AND v.is_draft = 0
+             WHERE v.user_id = ? AND v.is_active = 1 AND v.is_draft = 0 ${privacyClause}
              ORDER BY v.created_at DESC LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
@@ -283,6 +297,18 @@ export const VideoModel = {
                 moderationStatus, rejectionReason]
         );
         return Number(result.insertId);
+    },
+
+    // Cập nhật quyền riêng tư video
+    async updatePrivacy(videoId, userId, privacy) {
+        const validPrivacy = ['public', 'friends', 'private'];
+        if (!validPrivacy.includes(privacy)) return false;
+
+        const [result] = await pool.query(
+            'UPDATE videos SET privacy = ? WHERE id = ? AND user_id = ? AND is_active = 1',
+            [privacy, videoId, userId]
+        );
+        return result.affectedRows > 0;
     },
 
     // Owner soft-delete

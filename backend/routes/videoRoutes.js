@@ -6,7 +6,7 @@ import {
     uploadVideo, getComments, postComment, getReplies,
     likeVideo, unlikeVideo, deleteVideo,
     likeComment, unlikeComment, viewVideo, getLikedVideos,
-    shareVideo, repostVideo, getRepostedVideos, reportVideo,
+    shareVideo, repostVideo, getRepostedVideos, updateVideoPrivacy, reportVideo,
 } from '../controllers/videoController.js';
 
 const router = express.Router();
@@ -32,6 +32,7 @@ router.delete('/:id/comments/:commentId/like', verifyToken, unlikeComment);
 router.post('/:id/like', verifyToken, likeVideo);
 router.delete('/:id/like', verifyToken, unlikeVideo);
 router.post('/:id/repost', verifyToken, repostVideo);
+router.patch('/:id/privacy', verifyToken, updateVideoPrivacy);
 router.post('/:id/report', verifyToken, reportVideo);
 router.delete('/:id', verifyToken, deleteVideo);
 

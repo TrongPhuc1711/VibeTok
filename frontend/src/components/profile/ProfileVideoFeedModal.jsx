@@ -158,7 +158,7 @@ function CommentRow({ comment }) {
 }
 
 // ── Right Panel ──
-function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount, onClose }) {
+function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount, onClose, onPrivacyChange }) {
     const navigate = useNavigate();
     const me = getStoredUser();
     const user = video?.user ?? {};
@@ -193,7 +193,7 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                     </p>
                     <p className="text-white/40 text-[12px] font-body m-0">@{user.username}</p>
                 </div>
-                {!isOwnVideo && me && (
+                {!isOwnVideo && me ? (
                     <button
                         onClick={onFollowToggle}
                         className={`shrink-0 text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer
@@ -204,7 +204,19 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                     >
                         {following ? 'Đang follow' : 'Follow'}
                     </button>
-                )}
+                ) : isOwnVideo ? (
+                    <div className="shrink-0">
+                        <select
+                            value={video?.privacy || 'public'}
+                            onChange={(e) => onPrivacyChange && onPrivacyChange(video.id, e.target.value)}
+                            className="bg-[#1e1e2e] text-white/90 border border-white/15 rounded-lg px-2.5 py-1.5 text-[12px] font-body outline-none cursor-pointer hover:border-primary/50 transition-colors"
+                        >
+                            <option value="public">Công khai</option>
+                            <option value="friends">Bạn bè</option>
+                            <option value="private">Chỉ mình tôi</option>
+                        </select>
+                    </div>
+                ) : null}
             </div>
 
             {/* Caption & Hashtags */}
@@ -318,7 +330,7 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
 }
 
 // ── Main Modal ──
-export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, onClose }) {
+export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, onClose, onPrivacyChange }) {
     const navigate = useNavigate();
     const me = getStoredUser();
     const videoRef = useRef(null);
@@ -667,6 +679,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
                     liked={liked}
                     likeCount={likeCount}
                     onClose={handleClose}
+                    onPrivacyChange={onPrivacyChange}
                 />
             </div>
         </div>
