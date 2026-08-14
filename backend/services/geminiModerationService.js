@@ -9,7 +9,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 function getCandidateModels() {
     const envModel = process.env.GEMINI_MODEL;
-    const defaults = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    const defaults = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3-flash-preview'];
     const candidates = envModel ? [envModel, ...defaults] : defaults;
     return [...new Set(candidates)];
 }
