@@ -177,23 +177,11 @@ export function initModerationWorker() {
                 isRejected ? result.reason : null,
             );
 
-            // Nếu bị từ chối → xóa file trên Cloudinary
+            // Nếu bị từ chối → chỉ ẩn video (is_active = 0), KHÔNG xóa file trên Cloudinary
+            // để Admin có thể xem lại và duyệt thủ công nếu cần
             if (isRejected) {
                 console.log(`[ModerationWorker] ❌ Video #${videoId} bị từ chối: ${result.reason}`);
-
-                if (isSlideshow && slideshowUrls?.length > 0) {
-                    // Xóa tất cả ảnh slideshow
-                    for (const url of slideshowUrls) {
-                        await deleteFromCloudinary(url, 'image');
-                    }
-                } else {
-                    // Xóa video
-                    await deleteFromCloudinary(videoUrl, 'video');
-                    // Xóa thumbnail nếu khác video
-                    if (thumbnailUrl && thumbnailUrl !== videoUrl) {
-                        await deleteFromCloudinary(thumbnailUrl, 'image');
-                    }
-                }
+                console.log(`[ModerationWorker] File Cloudinary được giữ lại để Admin review`);
             } else {
                 console.log(`[ModerationWorker] ✅ Video #${videoId} được phê duyệt`);
             }

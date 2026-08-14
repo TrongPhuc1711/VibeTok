@@ -132,7 +132,8 @@ export const getVideoCounts = async (req, res) => {
 // PATCH /api/admin/videos/:id/hide
 export const hideVideo = async (req, res) => {
     try {
-        const ok = await AdminModel.hideVideo(req.params.id);
+        const reason = req.body.reason || null;
+        const ok = await AdminModel.hideVideo(req.params.id, reason);
         if (!ok) return res.status(404).json({ message: 'Video không tồn tại' });
         res.json({ message: 'Đã ẩn video' });
     } catch (e) {

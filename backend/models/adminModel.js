@@ -289,6 +289,7 @@ export const AdminModel = {
                 initials,
                 color: COLORS[i % COLORS.length],
                 thumbnail: v.thumbnail_url,
+                videoUrl: v.video_url || null,
                 duration: `${mins}:${String(secs).padStart(2, '0')}`,
                 views: Number(v.views_count),
                 likes: Number(v.likes_count),
@@ -325,8 +326,11 @@ export const AdminModel = {
     },
 
     //  Hide / Restore video 
-    async hideVideo(videoId) {
-        const [r] = await pool.query('UPDATE videos SET is_active = 0 WHERE id = ?', [videoId]);
+    async hideVideo(videoId, reason = null) {
+        const [r] = await pool.query(
+            'UPDATE videos SET is_active = 0, rejection_reason = ? WHERE id = ?',
+            [reason, videoId]
+        );
         return r.affectedRows > 0;
     },
 
