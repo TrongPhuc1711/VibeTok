@@ -6,7 +6,33 @@ import os from 'os';
 import 'dotenv/config';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = 'gemini-2.0-flash';
+
+function getCandidateModels() {
+    const envModel = process.env.GEMINI_MODEL;
+    const defaults = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    const candidates = envModel ? [envModel, ...defaults] : defaults;
+    return [...new Set(candidates)];
+}
+
+async function generateContentWithFallback(client, params) {
+    const models = getCandidateModels();
+    let lastError = null;
+
+    for (const model of models) {
+        try {
+            const response = await client.models.generateContent({
+                model,
+                ...params,
+            });
+            return response;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[GeminiMod] Model '${model}' không khả dụng (${error.message || error}). Đang thử model tiếp theo...`);
+        }
+    }
+
+    throw lastError;
+}
 
 let aiClient = null;
 
@@ -156,8 +182,7 @@ async function moderateImageWithGemini(imageUrl) {
         const fileBuffer = fs.readFileSync(filePath);
         const base64Data = fileBuffer.toString('base64');
 
-        const response = await client.models.generateContent({
-            model: GEMINI_MODEL,
+        const response = await generateContentWithFallback(client, {
             contents: [
                 {
                     role: 'user',
@@ -231,8 +256,7 @@ async function moderateVideoWithGemini(videoUrl) {
         }
 
         // Gọi generateContent với file đã upload
-        const response = await client.models.generateContent({
-            model: GEMINI_MODEL,
+        const response = await generateContentWithFallback(client, {
             contents: [
                 {
                     role: 'user',
