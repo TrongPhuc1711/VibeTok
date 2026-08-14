@@ -133,6 +133,15 @@ export default function HomePage({ feedType = 'forYou' }) {
         }
     }, [currentIdx, videos, hasMore, loadMore, commentVideoId]);
 
+    // Handle auto-scroll next video event
+    useEffect(() => {
+        const handleNextVideo = () => {
+            go(1);
+        };
+        window.addEventListener('vibetok:next_video', handleNextVideo);
+        return () => window.removeEventListener('vibetok:next_video', handleNextVideo);
+    }, [go]);
+
     const scrollLockRef = useRef(false);
 
     // Desktop: wheel navigation

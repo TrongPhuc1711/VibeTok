@@ -7,6 +7,7 @@ import {
     getVideos, getVideoCounts, hideVideo, restoreVideo, approveVideo,
     getViewsPerDay, getSidebarCounts,
     getMusic, getMusicCounts, createMusic, updateMusic, deleteMusic, toggleMusicTrending,
+    getAdminReports, getAdminReportCounts, updateAdminReportStatus, deleteAdminReport,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -45,5 +46,11 @@ router.patch('/music/:id/trending', toggleMusicTrending);
 
 // Analytics
 router.get('/views-per-day', getViewsPerDay);
+
+// Reports
+router.get('/reports', getAdminReports);
+router.get('/report-counts', getAdminReportCounts);
+router.patch('/reports/:id/status', updateAdminReportStatus);
+router.delete('/reports/:id', deleteAdminReport);
 
 export default router;

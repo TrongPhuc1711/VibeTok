@@ -22,8 +22,8 @@ export const NotificationModel = {
 
     // 2. Tạo thông báo mới
     create: async (receiverId, senderId, type, videoId = null, commentId = null) => {
-        // Không gửi thông báo cho chính mình
-        if (receiverId === senderId) return null;
+        // Không gửi thông báo cho chính mình (ngoại trừ báo cáo video để admin có thể tự thử nghiệm)
+        if (receiverId === senderId && type !== 'video_report') return null;
 
         const query = `
             INSERT INTO notifications (receiver_id, sender_id, notification_type, video_id, comment_id)

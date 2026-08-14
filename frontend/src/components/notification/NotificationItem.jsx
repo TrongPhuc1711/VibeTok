@@ -9,6 +9,7 @@ const TYPE_TEXT = {
   comment: 'đã bình luận về video của bạn',
   mention: 'đã nhắc đến bạn trong bình luận',
   duet:    'đã tạo duet với video của bạn',
+  video_report: 'đã gửi báo cáo vi phạm một video',
 };
 
 export default function NotificationItem({ notif, onClick }) {

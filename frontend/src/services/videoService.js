@@ -103,6 +103,12 @@ export const getRepostedVideosByUserId = async (userId, { page = 1, limit = 30 }
     return { data: res.data };
 };
 
+// POST /api/videos/:id/report
+export const reportVideo = async (videoId, { reason, description }) => {
+    const res = await api.post(`/videos/${videoId}/report`, { reason, description });
+    return { data: res.data };
+};
+
 // POST /api/videos/upload — multipart/form-data
 export const uploadVideo = async (formData) => {
     const { caption, privacy, allowDuet, allowStitch, location, music, isDraft, file } = formData;

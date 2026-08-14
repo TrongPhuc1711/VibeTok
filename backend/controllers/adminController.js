@@ -322,3 +322,64 @@ export const toggleMusicTrending = async (req, res) => {
         res.status(500).json({ message: 'Lỗi toggle trending', error: e.message });
     }
 };
+
+// ── REPORTS MANAGEMENT FOR ADMIN ──
+import {
+    getReportsForAdmin,
+    getReportCounts as getReportCountsModel,
+    updateReportStatus as updateReportStatusModel,
+    deleteReport as deleteReportModel,
+} from '../models/reportModel.js';
+
+// GET /api/admin/reports
+export const getAdminReports = async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+        const status = req.query.status || 'all';
+        const search = req.query.search || '';
+
+        const data = await getReportsForAdmin({ status, search, page, limit });
+        res.json(data);
+    } catch (e) {
+        console.error('Admin getAdminReports error:', e);
+        res.status(500).json({ message: 'Lỗi tải danh sách báo cáo', error: e.message });
+    }
+};
+
+// GET /api/admin/report-counts
+export const getAdminReportCounts = async (req, res) => {
+    try {
+        const counts = await getReportCountsModel();
+        res.json(counts);
+    } catch (e) {
+        console.error('Admin getAdminReportCounts error:', e);
+        res.status(500).json({ message: 'Lỗi thống kê báo cáo', error: e.message });
+    }
+};
+
+// PATCH /api/admin/reports/:id/status
+export const updateAdminReportStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+            return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
+        }
+        await updateReportStatusModel(req.params.id, status);
+        res.json({ message: 'Đã cập nhật trạng thái báo cáo!' });
+    } catch (e) {
+        console.error('Admin updateAdminReportStatus error:', e);
+        res.status(500).json({ message: 'Lỗi cập nhật báo cáo', error: e.message });
+    }
+};
+
+// DELETE /api/admin/reports/:id
+export const deleteAdminReport = async (req, res) => {
+    try {
+        await deleteReportModel(req.params.id);
+        res.json({ message: 'Đã xóa báo cáo!' });
+    } catch (e) {
+        console.error('Admin deleteAdminReport error:', e);
+        res.status(500).json({ message: 'Lỗi xóa báo cáo', error: e.message });
+    }
+};

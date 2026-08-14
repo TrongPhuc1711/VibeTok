@@ -3,6 +3,7 @@ import VideoCardTopBar from './VideoCardTopBar';
 import VideoCardInfo from './VideoCardInfo';
 import VideoCardActions from './VideoCardActions';
 import VolumeControl, { useVideoVolume } from '../../video/VolumnControl/index';
+import VideoMoreMenu from './VideoMoreMenu';
 import { ImageSlideshow } from '../../ui/ImageSlideshow';
 import { viewVideo } from '../../../services/videoService';
 
@@ -29,6 +30,22 @@ export default function VideoCard({
     const [tapIcon, setTapIcon] = useState(null); // 'play' | 'pause' | null
     const tapIconTimer = useRef(null);
     const progressBarRef = useRef(null);
+    const [autoScroll, setAutoScroll] = useState(() => localStorage.getItem('vibetok_autoscroll') === 'true');
+
+    useEffect(() => {
+        const handleAutoscrollChange = (e) => {
+            setAutoScroll(Boolean(e.detail?.enabled));
+        };
+        window.addEventListener('vibetok:autoscroll_changed', handleAutoscrollChange);
+        return () => window.removeEventListener('vibetok:autoscroll_changed', handleAutoscrollChange);
+    }, []);
+
+    const handleVideoEnded = useCallback(() => {
+        const isAuto = localStorage.getItem('vibetok_autoscroll') === 'true';
+        if (isAuto && isActive) {
+            window.dispatchEvent(new CustomEvent('vibetok:next_video'));
+        }
+    }, [isActive]);
 
     const { volume, muted, setVolume, toggleMute, applyToVideo } = useVideoVolume();
 
@@ -273,7 +290,8 @@ export default function VideoCard({
                 <video
                     ref={videoRef}
                     src={video.videoUrl}
-                    loop
+                    loop={!autoScroll}
+                    onEnded={handleVideoEnded}
                     playsInline
                     preload="metadata"
                     onLoadedMetadata={handleLoadedMetadata}
@@ -348,6 +366,18 @@ export default function VideoCard({
                         muted={muted}
                         onVolumeChange={setVolume}
                         onToggleMute={toggleMute}
+                    />
+                </div>
+            )}
+
+            {/* More menu (⋯) — Top-right, same row as volume */}
+            {isActive && (
+                <div
+                    className="absolute top-[30px] right-3.5 z-20 opacity-80 hover:opacity-100 transition-opacity duration-300 pointer-events-auto"
+                >
+                    <VideoMoreMenu
+                        videoId={video?.id}
+                        videoRef={videoRef}
                     />
                 </div>
             )}

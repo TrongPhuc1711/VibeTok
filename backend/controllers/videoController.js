@@ -5,6 +5,7 @@ import { HashtagModel } from '../models/contentModel.js';
 import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
 import { addModerationJob } from '../services/moderationQueue.js';
+import { createReport, hasUserReported } from '../models/reportModel.js';
 
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
@@ -443,5 +444,50 @@ export const getRepostedVideos = async (req, res) => {
     } catch (e) {
         console.error('getRepostedVideos error:', e);
         res.status(500).json({ message: 'Lỗi lấy video đã đăng lại', error: e.message });
+    }
+};
+
+// POST /api/videos/:id/report
+export const reportVideo = async (req, res) => {
+    try {
+        const videoId = req.params.id;
+        const userId = req.user.id;
+        const { reason, description } = req.body;
+
+        if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+            return res.status(400).json({ message: 'Vui lòng chọn lý do báo cáo' });
+        }
+
+        // Kiểm tra đã báo cáo chưa
+        const alreadyReported = await hasUserReported(videoId, userId);
+        if (alreadyReported) {
+            return res.status(409).json({ message: 'Bạn đã báo cáo video này rồi' });
+        }
+
+        await createReport({
+            videoId,
+            userId,
+            reason: reason.trim(),
+            description: description?.trim() || null,
+        });
+
+        // Gửi thông báo cho tất cả Admin
+        try {
+            const adminIds = await UserModel.getAdminIds();
+            const reporter = await UserModel.findById(userId);
+            const reporterNorm = normalizeUser(reporter);
+            if (adminIds && adminIds.length > 0 && reporterNorm) {
+                for (const adminId of adminIds) {
+                    await triggerNotification(adminId, reporterNorm, 'video_report', videoId);
+                }
+            }
+        } catch (notifErr) {
+            console.error('Lỗi gửi thông báo báo cáo cho admin:', notifErr.message);
+        }
+
+        res.status(201).json({ message: 'Báo cáo đã được gửi thành công' });
+    } catch (e) {
+        console.error('reportVideo error:', e);
+        res.status(500).json({ message: 'Lỗi gửi báo cáo', error: e.message });
     }
 };

@@ -32,3 +32,9 @@ export const toggleMusicTrending = (id) => api.patch(`${BASE}/music/${id}/trendi
 
 // Analytics
 export const getViewsPerDay = (days = 7) => api.get(`${BASE}/views-per-day`, { params: { days } }).then(r => r.data.data);
+
+// Reports
+export const getAdminReports = (params) => api.get(`${BASE}/reports`, { params }).then(r => r.data);
+export const getReportCounts = () => api.get(`${BASE}/report-counts`).then(r => r.data);
+export const updateReportStatus = (id, status) => api.patch(`${BASE}/reports/${id}/status`, { status }).then(r => r.data);
+export const deleteReport = (id) => api.delete(`${BASE}/reports/${id}`).then(r => r.data);

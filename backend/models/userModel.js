@@ -221,4 +221,12 @@ export const UserModel = {
             [phoneNumber || null, userId]
         );
     },
+
+    // Lấy danh sách ID của tất cả Admin active
+    async getAdminIds() {
+        const [rows] = await pool.query(
+            "SELECT id FROM users WHERE role = 'admin' AND is_active = 1"
+        );
+        return rows.map(r => r.id);
+    },
 };
