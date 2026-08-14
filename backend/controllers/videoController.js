@@ -445,3 +445,24 @@ export const getRepostedVideos = async (req, res) => {
         res.status(500).json({ message: 'Lỗi lấy video đã đăng lại', error: e.message });
     }
 };
+
+// PATCH /api/videos/:id/privacy
+export const updateVideoPrivacy = async (req, res) => {
+    try {
+        const { privacy } = req.body;
+        const validPrivacy = ['public', 'friends', 'private'];
+        if (!validPrivacy.includes(privacy)) {
+            return res.status(400).json({ message: 'Chế độ riêng tư không hợp lệ' });
+        }
+
+        const ok = await VideoModel.updatePrivacy(req.params.id, req.user.id, privacy);
+        if (!ok) {
+            return res.status(403).json({ message: 'Không thể cập nhật quyền riêng tư video này' });
+        }
+
+        res.json({ message: 'Cập nhật quyền riêng tư thành công', privacy });
+    } catch (e) {
+        console.error('updateVideoPrivacy error:', e);
+        res.status(500).json({ message: 'Lỗi cập nhật quyền riêng tư', error: e.message });
+    }
+};

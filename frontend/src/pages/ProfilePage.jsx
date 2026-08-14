@@ -13,7 +13,7 @@ import FindFriendsModal from '../components/common/FindFriendsModal/FindFriendsM
 
 import { useProfile } from '../hooks/useProfile';
 import { getSuggestedUsers } from '../services/userService';
-import { deleteVideo } from '../services/videoService';
+import { deleteVideo, updateVideoPrivacy } from '../services/videoService';
 import { getMyBookmarks, toggleBookmark } from '../services/bookmarkService';
 import { formatCount } from '../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../utils/helpers';
@@ -115,6 +115,15 @@ export default function ProfilePage() {
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Không thể xóa video này');
+    }
+  };
+
+  const handlePrivacyChange = async (videoId, newPrivacy) => {
+    try {
+      await updateVideoPrivacy(videoId, newPrivacy);
+      setLocalVideos(prev => prev.map(v => v.id === videoId ? { ...v, privacy: newPrivacy } : v));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể cập nhật quyền riêng tư');
     }
   };
 
@@ -399,6 +408,7 @@ export default function ProfilePage() {
                   isOwner={isMyProfile}
                   onClick={() => setFeedModalIndex(idx)}
                   onDelete={handleDeleteVideo}
+                  onPrivacyChange={handlePrivacyChange}
                 />
               ))
             ) : (
@@ -502,6 +512,7 @@ export default function ProfilePage() {
           }
           initialIndex={feedModalIndex}
           onClose={() => setFeedModalIndex(null)}
+          onPrivacyChange={handlePrivacyChange}
         />
       )}
 

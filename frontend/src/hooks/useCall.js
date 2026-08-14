@@ -45,6 +45,8 @@ export function useCall() {
     // ── Watch Together ──
     const [watchTogether, setWatchTogether] = useState(null);
     // { videoUrl, isPlaying, currentTime }
+    const [watchInvite, setWatchInvite] = useState(null);
+    // { videoUrl, fromUserId } — lời mời xem cùng từ đối phương
     const watchVideoRef = useRef(null);
 
 
@@ -208,15 +210,26 @@ export function useCall() {
         };
 
         // ── Watch Together events ──
-        const onWatchStart = ({ videoUrl }) => {
+        const onWatchInvite = ({ videoUrl, fromUserId }) => {
             if (!mountedRef.current) return;
-            console.log('[Call][Socket] watch_together_start', { videoUrl });
-            setWatchTogether({ videoUrl, isPlaying: false, currentTime: 0 });
+            console.log('[Call][Socket] watch_together_invite', { videoUrl, fromUserId });
+            setWatchInvite({ videoUrl, fromUserId });
+        };
+        const onWatchAccepted = () => {
+            if (!mountedRef.current) return;
+            console.log('[Call][Socket] watch_together_accepted');
+            toast?.showInfo('Xem cùng nhau', 'Đối phương đã tham gia xem cùng bạn! 🎬');
+        };
+        const onWatchDeclined = () => {
+            if (!mountedRef.current) return;
+            console.log('[Call][Socket] watch_together_declined');
+            toast?.showInfo('Xem cùng nhau', 'Đối phương đã từ chối xem cùng.');
         };
         const onWatchSync = ({ action, currentTime, videoUrl }) => {
             if (!mountedRef.current) return;
             console.log('[Call][Socket] watch_together_sync', { action, currentTime });
             setWatchTogether(prev => {
+                if (!prev) return prev; // Chỉ sync nếu đang xem
                 const url = videoUrl || prev?.videoUrl;
                 if (action === 'play') return { videoUrl: url, isPlaying: true, currentTime };
                 if (action === 'pause') return { videoUrl: url, isPlaying: false, currentTime };
@@ -227,7 +240,8 @@ export function useCall() {
         const onWatchEnd = () => {
             if (!mountedRef.current) return;
             console.log('[Call][Socket] watch_together_end');
-            setWatchTogether(videoUrl);
+            setWatchTogether(null);
+            setWatchInvite(null);
         };
 
         socket.on('call_incoming', onIncoming);
@@ -237,7 +251,9 @@ export function useCall() {
         socket.on('call_rejected', onRejected);
         socket.on('call_ended', onEnded);
         socket.on('call_ringing', onRinging);
-        socket.on('watch_together_start', onWatchStart);
+        socket.on('watch_together_invite', onWatchInvite);
+        socket.on('watch_together_accepted', onWatchAccepted);
+        socket.on('watch_together_declined', onWatchDeclined);
         socket.on('watch_together_sync', onWatchSync);
         socket.on('watch_together_end', onWatchEnd);
 
@@ -252,7 +268,9 @@ export function useCall() {
             socket.off('call_rejected', onRejected);
             socket.off('call_ended', onEnded);
             socket.off('call_ringing', onRinging);
-            socket.off('watch_together_start', onWatchStart);
+            socket.off('watch_together_invite', onWatchInvite);
+            socket.off('watch_together_accepted', onWatchAccepted);
+            socket.off('watch_together_declined', onWatchDeclined);
             socket.off('watch_together_sync', onWatchSync);
             socket.off('watch_together_end', onWatchEnd);
             clearTimeout(retryTimer);
@@ -346,6 +364,7 @@ export function useCall() {
         setIsCameraOff(false);
         setIsScreenSharing(false);
         setWatchTogether(null);
+        setWatchInvite(null);
         iceCandidateQueueRef.current = [];
         settingRemoteDescRef.current = false;
         localStorage.removeItem('vibetok_incoming_ice_candidates');
@@ -550,12 +569,32 @@ export function useCall() {
     const startWatchTogether = useCallback((videoUrl) => {
         if (!currentPartnerId || callState !== 'connected') return;
         console.log('[Call] startWatchTogether', { videoUrl });
+        // Người gửi tự xem ngay, đối phương nhận lời mời
         setWatchTogether({ videoUrl, isPlaying: false, currentTime: 0 });
         getSharedSocket().emit('watch_together_start', {
             toUserId: currentPartnerId,
             videoUrl,
         });
     }, [currentPartnerId, callState]);
+
+    const acceptWatchInvite = useCallback(() => {
+        if (!currentPartnerId || !watchInvite) return;
+        console.log('[Call] acceptWatchInvite', { videoUrl: watchInvite.videoUrl });
+        setWatchTogether({ videoUrl: watchInvite.videoUrl, isPlaying: false, currentTime: 0 });
+        setWatchInvite(null);
+        getSharedSocket().emit('watch_together_accept', {
+            toUserId: currentPartnerId,
+        });
+    }, [currentPartnerId, watchInvite]);
+
+    const declineWatchInvite = useCallback(() => {
+        if (!currentPartnerId || !watchInvite) return;
+        console.log('[Call] declineWatchInvite');
+        setWatchInvite(null);
+        getSharedSocket().emit('watch_together_decline', {
+            toUserId: currentPartnerId,
+        });
+    }, [currentPartnerId, watchInvite]);
 
     const syncWatchTogether = useCallback((action, currentTime = 0) => {
         if (!currentPartnerId || !watchTogether) return;
@@ -640,7 +679,10 @@ export function useCall() {
         toggleScreenShare,
         // Watch Together
         watchTogether,
+        watchInvite,
         startWatchTogether,
+        acceptWatchInvite,
+        declineWatchInvite,
         syncWatchTogether,
         endWatchTogether,
         setWatchVideoRef,

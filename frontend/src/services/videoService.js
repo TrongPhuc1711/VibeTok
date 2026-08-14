@@ -103,6 +103,12 @@ export const getRepostedVideosByUserId = async (userId, { page = 1, limit = 30 }
     return { data: res.data };
 };
 
+// PATCH /api/videos/:id/privacy — Cập nhật quyền riêng tư
+export const updateVideoPrivacy = async (videoId, privacy) => {
+    const res = await api.patch(`/videos/${videoId}/privacy`, { privacy });
+    return { data: res.data };
+};
+
 // POST /api/videos/upload — multipart/form-data
 export const uploadVideo = async (formData) => {
     const { caption, privacy, allowDuet, allowStitch, location, music, isDraft, file } = formData;

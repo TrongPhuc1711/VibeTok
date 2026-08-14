@@ -296,15 +296,27 @@ function VideoRow({ video, isOwner, onDelete }) {
               <span className="text-[#555] text-[12px] font-body">{formatCount(video.shares)}</span>
             </div>
 
-            {/* Privacy badge */}
-            <span className="ml-auto text-[10px] font-body px-2 py-0.5 rounded-full border"
-              style={{
-                borderColor: video.privacy === 'public' ? '#10b98130' : '#f59e0b30',
-                color:       video.privacy === 'public' ? '#10b981'   : '#f59e0b',
-                background:  video.privacy === 'public' ? '#10b98110' : '#f59e0b10',
-              }}>
-              {video.privacy === 'public' ? '🌍 Công khai' : video.privacy === 'friends' ? '👥 Bạn bè' : '🔒 Riêng tư'}
-            </span>
+            {/* Privacy badge / select */}
+            {isOwner ? (
+              <select
+                value={video.privacy || 'public'}
+                onChange={(e) => onPrivacyChange && onPrivacyChange(video.id, e.target.value)}
+                className="ml-auto text-[11px] font-body px-2 py-0.5 rounded-lg border bg-[#161622] text-white/90 border-white/10 outline-none cursor-pointer hover:border-[#ff2d78]/50"
+              >
+                <option value="public">Công khai</option>
+                <option value="friends">Bạn bè</option>
+                <option value="private">Riêng tư</option>
+              </select>
+            ) : (
+              <span className="ml-auto text-[10px] font-body px-2 py-0.5 rounded-full border"
+                style={{
+                  borderColor: video.privacy === 'public' ? '#10b98130' : '#f59e0b30',
+                  color:       video.privacy === 'public' ? '#10b981'   : '#f59e0b',
+                  background:  video.privacy === 'public' ? '#10b98110' : '#f59e0b10',
+                }}>
+                {video.privacy === 'public' ? 'Công khai' : video.privacy === 'friends' ? 'Bạn bè' : 'Riêng tư'}
+              </span>
+            )}
 
             {/* Delete (owner only) */}
             {isOwner && (
@@ -333,7 +345,7 @@ function VideoRow({ video, isOwner, onDelete }) {
 }
 
 /* ── Main export ── */
-export default function ProfileVideoList({ videos = [], isOwner = false, onDelete, loading = false }) {
+export default function ProfileVideoList({ videos = [], isOwner = false, onDelete, onPrivacyChange, loading = false }) {
   if (loading) {
     return (
       <div className="flex flex-col gap-3 p-4">
@@ -359,7 +371,7 @@ export default function ProfileVideoList({ videos = [], isOwner = false, onDelet
     <div className="flex flex-col gap-3 p-4">
       {videos.map((v, i) => (
         <div key={v.id} style={{ animationDelay: `${i * 0.06}s` }}>
-          <VideoRow video={v} isOwner={isOwner} onDelete={onDelete} />
+          <VideoRow video={v} isOwner={isOwner} onDelete={onDelete} onPrivacyChange={onPrivacyChange} />
         </div>
       ))}
     </div>
