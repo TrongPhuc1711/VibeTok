@@ -365,8 +365,13 @@ export const AdminModel = {
     async getSidebarCounts() {
         const [[{ users }]] = await pool.query('SELECT COUNT(*) AS users FROM users WHERE is_active = 1');
         const [[{ videos }]] = await pool.query('SELECT COUNT(*) AS videos FROM videos WHERE is_active = 1');
-        const [[{ hidden }]] = await pool.query('SELECT COUNT(*) AS hidden FROM videos WHERE is_active = 0');
-        return { users, videos, hidden };
+        const [[{ moderation }]] = await pool.query(`
+            SELECT (
+                (SELECT COUNT(*) FROM videos WHERE moderation_status = 'rejected') +
+                (SELECT COUNT(*) FROM video_reports WHERE status = 'pending')
+            ) AS total
+        `);
+        return { users, videos, hidden: Number(moderation?.total) || 0 };
     },
 
     // All Music (filter/search/pagination)

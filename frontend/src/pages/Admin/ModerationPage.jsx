@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
 import StatCard from '../../components/ui/StatCard';
 import StatusBadge from '../../components/ui/StatusBadge';
-import AdminBtn from './components/AdminBtn';
 import AdminFilters from './components/AdminFilters';
 import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
@@ -24,12 +23,12 @@ const fmt = (n) => {
 
 const PAGE_SIZE = 12;
 
+// Filters cho trang Quản lý Video (không có "Bị từ chối" vì đã chuyển sang Kiểm duyệt)
 const VIDEO_FILTERS = [
     { label: 'Tất cả', value: 'all' },
     { label: 'Đang hiển thị', value: 'active' },
     { label: 'Bản nháp', value: 'draft' },
     { label: 'Đã ẩn', value: 'hidden' },
-    { label: 'Bị từ chối', value: 'rejected' },
 ];
 
 const REPORT_FILTERS = [
@@ -312,16 +311,14 @@ function HideReasonModal({ video, onClose, onConfirm }) {
 export default function ModerationPage() {
     const { showSuccess, showError } = useToast();
     const { pathname } = useLocation();
-    const [activeTab, setActiveTab] = useState(
-        pathname.includes('/admin/videos') ? 'videos' : 'reports'
-    ); // 'videos' | 'reports'
 
-    // Đồng bộ tab khi URL thay đổi (click sidebar)
-    useEffect(() => {
-        setActiveTab(pathname.includes('/admin/videos') ? 'videos' : 'reports');
-    }, [pathname]);
+    // Xác định xem đang ở trang nào (/admin/videos hay /admin/moderation)
+    const isVideosPage = pathname.includes('/admin/videos');
 
-    // Video State
+    // Tab phụ bên trong trang Kiểm duyệt ('rejected' = video bị AI từ chối, 'reports' = báo cáo vi phạm)
+    const [moderationTab, setModerationTab] = useState('rejected');
+
+    // Video State cho trang Quản lý Video (/admin/videos)
     const [videos, setVideos] = useState([]);
     const [videoCounts, setVideoCounts] = useState({ all: 0, active: 0, draft: 0, hidden: 0, rejected: 0 });
     const [videoFilter, setVideoFilter] = useState('all');
@@ -330,7 +327,14 @@ export default function ModerationPage() {
     const [videoTotalPages, setVideoTotalPages] = useState(1);
     const [videoTotal, setVideoTotal] = useState(0);
 
-    // Report State
+    // Video State cho phần Video bị từ chối bên trang Kiểm duyệt (/admin/moderation)
+    const [rejectedVideos, setRejectedVideos] = useState([]);
+    const [rejectedSearch, setRejectedSearch] = useState('');
+    const [rejectedPage, setRejectedPage] = useState(1);
+    const [rejectedTotalPages, setRejectedTotalPages] = useState(1);
+    const [rejectedTotal, setRejectedTotal] = useState(0);
+
+    // Report State cho phần Báo cáo bên trang Kiểm duyệt
     const [reports, setReports] = useState([]);
     const [reportCounts, setReportCounts] = useState({ all: 0, pending: 0, reviewed: 0, resolved: 0 });
     const [reportFilter, setReportFilter] = useState('all');
@@ -346,7 +350,7 @@ export default function ModerationPage() {
     const [previewVideo, setPreviewVideo] = useState(null);     // VideoPreviewModal
     const [hideReasonVideo, setHideReasonVideo] = useState(null); // HideReasonModal
 
-    // Fetch Videos
+    // Fetch Videos cho trang Quản lý Video (/admin/videos)
     const fetchVideos = useCallback(async () => {
         setLoading(true);
         try {
@@ -360,6 +364,21 @@ export default function ModerationPage() {
             setLoading(false);
         }
     }, [videoFilter, videoSearch, videoPage]);
+
+    // Fetch Video bị từ chối cho trang Kiểm duyệt (/admin/moderation)
+    const fetchRejectedVideos = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await getAdminVideos({ status: 'rejected', search: rejectedSearch, page: rejectedPage, limit: PAGE_SIZE });
+            setRejectedVideos(res.videos || []);
+            setRejectedTotal(res.total || 0);
+            setRejectedTotalPages(res.totalPages || 1);
+        } catch {
+            showError('Lỗi', 'Không thể tải video bị từ chối');
+        } finally {
+            setLoading(false);
+        }
+    }, [rejectedSearch, rejectedPage]);
 
     const fetchVideoCounts = useCallback(async () => {
         try {
@@ -390,10 +409,18 @@ export default function ModerationPage() {
         } catch { /* ignore */ }
     }, []);
 
+    // Effect fetch dữ liệu dựa trên route hiện tại
     useEffect(() => {
-        if (activeTab === 'videos') fetchVideos();
-        else fetchReports();
-    }, [activeTab, fetchVideos, fetchReports]);
+        if (isVideosPage) {
+            fetchVideos();
+        } else {
+            if (moderationTab === 'rejected') {
+                fetchRejectedVideos();
+            } else {
+                fetchReports();
+            }
+        }
+    }, [isVideosPage, moderationTab, fetchVideos, fetchRejectedVideos, fetchReports]);
 
     useEffect(() => {
         fetchVideoCounts();
@@ -411,8 +438,12 @@ export default function ModerationPage() {
             await hideVideo(id, reason);
             showSuccess('Thành công', 'Đã ẩn video');
             setHideReasonVideo(null);
-            if (activeTab === 'videos') fetchVideos();
-            else fetchReports();
+            if (isVideosPage) {
+                fetchVideos();
+            } else {
+                if (moderationTab === 'rejected') fetchRejectedVideos();
+                else fetchReports();
+            }
             fetchVideoCounts();
         } catch (e) {
             showError('Lỗi', e.response?.data?.message || 'Không thể ẩn video');
@@ -427,8 +458,8 @@ export default function ModerationPage() {
         try {
             await restoreVideo(id);
             showSuccess('Thành công', 'Đã khôi phục video');
-            if (activeTab === 'videos') fetchVideos();
-            else fetchReports();
+            if (isVideosPage) fetchVideos();
+            else fetchRejectedVideos();
             fetchVideoCounts();
         } catch (e) {
             showError('Lỗi', e.response?.data?.message || 'Không thể khôi phục');
@@ -443,7 +474,8 @@ export default function ModerationPage() {
         try {
             await approveVideo(id);
             showSuccess('Thành công', 'Đã duyệt lại video thành công');
-            if (activeTab === 'videos') fetchVideos();
+            if (isVideosPage) fetchVideos();
+            else fetchRejectedVideos();
             fetchVideoCounts();
         } catch (e) {
             showError('Lỗi', e.response?.data?.message || 'Không thể duyệt video');
@@ -485,157 +517,22 @@ export default function ModerationPage() {
     const reportFiltersWithCounts = REPORT_FILTERS.map(f => ({ ...f, count: reportCounts[f.value] ?? 0 }));
 
     return (
-        <AdminLayout title={activeTab === 'videos' ? 'Quản lý Video' : 'Kiểm duyệt & Báo cáo'}>
-            {/* VIEW: BÁO CÁO VI PHẠM */}
-            {activeTab === 'reports' && (
+        <AdminLayout title={isVideosPage ? 'Quản lý Video' : 'Kiểm duyệt nội dung'}>
+
+            {/* ═══════════════════════════════════════════════════ */}
+            {/* TRANG 1: QUẢN LÝ VIDEO (/admin/videos)              */}
+            {/* ═══════════════════════════════════════════════════ */}
+            {isVideosPage && (
                 <>
-                    {/* Stats */}
+                    {/* Stats 4 cột: Tất cả, Đang hiển thị, Bản nháp, Đã ẩn */}
                     <div className="grid grid-cols-4 gap-4 mb-6">
-                        <StatCard label="Tổng số báo cáo" value={fmt(reportCounts.all)} change={0} positive accent />
-                        <StatCard label="Chờ xử lý" value={fmt(reportCounts.pending)} change={0} positive={false} />
-                        <StatCard label="Đã xem" value={String(reportCounts.reviewed)} change={0} positive />
-                        <StatCard label="Đã giải quyết" value={String(reportCounts.resolved)} change={0} positive />
-                    </div>
-
-                    {/* Filters */}
-                    <AdminFilters
-                        filters={reportFiltersWithCounts}
-                        active={reportFilter}
-                        onChange={(f) => { setReportFilter(f); setReportPage(1); }}
-                        search={reportSearch}
-                        onSearch={(s) => { setReportSearch(s); setReportPage(1); }}
-                        placeholder="Tìm theo lý do, mô tả, tài khoản..."
-                    />
-
-                    {/* Report Table */}
-                    {loading ? (
-                        <div className="flex items-center justify-center py-16"><BounceDots /></div>
-                    ) : reports.length === 0 ? (
-                        <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-12 text-center">
-                            <p className="text-[#666] text-[14px]">Chưa có báo cáo vi phạm nào</p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex flex-col gap-4 mb-6">
-                                {reports.map((r) => (
-                                    <div
-                                        key={r.id}
-                                        className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center hover:border-[#2a2a3e] transition-colors"
-                                    >
-                                        {/* Content info */}
-                                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                                            <div className="w-10 h-10 rounded-full bg-[#ff2d78]/10 text-[#ff2d78] flex items-center justify-center font-bold shrink-0 text-[18px]">
-                                                🚩
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                    <span className="text-white font-semibold text-[15px]">{r.reason}</span>
-                                                    <StatusBadge
-                                                        status={r.status === 'resolved' ? 'approved' : r.status === 'reviewed' ? 'pending' : 'rejected'}
-                                                        label={r.status === 'resolved' ? 'Đã giải quyết' : r.status === 'reviewed' ? 'Đã xem' : 'Chờ xử lý'}
-                                                    />
-                                                    <span className="text-[12px] text-[#555] ml-auto">
-                                                        {new Date(r.created_at).toLocaleString('vi-VN')}
-                                                    </span>
-                                                </div>
-
-                                                {r.description && (
-                                                    <p className="text-[#aaa] text-[13.5px] bg-[#161625] p-2.5 rounded-lg border border-white/5 mb-2 font-mono leading-relaxed">
-                                                        "{r.description}"
-                                                    </p>
-                                                )}
-
-                                                <div className="flex items-center gap-4 text-[12.5px] text-[#777] flex-wrap">
-                                                    <span>
-                                                        Người báo cáo: <strong className="text-white">@{r.reporter_username || 'n/a'}</strong>
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span>
-                                                        Video bị báo cáo: ID <code className="text-white bg-white/10 px-1.5 py-0.5 rounded">{r.video_id}</code>
-                                                    </span>
-                                                    {r.creator_username && (
-                                                        <>
-                                                            <span>•</span>
-                                                            <span>
-                                                                Tác giả: <strong className="text-[#ff2d78]">@{r.creator_username}</strong>
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-2 shrink-0 self-end md:self-center border-t md:border-t-0 pt-3 md:pt-0 border-white/5 w-full md:w-auto justify-end">
-                                            {r.video_active ? (
-                                                <button
-                                                    onClick={() => handleHideVideoWithReason({ id: r.video_id, title: `Video #${r.video_id}`, creator: r.creator_username || 'N/A' })}
-                                                    disabled={actionLoading === r.video_id}
-                                                    className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-[12.5px] font-semibold hover:bg-red-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
-                                                >
-                                                    Ẩn video
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleRestoreVideo(r.video_id)}
-                                                    disabled={actionLoading === r.video_id}
-                                                    className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[12.5px] font-semibold hover:bg-emerald-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
-                                                >
-                                                    Khôi phục
-                                                </button>
-                                            )}
-
-                                            {r.status !== 'resolved' && (
-                                                <button
-                                                    onClick={() => handleUpdateReportStatus(r.id, 'resolved')}
-                                                    disabled={actionLoading === `report_${r.id}`}
-                                                    className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-[12.5px] font-semibold hover:bg-blue-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
-                                                >
-                                                    Giải quyết
-                                                </button>
-                                            )}
-
-                                            <button
-                                                onClick={() => handleDeleteReport(r.id)}
-                                                disabled={actionLoading === `del_report_${r.id}`}
-                                                className="px-3 py-1.5 rounded-lg bg-white/10 text-white/70 text-[12.5px] font-semibold hover:bg-white/20 transition-colors cursor-pointer border-none disabled:opacity-50"
-                                            >
-                                                Xóa
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Pagination */}
-                            <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
-                                <AdminPagination
-                                    page={reportPage}
-                                    totalPages={reportTotalPages}
-                                    total={reportTotal}
-                                    pageSize={PAGE_SIZE}
-                                    onPageChange={setReportPage}
-                                    label="báo cáo"
-                                />
-                            </div>
-                        </>
-                    )}
-                </>
-            )}
-
-            {/* TAB: QUẢN LÝ VIDEO */}
-            {activeTab === 'videos' && (
-                <>
-                    {/* Stats */}
-                    <div className="grid grid-cols-5 gap-4 mb-6">
                         <StatCard label="Tổng video" value={fmt(videoCounts.all)} change={0} positive accent />
                         <StatCard label="Đang hiển thị" value={fmt(videoCounts.active)} change={0} positive />
                         <StatCard label="Bản nháp" value={String(videoCounts.draft)} change={0} positive />
                         <StatCard label="Đã ẩn" value={String(videoCounts.hidden)} change={0} positive={false} />
-                        <StatCard label="Bị từ chối" value={String(videoCounts.rejected || 0)} change={0} positive={false} />
                     </div>
 
-                    {/* Filters */}
+                    {/* Filters 4 tab */}
                     <AdminFilters
                         filters={videoFiltersWithCounts}
                         active={videoFilter}
@@ -698,13 +595,6 @@ export default function ModerationPage() {
                                                 <span>💬 {fmt(v.comments)}</span>
                                             </div>
 
-                                            {/* Rejection reason tag */}
-                                            {v.status === 'rejected' && v.rejectionReason && (
-                                                <p className="text-red-400/80 text-[9px] font-body bg-red-500/10 px-2 py-1 rounded mb-2 line-clamp-1" title={v.rejectionReason}>
-                                                    ⚠ {v.rejectionReason}
-                                                </p>
-                                            )}
-
                                             <div className="flex gap-1.5">
                                                 {v.status === 'active' && (
                                                     <button onClick={() => handleHideVideoWithReason(v)}
@@ -719,21 +609,6 @@ export default function ModerationPage() {
                                                         className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded bg-emerald-500/15 text-emerald-400 border-none cursor-pointer hover:bg-emerald-500/25 disabled:opacity-40">
                                                         Khôi phục
                                                     </button>
-                                                )}
-                                                {v.status === 'rejected' && (
-                                                    <>
-                                                        <button onClick={() => handleApproveVideo(v.id)}
-                                                            disabled={actionLoading === v.id}
-                                                            className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded text-white border-none cursor-pointer disabled:opacity-40 hover:opacity-90 transition-all"
-                                                            style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}>
-                                                            ✓ Duyệt lại
-                                                        </button>
-                                                        <button onClick={() => handleHideVideoWithReason(v)}
-                                                            disabled={actionLoading === v.id}
-                                                            className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded bg-red-500/15 text-red-400 border-none cursor-pointer hover:bg-red-500/25 disabled:opacity-40">
-                                                            Ẩn
-                                                        </button>
-                                                    </>
                                                 )}
                                                 {v.status === 'draft' && (
                                                     <span className="flex-1 text-[10px] font-body py-1.5 text-center text-[#555]">Bản nháp</span>
@@ -755,6 +630,319 @@ export default function ModerationPage() {
                                     label="video"
                                 />
                             </div>
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* ═══════════════════════════════════════════════════ */}
+            {/* TRANG 2: KIỂM DUYỆT NỘI DUNG (/admin/moderation)    */}
+            {/* ═══════════════════════════════════════════════════ */}
+            {!isVideosPage && (
+                <>
+                    {/* Sub-selector nội bộ trang Kiểm duyệt */}
+                    <div className="flex items-center gap-2.5 mb-6 border-b border-[#1a1a2a] pb-3">
+                        <button
+                            onClick={() => { setModerationTab('rejected'); setRejectedPage(1); }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13.5px] font-semibold transition-all cursor-pointer border-none ${
+                                moderationTab === 'rejected'
+                                    ? 'bg-[#ff2d78] text-white shadow-lg shadow-[#ff2d78]/25'
+                                    : 'bg-[#0f0f1a] text-white/60 hover:text-white hover:bg-white/5'
+                            }`}
+                        >
+                            <span>🚫 Video bị AI từ chối</span>
+                            {videoCounts.rejected > 0 && (
+                                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold ${
+                                    moderationTab === 'rejected' ? 'bg-white text-[#ff2d78]' : 'bg-red-500 text-white'
+                                }`}>
+                                    {videoCounts.rejected}
+                                </span>
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => { setModerationTab('reports'); setReportPage(1); }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13.5px] font-semibold transition-all cursor-pointer border-none ${
+                                moderationTab === 'reports'
+                                    ? 'bg-[#ff2d78] text-white shadow-lg shadow-[#ff2d78]/25'
+                                    : 'bg-[#0f0f1a] text-white/60 hover:text-white hover:bg-white/5'
+                            }`}
+                        >
+                            <span>🚩 Báo cáo từ người dùng</span>
+                            {reportCounts.pending > 0 && (
+                                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold ${
+                                    moderationTab === 'reports' ? 'bg-white text-[#ff2d78]' : 'bg-amber-500 text-black'
+                                }`}>
+                                    {reportCounts.pending}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* ── MỤC 1: VIDEO BỊ AI TỪ CHỐI ── */}
+                    {moderationTab === 'rejected' && (
+                        <>
+                            {/* Stats */}
+                            <div className="grid grid-cols-4 gap-4 mb-6">
+                                <StatCard label="Video bị từ chối" value={String(videoCounts.rejected || 0)} change={0} positive={false} accent />
+                                <StatCard label="Đã ẩn thủ công" value={String(videoCounts.hidden || 0)} change={0} positive={false} />
+                                <StatCard label="Báo cáo chờ xử lý" value={String(reportCounts.pending || 0)} change={0} positive={false} />
+                                <StatCard label="Báo cáo đã giải quyết" value={String(reportCounts.resolved || 0)} change={0} positive />
+                            </div>
+
+                            {/* Search bar cho video bị từ chối */}
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="relative flex-1 max-w-md">
+                                    <input
+                                        type="text"
+                                        value={rejectedSearch}
+                                        onChange={(e) => { setRejectedSearch(e.target.value); setRejectedPage(1); }}
+                                        placeholder="Tìm video bị từ chối theo tiêu đề, tác giả..."
+                                        className="w-full bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl px-4 py-2.5 text-white text-[13px] font-body outline-none placeholder:text-[#555] focus:border-[#ff2d78]/50 transition-colors"
+                                    />
+                                    {rejectedSearch && (
+                                        <button
+                                            onClick={() => { setRejectedSearch(''); setRejectedPage(1); }}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white border-none bg-transparent cursor-pointer text-[12px]"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Video grid */}
+                            {loading ? (
+                                <div className="flex items-center justify-center py-16"><BounceDots /></div>
+                            ) : rejectedVideos.length === 0 ? (
+                                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-12 text-center">
+                                    <p className="text-[#666] text-[14px]">🎉 Tuyệt vời! Không có video nào bị từ chối cần duyệt lại</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-4 gap-4 mb-6">
+                                        {rejectedVideos.map(v => (
+                                            <div key={v.id} className="bg-[#0f0f1a] border border-red-500/20 rounded-xl overflow-hidden hover:border-red-500/40 transition-colors group">
+                                                {/* Thumbnail — click to preview */}
+                                                <div
+                                                    className="relative h-[120px] flex items-center justify-center bg-[#1a0a2e] cursor-pointer"
+                                                    onClick={() => setPreviewVideo(v)}
+                                                >
+                                                    {v.thumbnail ? (
+                                                        <img src={v.thumbnail} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                                                            <PlayAdminIcon />
+                                                        </div>
+                                                    )}
+                                                    {/* Play overlay on hover */}
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                                                <polygon points="5 3 19 12 5 21 5 3" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute top-2 left-2">
+                                                        <StatusBadge status="rejected" label="Bị từ chối" />
+                                                    </div>
+                                                    <span className="absolute bottom-2 right-2 text-[9px] font-bold font-body text-white bg-black/60 px-1.5 py-0.5 rounded">{v.duration}</span>
+                                                </div>
+
+                                                {/* Info */}
+                                                <div className="p-3">
+                                                    <p className="text-white text-[12px] font-semibold font-body leading-tight mb-1.5 line-clamp-1">{v.title}</p>
+                                                    <div className="flex items-center gap-1.5 mb-1">
+                                                        <Avatar user={{ anh_dai_dien: v.avatar, initials: v.initials, fullName: v.creator }} size="xs" className="!w-7 !h-7 !text-[9px]" />
+                                                        <span className="text-[#555] text-[10px] font-body">{v.creator}</span>
+                                                        <span className="text-[#333] text-[10px] font-body ml-auto">{v.submitTime}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[9px] text-[#555] font-body mb-2">
+                                                        <span>👁 {fmt(v.views)}</span>
+                                                        <span>❤ {fmt(v.likes)}</span>
+                                                        <span>💬 {fmt(v.comments)}</span>
+                                                    </div>
+
+                                                    {/* Rejection reason */}
+                                                    {v.rejectionReason && (
+                                                        <p className="text-red-400/90 text-[10px] font-body bg-red-500/10 border border-red-500/20 px-2 py-1.5 rounded-lg mb-2.5 line-clamp-2" title={v.rejectionReason}>
+                                                            ⚠ {v.rejectionReason}
+                                                        </p>
+                                                    )}
+
+                                                    {/* Actions: Duyệt lại hoặc Ẩn */}
+                                                    <div className="flex gap-1.5">
+                                                        <button
+                                                            onClick={() => handleApproveVideo(v.id)}
+                                                            disabled={actionLoading === v.id}
+                                                            className="flex-1 text-[11px] font-semibold font-body py-1.5 rounded text-white border-none cursor-pointer disabled:opacity-40 hover:opacity-90 transition-all"
+                                                            style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
+                                                        >
+                                                            ✓ Duyệt lại
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleHideVideoWithReason(v)}
+                                                            disabled={actionLoading === v.id}
+                                                            className="px-3 text-[11px] font-semibold font-body py-1.5 rounded bg-red-500/15 text-red-400 border-none cursor-pointer hover:bg-red-500/25 disabled:opacity-40"
+                                                        >
+                                                            Ẩn
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Pagination */}
+                                    <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+                                        <AdminPagination
+                                            page={rejectedPage}
+                                            totalPages={rejectedTotalPages}
+                                            total={rejectedTotal}
+                                            pageSize={PAGE_SIZE}
+                                            onPageChange={setRejectedPage}
+                                            label="video bị từ chối"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    )}
+
+                    {/* ── MỤC 2: BÁO CÁO VI PHẠM TỪ NGƯỜI DÙNG ── */}
+                    {moderationTab === 'reports' && (
+                        <>
+                            {/* Stats */}
+                            <div className="grid grid-cols-4 gap-4 mb-6">
+                                <StatCard label="Tổng số báo cáo" value={fmt(reportCounts.all)} change={0} positive accent />
+                                <StatCard label="Chờ xử lý" value={fmt(reportCounts.pending)} change={0} positive={false} />
+                                <StatCard label="Đã xem" value={String(reportCounts.reviewed)} change={0} positive />
+                                <StatCard label="Đã giải quyết" value={String(reportCounts.resolved)} change={0} positive />
+                            </div>
+
+                            {/* Filters */}
+                            <AdminFilters
+                                filters={reportFiltersWithCounts}
+                                active={reportFilter}
+                                onChange={(f) => { setReportFilter(f); setReportPage(1); }}
+                                search={reportSearch}
+                                onSearch={(s) => { setReportSearch(s); setReportPage(1); }}
+                                placeholder="Tìm theo lý do, mô tả, tài khoản..."
+                            />
+
+                            {/* Report Table */}
+                            {loading ? (
+                                <div className="flex items-center justify-center py-16"><BounceDots /></div>
+                            ) : reports.length === 0 ? (
+                                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-12 text-center">
+                                    <p className="text-[#666] text-[14px]">Chưa có báo cáo vi phạm nào</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col gap-4 mb-6">
+                                        {reports.map((r) => (
+                                            <div
+                                                key={r.id}
+                                                className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center hover:border-[#2a2a3e] transition-colors"
+                                            >
+                                                {/* Content info */}
+                                                <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                                                    <div className="w-10 h-10 rounded-full bg-[#ff2d78]/10 text-[#ff2d78] flex items-center justify-center font-bold shrink-0 text-[18px]">
+                                                        🚩
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                            <span className="text-white font-semibold text-[15px]">{r.reason}</span>
+                                                            <StatusBadge
+                                                                status={r.status === 'resolved' ? 'approved' : r.status === 'reviewed' ? 'pending' : 'rejected'}
+                                                                label={r.status === 'resolved' ? 'Đã giải quyết' : r.status === 'reviewed' ? 'Đã xem' : 'Chờ xử lý'}
+                                                            />
+                                                            <span className="text-[12px] text-[#555] ml-auto">
+                                                                {new Date(r.created_at).toLocaleString('vi-VN')}
+                                                            </span>
+                                                        </div>
+
+                                                        {r.description && (
+                                                            <p className="text-[#aaa] text-[13.5px] bg-[#161625] p-2.5 rounded-lg border border-white/5 mb-2 font-mono leading-relaxed">
+                                                                "{r.description}"
+                                                            </p>
+                                                        )}
+
+                                                        <div className="flex items-center gap-4 text-[12.5px] text-[#777] flex-wrap">
+                                                            <span>
+                                                                Người báo cáo: <strong className="text-white">@{r.reporter_username || 'n/a'}</strong>
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>
+                                                                Video bị báo cáo: ID <code className="text-white bg-white/10 px-1.5 py-0.5 rounded">{r.video_id}</code>
+                                                            </span>
+                                                            {r.creator_username && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span>
+                                                                        Tác giả: <strong className="text-[#ff2d78]">@{r.creator_username}</strong>
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Actions */}
+                                                <div className="flex items-center gap-2 shrink-0 self-end md:self-center border-t md:border-t-0 pt-3 md:pt-0 border-white/5 w-full md:w-auto justify-end">
+                                                    {r.video_active ? (
+                                                        <button
+                                                            onClick={() => handleHideVideoWithReason({ id: r.video_id, title: `Video #${r.video_id}`, creator: r.creator_username || 'N/A' })}
+                                                            disabled={actionLoading === r.video_id}
+                                                            className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-[12.5px] font-semibold hover:bg-red-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                        >
+                                                            Ẩn video
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleRestoreVideo(r.video_id)}
+                                                            disabled={actionLoading === r.video_id}
+                                                            className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[12.5px] font-semibold hover:bg-emerald-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                        >
+                                                            Khôi phục
+                                                        </button>
+                                                    )}
+
+                                                    {r.status !== 'resolved' && (
+                                                        <button
+                                                            onClick={() => handleUpdateReportStatus(r.id, 'resolved')}
+                                                            disabled={actionLoading === `report_${r.id}`}
+                                                            className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-[12.5px] font-semibold hover:bg-blue-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                        >
+                                                            Giải quyết
+                                                        </button>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => handleDeleteReport(r.id)}
+                                                        disabled={actionLoading === `del_report_${r.id}`}
+                                                        className="px-3 py-1.5 rounded-lg bg-white/10 text-white/70 text-[12.5px] font-semibold hover:bg-white/20 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                    >
+                                                        Xóa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Pagination */}
+                                    <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+                                        <AdminPagination
+                                            page={reportPage}
+                                            totalPages={reportTotalPages}
+                                            total={reportTotal}
+                                            pageSize={PAGE_SIZE}
+                                            onPageChange={setReportPage}
+                                            label="báo cáo"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </>
                     )}
                 </>
