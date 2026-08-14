@@ -485,37 +485,8 @@ export default function ModerationPage() {
     const reportFiltersWithCounts = REPORT_FILTERS.map(f => ({ ...f, count: reportCounts[f.value] ?? 0 }));
 
     return (
-        <AdminLayout title="Kiểm duyệt & Báo cáo">
-            {/* Top Navigation Tabs */}
-            <div className="flex items-center gap-3 mb-6 border-b border-[#1a1a2a] pb-3">
-                <button
-                    onClick={() => { setActiveTab('reports'); setReportPage(1); }}
-                    className={`px-4 py-2 rounded-xl text-[14px] font-semibold transition-all cursor-pointer ${
-                        activeTab === 'reports'
-                            ? 'bg-[#ff2d78] text-white shadow-lg shadow-[#ff2d78]/25'
-                            : 'bg-[#0f0f1a] text-white/60 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                    🚩 Báo cáo vi phạm ({reportCounts.pending || 0} chờ xử lý)
-                </button>
-                <button
-                    onClick={() => { setActiveTab('videos'); setVideoPage(1); }}
-                    className={`px-4 py-2 rounded-xl text-[14px] font-semibold transition-all cursor-pointer ${
-                        activeTab === 'videos'
-                            ? 'bg-[#ff2d78] text-white shadow-lg shadow-[#ff2d78]/25'
-                            : 'bg-[#0f0f1a] text-white/60 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                    🎥 Tất cả Video ({videoCounts.all || 0})
-                    {videoCounts.rejected > 0 && (
-                        <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                            {videoCounts.rejected}
-                        </span>
-                    )}
-                </button>
-            </div>
-
-            {/* TAB: BÁO CÁO VI PHẠM */}
+        <AdminLayout title={activeTab === 'videos' ? 'Quản lý Video' : 'Kiểm duyệt & Báo cáo'}>
+            {/* VIEW: BÁO CÁO VI PHẠM */}
             {activeTab === 'reports' && (
                 <>
                     {/* Stats */}
