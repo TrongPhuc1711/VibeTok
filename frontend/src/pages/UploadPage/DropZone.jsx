@@ -44,7 +44,7 @@ export default function DropZone({ error, onSelect }) {
         <UploadVideoIcon />
       </div>
 
-      <p className="text-[#ddd] text-sm font-semibold font-body m-0">
+      <p className="text-sm font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>
         Chọn video để tải lên
       </p>
       <p className="text-text-faint text-xs font-body m-0 text-center px-5">

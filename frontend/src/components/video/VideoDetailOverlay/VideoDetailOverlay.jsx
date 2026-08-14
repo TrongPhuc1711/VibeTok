@@ -161,8 +161,11 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
         </div>
       ) : (
         <div
-          className="flex h-[92vh] max-h-[860px] w-[96vw] max-w-[1100px] rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: '#0d0d14' }}
+          className="flex h-[92vh] max-h-[860px] w-[96vw] max-w-[1100px] rounded-2xl overflow-hidden shadow-2xl border"
+          style={{
+            background: 'var(--vt-card)',
+            borderColor: 'var(--color-border)',
+          }}
         >
           {/* LEFT: Video */}
           <div
@@ -212,33 +215,42 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
               style={{ background: 'linear-gradient(to top, rgba(0,0,0,.8), transparent)' }}
             >
               <p
-                className="text-white font-bold text-[15px] font-body mb-1 cursor-pointer pointer-events-auto hover:underline w-fit"
+                className="font-bold text-[15px] font-body mb-1 cursor-pointer pointer-events-auto hover:underline w-fit"
+                style={{ color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
                 onClick={() => { handleClose(); navigate(`/profile/${video.user?.username}`); }}
               >
                 @{video.user?.username}
               </p>
-              <p className="text-white/80 text-[13px] font-body leading-snug">
+              <p className="text-[13px] font-body leading-snug" style={{ color: '#f1f1f2', textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>
                 {captionTxt}{' '}
                 {hashtags.map(h => (
-                  <span key={h} className="text-white font-bold">{h} </span>
+                  <span key={h} className="font-bold" style={{ color: '#ffffff' }}>{h} </span>
                 ))}
               </p>
               {video.music && (
                 <div className="flex items-center gap-1.5 mt-2 pointer-events-auto">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,.7)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,.9)">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                   </svg>
-                  <span className="text-white/70 text-[11px] font-body">{video.music.title} – {video.music.artist}</span>
+                  <span className="text-[11px] font-body" style={{ color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                    {video.music.title} – {video.music.artist}
+                  </span>
                 </div>
               )}
             </div>
           </div>
 
           {/* RIGHT: Info + Comments */}
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+          <div
+            className="flex-1 flex flex-col overflow-hidden"
+            style={{
+              background: 'var(--vt-card)',
+              borderLeft: '1px solid var(--color-border)',
+            }}
+          >
 
             {/* User header */}
-            <div className="flex items-center gap-3 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-3 px-5 py-4 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
               <Avatar
                 user={video.user}
                 className="!w-11 !h-11 !text-sm cursor-pointer"
@@ -246,21 +258,24 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
               />
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-white text-[14px] font-semibold font-body leading-tight cursor-pointer hover:underline"
+                  className="text-[14px] font-semibold font-body leading-tight cursor-pointer hover:underline m-0"
+                  style={{ color: 'var(--color-text-primary)' }}
                   onClick={() => { handleClose(); navigate(`/profile/${video.user?.username}`); }}
                 >
                   {video.user?.fullName || video.user?.username}
                 </p>
-                <p className="text-white/40 text-[12px] font-body">{formatTimeAgo(video.createdAt)}</p>
+                <p className="text-[12px] font-body m-0 mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  {formatTimeAgo(video.createdAt)}
+                </p>
               </div>
               {me && me.username !== video.user?.username && (
                 <button
                   onClick={handleFollow}
-                  className={`text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer
-                    ${following
-                      ? 'bg-transparent border-white/20 text-white/50 hover:border-red-400/40 hover:text-red-400'
-                      : 'bg-[#ff2d78] border-[#ff2d78] text-white hover:bg-[#e0266b]'
-                    }`}
+                  className={`text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    following
+                      ? 'bg-transparent text-text-secondary border-border hover:border-red-400 hover:text-red-400'
+                      : 'bg-primary border-primary text-white hover:opacity-90'
+                  }`}
                 >
                   {following ? 'Đang follow' : 'Follow'}
                 </button>
@@ -269,54 +284,62 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
 
             {/* Caption */}
             {captionTxt && (
-              <div className="px-5 py-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-white/80 text-[13px] font-body leading-relaxed">
+              <div className="px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                <p className="text-[13px] font-body leading-relaxed m-0" style={{ color: 'var(--color-text-primary)' }}>
                   {captionTxt}
                   {hashtags.map(h => (
-                    <span key={h} className="text-[#ff2d78] font-bold ml-1">{h}</span>
+                    <span key={h} className="text-primary font-bold ml-1">{h}</span>
                   ))}
                 </p>
               </div>
             )}
 
             {/* Stats row */}
-            <div className="flex items-center gap-5 px-5 py-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-5 px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
               {/* Like */}
               <button
                 onClick={handleLike}
-                className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer transition-all active:scale-90"
+                className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer transition-all active:scale-90 p-0"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24"
-                  fill={liked ? '#ff2d78' : 'none'}
-                  stroke={liked ? '#ff2d78' : 'rgba(255,255,255,.5)'}
-                  strokeWidth="1.5"
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-                <span className={`text-[13px] font-body ${liked ? 'text-[#ff2d78]' : 'text-white/50'}`}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: liked ? 'rgba(255,45,120,0.15)' : 'var(--vt-input)' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24"
+                    fill={liked ? '#ff2d78' : 'none'}
+                    stroke={liked ? '#ff2d78' : 'var(--color-text-secondary)'}
+                    strokeWidth="1.5"
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                </div>
+                <span className="text-[13px] font-body" style={{ color: liked ? '#ff2d78' : 'var(--color-text-secondary)' }}>
                   {formatCount(likeCount)}
                 </span>
               </button>
               {/* Comments */}
               <div className="flex items-center gap-1.5">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1.5">
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                </svg>
-                <span className="text-[13px] font-body text-white/50">{formatCount(video.comments)}</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--vt-input)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                  </svg>
+                </div>
+                <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
+                  {formatCount(video.comments)}
+                </span>
               </div>
               {/* Views */}
               <div className="flex items-center gap-1.5 ml-auto">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" strokeWidth="1.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
                   <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
-                <span className="text-[12px] font-body text-white/30">{formatCount(video.views)}</span>
+                <span className="text-[12px] font-body" style={{ color: 'var(--color-text-muted)' }}>
+                  {formatCount(video.views)}
+                </span>
               </div>
             </div>
 
             {/* Comments list */}
-            <div ref={commentRef} className="flex-1 overflow-auto px-5 py-3">
-              <p className="text-white/40 text-[11px] font-body uppercase tracking-[0.5px] mb-3">
+            <div ref={commentRef} className="flex-1 overflow-auto px-5 py-3 custom-modal-scrollbar">
+              <p className="text-[11px] font-body uppercase tracking-[0.5px] mb-3 m-0" style={{ color: 'var(--color-text-muted)' }}>
                 Bình luận ({formatCount(comments.length)})
               </p>
 
@@ -324,18 +347,18 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
                 <div className="flex flex-col gap-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex gap-3 animate-pulse">
-                      <div className="w-8 h-8 rounded-full bg-white/5 shrink-0" />
+                      <div className="w-8 h-8 rounded-full bg-black/10 dark:bg-white/5 shrink-0" />
                       <div className="flex-1 flex flex-col gap-2">
-                        <div className="h-2.5 rounded bg-white/5 w-1/3" />
-                        <div className="h-2.5 rounded bg-white/5 w-3/4" />
+                        <div className="h-2.5 rounded bg-black/10 dark:bg-white/5 w-1/3" />
+                        <div className="h-2.5 rounded bg-black/5 dark:bg-white/5 w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : comments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-2 text-white/20">
+                <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: 'var(--color-text-muted)' }}>
                   <span className="text-3xl">💬</span>
-                  <p className="text-[13px] font-body">Chưa có bình luận nào</p>
+                  <p className="text-[13px] font-body m-0">Chưa có bình luận nào</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-1">
@@ -352,13 +375,16 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
 
             {/* Comment input */}
             <div
-              className="px-4 py-3 shrink-0"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+              className="px-4 py-3 shrink-0 border-t"
+              style={{ borderColor: 'var(--color-border)' }}
             >
               {isLoggedIn() ? (
                 <div
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border"
+                  style={{
+                    background: 'var(--vt-input)',
+                    borderColor: 'var(--color-border)',
+                  }}
                 >
                   <Avatar
                     user={me}
@@ -370,23 +396,24 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleComment(); }}
                     placeholder="Thêm bình luận..."
-                    className="flex-1 bg-transparent border-none outline-none text-white text-[13px] font-body placeholder:text-white/25"
+                    className="flex-1 bg-transparent border-none outline-none text-[13px] font-body"
+                    style={{ color: 'var(--color-text-primary)' }}
                   />
                   <button
                     onClick={handleComment}
                     disabled={!input.trim() || submitting}
                     className="w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{ background: input.trim() ? 'linear-gradient(135deg,#ff2d78,#ff6b35)' : 'rgba(255,255,255,.06)' }}
+                    style={{ background: input.trim() ? 'linear-gradient(135deg,#ff2d78,#ff6b35)' : 'var(--vt-card)' }}
                   >
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" style={{ color: input.trim() ? '#ffffff' : 'var(--color-text-muted)' }}>
                       <path d="M12 1L5.5 7.5M12 1L8.5 12L5.5 7.5L1 4.5L12 1Z" />
                     </svg>
                   </button>
                 </div>
               ) : (
-                <p className="text-center text-white/30 text-[12px] font-body">
+                <p className="text-center text-[12px] font-body m-0" style={{ color: 'var(--color-text-muted)' }}>
                   <span
-                    className="text-[#ff2d78] cursor-pointer hover:underline"
+                    className="text-primary cursor-pointer hover:underline"
                     onClick={() => { handleClose(); navigate('/login'); }}
                   >Đăng nhập</span> để bình luận
                 </p>
@@ -405,9 +432,9 @@ function CommentRow({ comment, highlight = false }) {
 
   return (
     <div
-      className={`flex gap-3 py-3 rounded-xl transition-colors ${highlight ? 'bg-[#ff2d78]/8 px-2' : ''
+      className={`flex gap-3 py-3 rounded-xl transition-colors border-b ${highlight ? 'bg-primary/10 px-2' : ''
         }`}
-      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      style={{ borderColor: 'var(--color-border)' }}
     >
       <Avatar
         user={{
@@ -420,30 +447,37 @@ function CommentRow({ comment, highlight = false }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-0.5">
-          <span className="text-white text-[13px] font-semibold font-body">{comment.username}</span>
-          <span className="text-white/25 text-[11px] font-body">{formatTimeAgo(comment.createdAt)}</span>
+          <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--color-text-primary)' }}>
+            {comment.username}
+          </span>
+          <span className="text-[11px] font-body" style={{ color: 'var(--color-text-muted)' }}>
+            {formatTimeAgo(comment.createdAt)}
+          </span>
         </div>
-        <p className="text-white/75 text-[13px] font-body leading-relaxed m-0 break-words">
+        <p className="text-[13px] font-body leading-relaxed m-0 break-words" style={{ color: 'var(--color-text-secondary)' }}>
           {comment.content}
         </p>
-        <button className="text-white/30 text-[11px] font-body mt-1 bg-transparent border-none cursor-pointer hover:text-white/60 p-0">
+        <button
+          className="text-[11px] font-body mt-1 bg-transparent border-none cursor-pointer p-0 hover:underline"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
           Trả lời
         </button>
       </div>
 
       <button
         onClick={() => { setLiked(l => !l); setLikes(n => liked ? n - 1 : n + 1); }}
-        className="flex flex-col items-center gap-0.5 bg-transparent border-none cursor-pointer shrink-0 self-start mt-1"
+        className="flex flex-col items-center gap-0.5 bg-transparent border-none cursor-pointer shrink-0 self-start mt-1 transition-transform active:scale-90"
       >
         <svg width="14" height="14" viewBox="0 0 24 24"
           fill={liked ? '#ff2d78' : 'none'}
-          stroke={liked ? '#ff2d78' : 'rgba(255,255,255,.25)'}
+          stroke={liked ? '#ff2d78' : 'var(--color-text-muted)'}
           strokeWidth="1.5"
         >
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
         </svg>
         {likes > 0 && (
-          <span className={`text-[10px] font-body ${liked ? 'text-[#ff2d78]' : 'text-white/25'}`}>{likes}</span>
+          <span className="text-[10px] font-body" style={{ color: liked ? '#ff2d78' : 'var(--color-text-muted)' }}>{likes}</span>
         )}
       </button>
     </div>

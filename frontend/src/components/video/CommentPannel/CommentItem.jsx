@@ -27,10 +27,10 @@ export default function CommentItem({ comment }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-[#ccc] text-[13px] font-semibold font-body mb-1">
+        <p className="text-text-primary text-[13px] font-semibold font-body mb-1">
           {comment.username}
         </p>
-        <p className="text-[#ddd] text-sm font-body leading-relaxed m-0 mb-1.5 break-words">
+        <p className="text-text-secondary text-sm font-body leading-relaxed m-0 mb-1.5 break-words">
           {comment.content}
         </p>
 
@@ -40,12 +40,12 @@ export default function CommentItem({ comment }) {
             {formatTimeAgo(comment.createdAt)}
           </span>
 
-          <button className="bg-transparent border-none text-text-faint text-xs cursor-pointer font-body hover:!text-white transition-colors">
+          <button className="bg-transparent border-none text-text-faint text-xs cursor-pointer font-body hover:text-text-primary transition-colors">
             Trả lời
           </button>
 
           {comment.replies > 0 && (
-            <span className="text-text-faint text-xs font-body cursor-pointer hover:!text-white transition-colors">
+            <span className="text-text-faint text-xs font-body cursor-pointer hover:text-text-primary transition-colors">
               — Xem {comment.replies} trả lời ∨
             </span>
           )}

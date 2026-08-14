@@ -242,15 +242,15 @@ export default function ProfilePage() {
           )}
           <button
             onClick={() => navigate(-1)}
-            className="md:flex hidden bg-transparent border-none text-text-secondary cursor-pointer items-center gap-2 text-sm font-body hover:text-white transition-colors"
+            className="md:flex hidden bg-transparent border-none text-text-secondary cursor-pointer items-center gap-2 text-sm font-body hover:text-text-primary transition-colors"
           >
             ← Quay lại
           </button>
-          <span className="text-[16px] font-semibold font-body flex-1 text-center md:text-center" style={{ color: 'var(--vt-text-bright)' }}>
+          <span className="text-[16px] font-semibold font-body flex-1 text-center md:text-center text-text-primary">
             {profile.username}
           </span>
           {/* Share button */}
-          <button className="bg-transparent border-none text-text-secondary cursor-pointer text-xl w-8 h-8 flex items-center justify-center">
+          <button className="bg-transparent border-none text-text-secondary cursor-pointer text-xl w-8 h-8 flex items-center justify-center hover:text-text-primary">
             ···
           </button>
         </div>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
                   }
                   navigate(`/messages?u=${profile.username}`);
                 }}
-                className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-white hover:border-white/30"
+                className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-text-primary hover:border-border"
               >
                 Nhắn tin
               </button>
@@ -302,7 +302,7 @@ export default function ProfilePage() {
             {isMyProfile ? (
               <button
                 onClick={() => setEditOpen(true)}
-                className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-white"
+                className="px-3 py-1.5 rounded-lg border border-border2 text-text-secondary text-[12px] font-body bg-transparent cursor-pointer hover:text-text-primary hover:border-border"
               >
                 Chỉnh sửa
               </button>
@@ -328,7 +328,7 @@ export default function ProfilePage() {
         {/* ── Profile info ── */}
         <div className="px-4 pt-14 pb-4">
           <div className="flex items-baseline gap-2 mb-0.5">
-            <h1 className="font-display font-bold text-[20px] md:text-[22px] m-0" style={{ color: 'var(--vt-text-bright)' }}>
+            <h1 className="font-display font-bold text-[20px] md:text-[22px] m-0 text-text-primary">
               {profile.fullName}
             </h1>
             {profile.isCreator && (
@@ -357,7 +357,7 @@ export default function ProfilePage() {
                   className={`flex flex-col items-center px-4 first:pl-0 shrink-0 ${s.clickable ? 'cursor-pointer' : ''}`}
                   onClick={s.clickable ? () => setFollowModal(s.modalType) : undefined}
                 >
-                  <p className="font-display font-bold text-[18px] md:text-[20px] m-0 mb-0.5" style={{ color: 'var(--vt-text-bright)' }}>
+                  <p className="font-display font-bold text-[18px] md:text-[20px] m-0 mb-0.5 text-text-primary">
                     {s.value}
                   </p>
                   <p className="text-[11px] font-body m-0 text-text-faint whitespace-nowrap">
@@ -388,7 +388,7 @@ export default function ProfilePage() {
               }}
               className={`flex-1 md:flex-none bg-transparent border-none px-3 md:px-5 py-3 text-[13px] font-body cursor-pointer transition-all border-b-2
                 ${activeTab === tab
-                  ? 'text-white font-semibold border-primary'
+                  ? 'text-text-primary font-semibold border-primary'
                   : 'text-text-faint border-transparent hover:text-text-secondary'}`}
             >
               {tab}

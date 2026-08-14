@@ -166,7 +166,7 @@ function VideoRow({ video, isOwner, onDelete }) {
   };
 
   return (
-    <div className="group rounded-xl overflow-hidden border border-[#1e1e2e] bg-[#0d0d18] hover:border-[#2a2a3e] transition-all"
+    <div className="group rounded-xl overflow-hidden border border-border bg-surface hover:border-border2 transition-all"
       style={{ animation: 'fadeUp .3s ease-out both' }}>
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
@@ -226,8 +226,8 @@ function VideoRow({ video, isOwner, onDelete }) {
         <div className="flex-1 min-w-0 p-4 flex flex-col justify-between">
           {/* Title / caption */}
           <div>
-            <p className="text-white text-[14px] font-semibold font-body leading-snug mb-1.5 line-clamp-2">
-              {captionTxt || <span className="text-[#444] italic">Chưa có tiêu đề</span>}
+            <p className="text-text-primary text-[14px] font-semibold font-body leading-snug mb-1.5 line-clamp-2">
+              {captionTxt || <span className="text-text-faint italic">Chưa có tiêu đề</span>}
             </p>
             {hashtags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
@@ -236,23 +236,23 @@ function VideoRow({ video, isOwner, onDelete }) {
                 ))}
               </div>
             )}
-            <p className="text-[#444] text-[11px] font-body">{formatTimeAgo(video.createdAt)}</p>
+            <p className="text-text-faint text-[11px] font-body">{formatTimeAgo(video.createdAt)}</p>
           </div>
 
           {/* Music */}
           {video.music && (
             <div className="flex items-center gap-1.5 mt-1">
-              <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="#666" strokeWidth="1.2">
+              <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-text-muted">
                 <path d="M5 10V3l7-1.5V8.5"/><circle cx="3" cy="10" r="2"/><circle cx="10" cy="8.5" r="2"/>
               </svg>
-              <span className="text-[#555] text-[11px] font-body truncate max-w-[160px]">
+              <span className="text-text-muted text-[11px] font-body truncate max-w-[160px]">
                 {video.music.title} – {video.music.artist}
               </span>
             </div>
           )}
 
           {/* ── Action bar ── */}
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#1a1a2a]">
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
             {/* Like */}
             <button
               onClick={handleLike}

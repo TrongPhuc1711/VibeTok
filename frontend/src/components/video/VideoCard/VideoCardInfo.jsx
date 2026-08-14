@@ -52,14 +52,18 @@ export default function VideoCardInfo({ video }) {
       {/* Phục hồi pointer-events-auto để user có thể click vào tên */}
       <h3 
         onClick={handleNavigateToProfile}
-        className="text-white font-bold text-[17px] tracking-wide pointer-events-auto cursor-pointer drop-shadow-md hover:underline w-fit m-0"
+        className="font-bold text-[17px] tracking-wide pointer-events-auto cursor-pointer hover:underline w-fit m-0"
+        style={{ color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
       >
         {/* Ưu tiên hiển thị fullname hoặc displayName nếu có, không thì dùng username */}
         {user.fullName || user.username || "nguoi_dung_an_danh"}
       </h3>
 
       {/* Caption & Hashtags */}
-      <div className="text-[#f1f1f2] text-[15px] font-normal leading-snug pointer-events-auto drop-shadow-md w-[90%]">
+      <div
+        className="text-[15px] font-normal leading-snug pointer-events-auto w-[90%]"
+        style={{ color: '#f1f1f2', textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}
+      >
         {captionText}
         
         {/* Render hashtags sau caption */}
@@ -68,7 +72,8 @@ export default function VideoCardInfo({ video }) {
             {hashtags.map((h) => (
                <span 
                  key={h} 
-                 className="text-white font-bold hover:underline cursor-pointer mr-1"
+                 className="font-bold hover:underline cursor-pointer mr-1"
+                 style={{ color: '#ffffff' }}
                  onClick={(e) => { e.stopPropagation(); navigate(`/tag/${h.replace('#', '')}`); }}
                >
                  {h}
@@ -81,8 +86,8 @@ export default function VideoCardInfo({ video }) {
       {/*Music - Nếu bạn vẫn muốn giữ lại dòng nhạc đang phát */}
       {video?.music && (
         <div className="flex items-center gap-1.5 mt-1 pointer-events-auto cursor-pointer w-fit hover:underline">
-           <MusicFilledIcon size={14} className="text-white drop-shadow-md" />
-          <span className="text-white text-[14px] font-medium drop-shadow-md">
+          <MusicFilledIcon size={14} className="text-white drop-shadow-md" style={{ color: '#ffffff' }} />
+          <span className="text-[14px] font-medium" style={{ color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
             {video.music.title} – {video.music.artist}
           </span>
         </div>

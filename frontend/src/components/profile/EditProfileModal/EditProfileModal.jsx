@@ -130,14 +130,28 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-[680px] bg-[#121212] rounded-2xl border border-[#2a2a2a] shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
-
+      <div
+        className="w-full max-w-[680px] rounded-2xl border shadow-2xl flex flex-col max-h-[90vh] animate-fade-in overflow-hidden"
+        style={{
+          background: 'var(--vt-card)',
+          borderColor: 'var(--color-border)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2a] shrink-0">
-          <h2 className="text-white text-[18px] font-semibold font-body">Sửa hồ sơ</h2>
+        <div
+          className="flex items-center justify-between px-6 py-5 border-b shrink-0"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          <h2 className="text-[18px] font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>
+            Sửa hồ sơ
+          </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#2a2a2a] hover:bg-[#333] border-none cursor-pointer flex items-center justify-center text-[#888] hover:text-white transition-colors text-lg"
+            className="w-8 h-8 rounded-full border-none cursor-pointer flex items-center justify-center transition-colors text-lg"
+            style={{
+              background: 'var(--vt-input)',
+              color: 'var(--color-text-secondary)',
+            }}
           >
             ×
           </button>
@@ -153,7 +167,10 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 className="relative group cursor-pointer"
                 onClick={() => fileRef.current?.click()}
               >
-                <div className="w-[96px] h-[96px] rounded-full overflow-hidden bg-gradient-to-br from-[#ff2d78] to-[#ff6b35] flex items-center justify-center text-2xl font-bold text-white border-2 border-[#2a2a2a]">
+                <div
+                  className="w-[96px] h-[96px] rounded-full overflow-hidden bg-gradient-to-br from-[#ff2d78] to-[#ff6b35] flex items-center justify-center text-2xl font-bold text-white border-2"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -163,7 +180,13 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <CameraIcon />
                 </div>
-                <div className="absolute bottom-0 right-0 w-[28px] h-[28px] rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center shadow-md">
+                <div
+                  className="absolute bottom-0 right-0 w-[28px] h-[28px] rounded-full border flex items-center justify-center shadow-md"
+                  style={{
+                    background: 'var(--vt-card)',
+                    borderColor: 'var(--color-border)',
+                  }}
+                >
                   <PencilIcon />
                 </div>
               </div>
@@ -185,9 +208,15 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 type="text"
                 value={profile?.username || ''}
                 disabled
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#666] text-[14px] font-body cursor-not-allowed outline-none"
+                className="w-full rounded-lg px-4 py-3 text-[14px] font-body cursor-not-allowed outline-none border"
+                style={{
+                  background: 'var(--vt-input)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                  opacity: 0.7,
+                }}
               />
-              <p className="text-[#555] text-[12px] mt-1.5 font-body">
+              <p className="text-[12px] mt-1.5 font-body m-0" style={{ color: 'var(--color-text-muted)' }}>
                 www.vibetok.app/@{profile?.username}
               </p>
             </div>
@@ -202,9 +231,14 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 onChange={setField('ten_hien_thi')}
                 maxLength={50}
                 placeholder="Nhập tên hiển thị..."
-                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
+                className="w-full rounded-lg px-4 py-3 text-[14px] font-body outline-none border transition-colors"
+                style={{
+                  background: 'var(--vt-input)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
               />
-              <p className="text-[#555] text-[12px] mt-1.5 font-body">
+              <p className="text-[12px] mt-1.5 font-body m-0" style={{ color: 'var(--color-text-muted)' }}>
                 Bạn chỉ có thể thay đổi biệt danh 7 ngày một lần.
               </p>
             </div>
@@ -220,9 +254,14 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 }}
                 rows={4}
                 placeholder="Giới thiệu về bản thân..."
-                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors resize-none placeholder:text-[#444]"
+                className="w-full rounded-lg px-4 py-3 text-[14px] font-body outline-none border transition-colors resize-none"
+                style={{
+                  background: 'var(--vt-input)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
               />
-              <p className="text-[#555] text-[12px] mt-1 font-body text-right">
+              <p className="text-[12px] mt-1 font-body text-right m-0" style={{ color: 'var(--color-text-muted)' }}>
                 {form.tieu_su.length}/{bioMax}
               </p>
             </div>
@@ -237,9 +276,14 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 onChange={setField('so_dien_thoai')}
                 maxLength={15}
                 placeholder="+84 901 234 567"
-                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
+                className="w-full rounded-lg px-4 py-3 text-[14px] font-body outline-none border transition-colors"
+                style={{
+                  background: 'var(--vt-input)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
               />
-              <p className="text-[#555] text-[12px] mt-1.5 font-body">
+              <p className="text-[12px] mt-1.5 font-body m-0" style={{ color: 'var(--color-text-muted)' }}>
                 Dùng để bạn bè tìm thấy bạn qua danh bạ. Chỉ bạn mới thấy SĐT.
               </p>
             </div>
@@ -253,29 +297,44 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
               onChange={setField('vi_tri')}
               maxLength={100}
               placeholder="Thành phố, quốc gia..."
-              className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-[14px] font-body outline-none focus:border-[#444] transition-colors placeholder:text-[#444]"
+              className="w-full rounded-lg px-4 py-3 text-[14px] font-body outline-none border transition-colors"
+              style={{
+                background: 'var(--vt-input)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-primary)',
+              }}
             />
           </Row>
 
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[#2a2a2a] px-6 py-4 flex flex-col gap-2">
+        <div
+          className="shrink-0 border-t px-6 py-4 flex flex-col gap-2"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           {error && (
-            <p className="text-red-400 text-[12px] font-body text-center">{error}</p>
+            <p className="text-red-500 text-[12px] font-body text-center m-0">{error}</p>
           )}
           <div className="flex items-center justify-end gap-3">
             <button
               onClick={onClose}
               disabled={saving}
-              className="px-6 py-2.5 rounded-lg bg-transparent border border-[#333] text-[#aaa] text-[14px] font-semibold font-body cursor-pointer hover:border-[#555] hover:text-white transition-colors disabled:opacity-50"
+              className="px-6 py-2.5 rounded-lg bg-transparent border text-[14px] font-semibold font-body cursor-pointer transition-colors disabled:opacity-50"
+              style={{
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
             >
               Hủy
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !form.ten_hien_thi.trim()}
-              className="px-8 py-2.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-white text-[14px] font-semibold font-body cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-2.5 rounded-lg border-none text-white text-[14px] font-semibold font-body cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{
+                background: 'linear-gradient(135deg, #ff2d78, #ff6b35)',
+              }}
             >
               {saving && <SpinIcon />}
               {saving ? 'Đang lưu...' : 'Lưu'}
@@ -287,7 +346,13 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
       {showSyncPrompt && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-md">
-          <div className="w-[380px] bg-[#1e1e1e] rounded-2xl border border-[#2d2d2d] shadow-2xl p-6 flex flex-col items-center text-center animate-fade-in font-body">
+          <div
+            className="w-[380px] rounded-2xl border shadow-2xl p-6 flex flex-col items-center text-center animate-fade-in font-body"
+            style={{
+              background: 'var(--vt-card)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
             <div className="w-14 h-14 rounded-full bg-brand-gradient flex items-center justify-center text-white mb-4 shadow-lg shadow-primary/20">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -296,8 +361,8 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
             </div>
-            <h3 className="text-[18px] font-bold text-white mb-2">Đồng bộ danh bạ điện thoại?</h3>
-            <p className="text-[13px] text-[#aaa] leading-relaxed mb-6 px-2">
+            <h3 className="text-[18px] font-bold mb-2 m-0" style={{ color: 'var(--color-text-primary)' }}>Đồng bộ danh bạ điện thoại?</h3>
+            <p className="text-[13px] leading-relaxed mb-6 px-2" style={{ color: 'var(--color-text-muted)' }}>
               Tìm những người bạn quen biết trên VibeTok. Các liên hệ trong danh bạ sẽ được đồng bộ hóa liên tục để đề xuất tài khoản phù hợp nhất cho bạn.
             </p>
             <div className="w-full flex flex-col gap-2.5">
@@ -306,7 +371,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                   onSaved?.(savedUserTemp, true);
                   onClose();
                 }}
-                className="w-full py-3 rounded-xl bg-brand-gradient text-white text-[14px] font-semibold cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
+                className="w-full py-3 rounded-xl bg-brand-gradient text-white text-[14px] font-semibold cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20 border-none"
               >
                 Đồng bộ ngay
               </button>
@@ -315,7 +380,11 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                   onSaved?.(savedUserTemp, false);
                   onClose();
                 }}
-                className="w-full py-3 rounded-xl bg-[#2c2c2c] hover:bg-[#383838] text-[#ccc] hover:text-white text-[14px] font-semibold cursor-pointer active:scale-[0.98] transition-all"
+                className="w-full py-3 rounded-xl border-none text-[14px] font-semibold cursor-pointer active:scale-[0.98] transition-all"
+                style={{
+                  background: 'var(--vt-input)',
+                  color: 'var(--color-text-secondary)',
+                }}
               >
                 Để sau
               </button>
@@ -329,9 +398,14 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
 function Row({ label, children, noBorder = false }) {
   return (
-    <div className={`grid grid-cols-[160px_1fr] gap-6 px-6 py-5 ${!noBorder ? 'border-b border-[#1e1e1e]' : ''}`}>
+    <div
+      className="grid grid-cols-[160px_1fr] gap-6 px-6 py-5"
+      style={{
+        borderBottom: !noBorder ? '1px solid var(--color-border)' : 'none',
+      }}
+    >
       <div className="flex items-start pt-3">
-        <span className="text-white text-[14px] font-semibold font-body">{label}</span>
+        <span className="text-[14px] font-semibold font-body" style={{ color: 'var(--color-text-primary)' }}>{label}</span>
       </div>
       <div className="flex flex-col">{children}</div>
     </div>
@@ -348,7 +422,7 @@ function CameraIcon() {
 }
 function PencilIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#aaa" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-secondary)' }}>
       <path d="M9 2l2 2L4 11H2V9L9 2z" />
     </svg>
   );

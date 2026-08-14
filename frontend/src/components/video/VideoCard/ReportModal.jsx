@@ -109,21 +109,26 @@ export default function ReportModal({ open, onClose, videoId }) {
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-250 ${visible && !closing ? 'bg-black/60' : 'bg-transparent'}`}
+      className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-250 ${visible && !closing ? 'bg-black/60 backdrop-blur-sm' : 'bg-transparent'}`}
       onClick={handleClose}
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
       <div
-        className={`w-full max-w-[480px] max-h-[70vh] mx-4 bg-[#1e1e1e] rounded-2xl flex flex-col transition-all duration-250 ease-out ${visible && !closing ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        className={`w-full max-w-[480px] max-h-[70vh] mx-4 rounded-2xl flex flex-col transition-all duration-250 ease-out border shadow-2xl overflow-hidden ${visible && !closing ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        style={{
+          background: 'var(--vt-card)',
+          borderColor: 'var(--color-border)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-          <h3 className="text-white text-[17px] font-semibold">Báo cáo</h3>
+        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: 'var(--color-border)' }}>
+          <h3 className="text-[17px] font-semibold m-0" style={{ color: 'var(--color-text-primary)' }}>Báo cáo</h3>
           <button
             onClick={handleClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer border-none bg-transparent hover:bg-black/5 dark:hover:bg-white/10"
+            style={{ color: 'var(--color-text-secondary)' }}
           >
             <CloseMenuIcon size={18} />
           </button>
@@ -132,9 +137,9 @@ export default function ReportModal({ open, onClose, videoId }) {
         {/* Content */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto overscroll-contain pr-1"
+          className="flex-1 overflow-y-auto overscroll-contain pr-1 custom-modal-scrollbar"
         >
-          <p className="px-5 pt-4 pb-2 text-[13px] text-white/50">
+          <p className="px-5 pt-4 pb-2 text-[13px] m-0" style={{ color: 'var(--color-text-muted)' }}>
             Vui lòng chọn tình huống
           </p>
 
@@ -143,22 +148,24 @@ export default function ReportModal({ open, onClose, videoId }) {
               key={i}
               disabled={submitting}
               onClick={() => handleSelectReason(reason)}
-              className="w-full px-5 py-3.5 hover:bg-white/5 active:bg-white/10 transition-colors text-left disabled:opacity-50 cursor-pointer border-b border-white/[0.04] last:border-0"
+              className="w-full px-5 py-3.5 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors text-left disabled:opacity-50 cursor-pointer border-b last:border-0"
+              style={{ borderColor: 'var(--color-border)' }}
             >
-              <span className="text-white/90 text-[14.5px] leading-snug">{reason}</span>
+              <span className="text-[14.5px] leading-snug" style={{ color: 'var(--color-text-primary)' }}>{reason}</span>
             </button>
           ))}
 
           {/* Mục "Khác" */}
-          <div className="px-5 py-3.5 border-t border-white/[0.08]">
+          <div className="px-5 py-3.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <button
               type="button"
               disabled={submitting}
               onClick={() => setShowOtherInput(!showOtherInput)}
-              className="w-full text-left font-medium text-white/90 text-[14.5px] hover:text-white transition-colors cursor-pointer flex items-center justify-between"
+              className="w-full text-left font-medium text-[14.5px] bg-transparent border-none transition-colors cursor-pointer flex items-center justify-between p-0"
+              style={{ color: 'var(--color-text-primary)' }}
             >
               <span>Khác</span>
-              <span className="text-[12px] text-[#ff2d78] font-normal">
+              <span className="text-[12px] text-primary font-normal">
                 {showOtherInput ? 'Thu gọn' : 'Nhập chi tiết'}
               </span>
             </button>
@@ -171,15 +178,20 @@ export default function ReportModal({ open, onClose, videoId }) {
                   placeholder="Vui lòng nhập chi tiết lý do báo cáo..."
                   maxLength={500}
                   rows={3}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 text-white text-[14px] p-3 resize-none outline-none focus:border-[#ff2d78]/60 transition-colors placeholder:text-white/30"
+                  className="w-full rounded-xl border text-[14px] p-3 resize-none outline-none focus:border-primary transition-colors"
+                  style={{
+                    background: 'var(--vt-input)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                  }}
                   autoFocus
                 />
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-white/30">{otherText.length}/500</span>
+                  <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>{otherText.length}/500</span>
                   <button
                     type="submit"
                     disabled={!otherText.trim() || submitting}
-                    className="px-4 py-2 rounded-lg bg-[#ff2d78] text-white font-medium text-[13.5px] hover:bg-[#ff2d78]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-primary text-white font-medium text-[13.5px] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
                   >
                     {submitting ? 'Đang gửi...' : 'Gửi báo cáo'}
                   </button>

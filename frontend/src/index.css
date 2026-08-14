@@ -225,7 +225,6 @@ html[data-theme="light"] {
   .text-text-faint { color: var(--color-text-faint); }
   .text-text-subtle { color: var(--color-text-subtle); }
   .text-text-dim { color: var(--color-text-dim); }
-  .text-white { color: var(--color-text-primary) !important; }
 
   /* Input & textarea */
   input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),

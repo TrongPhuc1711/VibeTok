@@ -140,9 +140,9 @@ export default function UploadPage() {
   return (
     <PageLayout>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
+      <div className="flex items-center justify-between px-6 py-5 border-b shrink-0" style={{ borderColor: 'var(--color-border)' }}>
         <div>
-          <h1 className="font-display font-bold text-[22px] text-white m-0">
+          <h1 className="font-display font-bold text-[22px] m-0" style={{ color: 'var(--color-text-primary)' }}>
             {uploadType === 'video' ? 'Đăng video mới' : 'Đăng ảnh mới'}
           </h1>
           {file && (
@@ -158,13 +158,16 @@ export default function UploadPage() {
         </div>
         <div className="flex items-center gap-3">
           {/* Tab toggle Video / Ảnh */}
-          <div className="flex bg-elevated border border-border2 rounded-lg overflow-hidden">
+          <div className="flex rounded-lg overflow-hidden border" style={{ background: 'var(--vt-input)', borderColor: 'var(--color-border)' }}>
             <button
               className={`px-4 py-1.5 text-[12px] font-semibold font-body border-none cursor-pointer transition-all ${
                 uploadType === 'video'
                   ? 'bg-primary text-white'
-                  : 'bg-transparent text-text-secondary hover:text-white'
+                  : 'bg-transparent hover:opacity-80'
               }`}
+              style={{
+                color: uploadType === 'video' ? '#fff' : 'var(--color-text-secondary)',
+              }}
               onClick={() => setUploadType('video')}
             >
               Video
@@ -173,8 +176,11 @@ export default function UploadPage() {
               className={`px-4 py-1.5 text-[12px] font-semibold font-body border-none cursor-pointer transition-all ${
                 uploadType === 'images'
                   ? 'bg-primary text-white'
-                  : 'bg-transparent text-text-secondary hover:text-white'
+                  : 'bg-transparent hover:opacity-80'
               }`}
+              style={{
+                color: uploadType === 'images' ? '#fff' : 'var(--color-text-secondary)',
+              }}
               onClick={() => setUploadType('images')}
             >
               Ảnh
@@ -262,11 +268,15 @@ export default function UploadPage() {
 
               {/* Caption */}
               <div>
-                <label className="block text-text-secondary text-[13px] font-medium mb-2 font-body">
+                <label className="block text-xs font-medium mb-2 font-body" style={{ color: 'var(--color-text-secondary)' }}>
                   Thông tin video
                 </label>
                 <div
-                  className={`bg-elevated border rounded-lg overflow-hidden ${errors.caption ? 'border-primary' : 'border-border2'}`}
+                  className="rounded-lg overflow-hidden border transition-colors"
+                  style={{
+                    background: 'var(--vt-input)',
+                    borderColor: errors.caption ? '#ff2d78' : 'var(--color-border)',
+                  }}
                 >
                   <textarea
                     value={form.caption}
@@ -275,7 +285,8 @@ export default function UploadPage() {
                     }}
                     placeholder="Mô tả video, #hashtag..."
                     rows={3}
-                    className="w-full bg-transparent border-none outline-none text-white text-[13px] font-body p-3.5 resize-none"
+                    className="w-full bg-transparent border-none outline-none text-[13px] font-body p-3.5 resize-none"
+                    style={{ color: 'var(--color-text-primary)' }}
                   />
                   {form.caption && (
                     <div className="px-3.5 pb-2.5 flex flex-wrap gap-1.5">
@@ -289,7 +300,10 @@ export default function UploadPage() {
                       ))}
                     </div>
                   )}
-                  <div className={`px-3.5 pb-2.5 text-right text-[11px] ${form.caption.length > 450 ? 'text-primary' : 'text-text-subtle'}`}>
+                  <div
+                    className="px-3.5 pb-2.5 text-right text-[11px]"
+                    style={{ color: form.caption.length > 450 ? '#ff2d78' : 'var(--color-text-muted)' }}
+                  >
                     {form.caption.length}/500
                   </div>
                 </div>
@@ -347,18 +361,22 @@ export default function UploadPage() {
                 />
               </div>
 
-
-
               {/* Sound summary badge — hiện cho cả video lẫn ảnh */}
               {(uploadType === 'video' ? file : images.length > 0) && selectedMusic && (
-                <div className="flex items-center gap-3 bg-elevated border border-border2 rounded-lg px-4 py-3">
+                <div
+                  className="flex items-center gap-3 border rounded-lg px-4 py-3"
+                  style={{
+                    background: 'var(--vt-card)',
+                    borderColor: 'var(--color-border)',
+                  }}
+                >
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm flex-shrink-0 overflow-hidden">
                     {selectedMusic ? (
                       <img src={selectedMusic.cover} alt="cover" className="w-full h-full object-cover" />
                     ) : useOriginalSound ? '📹' : '🔇'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-[12px] font-semibold font-body m-0 truncate">
+                    <p className="text-[12px] font-semibold font-body m-0 truncate" style={{ color: 'var(--color-text-primary)' }}>
                       {selectedMusic
                         ? selectedMusic.title
                         : useOriginalSound
@@ -366,7 +384,7 @@ export default function UploadPage() {
                           : 'Không có âm thanh'
                       }
                     </p>
-                    <p className="text-text-faint text-[11px] font-body m-0 truncate">
+                    <p className="text-[11px] font-body m-0 truncate" style={{ color: 'var(--color-text-muted)' }}>
                       {selectedMusic && useOriginalSound
                         ? `Video: ${Math.round(originalVolume * 100)}% · Nhạc: ${Math.round(musicVolume * 100)}%`
                         : selectedMusic
@@ -380,17 +398,24 @@ export default function UploadPage() {
                 </div>
               )}
 
-
             </div>
           </div>
         </div>
 
         {/* Right — Sound panel (collapsible) */}
-        <div className={`relative border-l border-zinc-800 flex flex-col shrink-0 transition-all duration-300 ${soundPanelOpen ? 'w-[340px]' : 'w-[48px]'}`}>
+        <div
+          className={`relative border-l flex flex-col shrink-0 transition-all duration-300 ${soundPanelOpen ? 'w-[340px]' : 'w-[48px]'}`}
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           {/* Toggle button */}
           <button
             onClick={() => setSoundPanelOpen((v) => !v)}
-            className="absolute top-1/2 -translate-y-1/2 -left-4 z-30 w-8 h-8 rounded-full bg-elevated border border-border2 flex items-center justify-center cursor-pointer hover:bg-surface transition-colors"
+            className="absolute top-1/2 -translate-y-1/2 -left-4 z-30 w-8 h-8 rounded-full border flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            style={{
+              background: 'var(--vt-card)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-secondary)',
+            }}
             title={soundPanelOpen ? 'Thu gọn' : 'Mở rộng'}
           >
             <CollapseIcon collapsed={!soundPanelOpen} />
@@ -409,8 +434,8 @@ export default function UploadPage() {
               onUseOriginalSoundChange={setUseOriginalSound}
             />
           ) : (
-            <div className="flex-1 flex items-center justify-center relative bg-[#0d0d18]">
-              <span className="text-white text-[11px] font-bold font-body tracking-[0.2em]" style={{ writingMode: 'vertical-lr' }}>
+            <div className="flex-1 flex items-center justify-center relative" style={{ background: 'var(--vt-card)' }}>
+              <span className="text-[11px] font-bold font-body tracking-[0.2em]" style={{ writingMode: 'vertical-lr', color: 'var(--color-text-muted)' }}>
                 ÂM THANH
               </span>
             </div>

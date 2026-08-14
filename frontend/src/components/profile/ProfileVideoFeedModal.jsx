@@ -41,23 +41,22 @@ function CommentSection({ videoId, totalComments }) {
 
     return (
         <div className="flex flex-col flex-1 overflow-hidden">
-            <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a3e transparent' }}>
+            <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3 custom-modal-scrollbar">
                 {loading ? (
                     <div className="flex flex-col gap-4 pt-2">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="flex gap-3 animate-pulse">
-                                <div className="w-9 h-9 rounded-full bg-white/8 shrink-0" />
+                                <div className="w-9 h-9 rounded-full bg-black/10 dark:bg-white/10 shrink-0" />
                                 <div className="flex-1 flex flex-col gap-2">
-                                    <div className="h-2.5 rounded-full bg-white/6 w-1/3" />
-                                    <div className="h-2.5 rounded-full bg-white/4 w-3/4" />
+                                    <div className="h-2.5 rounded-full bg-black/10 dark:bg-white/10 w-1/3" />
+                                    <div className="h-2.5 rounded-full bg-black/5 dark:bg-white/5 w-3/4" />
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : comments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-3 text-[#444]">
-            
-                        <p className="text-[13px] font-body text-center">Chưa có bình luận nào.<br />Hãy là người đầu tiên!</p>
+                    <div className="flex flex-col items-center justify-center py-12 gap-3" style={{ color: 'var(--color-text-muted)' }}>
+                        <p className="text-[13px] font-body text-center m-0">Chưa có bình luận nào.<br />Hãy là người đầu tiên!</p>
                     </div>
                 ) : (
                     <div className="flex flex-col">
@@ -68,7 +67,7 @@ function CommentSection({ videoId, totalComments }) {
                 )}
             </div>
 
-            <div className="px-4 py-3 shrink-0 border-t border-white/6">
+            <div className="px-4 py-3 shrink-0 border-t" style={{ borderColor: 'var(--color-border)' }}>
                 {isLoggedIn() ? (
                     <div className="flex items-center gap-2.5">
                         <Avatar
@@ -76,8 +75,11 @@ function CommentSection({ videoId, totalComments }) {
                             className="!w-8 !h-8 !text-[10px]"
                         />
                         <div
-                            className="flex-1 flex items-center gap-2 px-3.5 py-2 rounded-full"
-                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                            className="flex-1 flex items-center gap-2 px-3.5 py-2 rounded-full border"
+                            style={{
+                                background: 'var(--vt-input)',
+                                borderColor: 'var(--color-border)',
+                            }}
                         >
                             <input
                                 ref={inputRef}
@@ -85,7 +87,8 @@ function CommentSection({ videoId, totalComments }) {
                                 onChange={e => setInput(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSubmit(); }}
                                 placeholder="Thêm bình luận..."
-                                className="flex-1 bg-transparent border-none outline-none text-white text-[13px] font-body placeholder:text-white/25"
+                                className="flex-1 bg-transparent border-none outline-none text-[13px] font-body"
+                                style={{ color: 'var(--color-text-primary)' }}
                             />
                             <EmojiPickerButton
                                 onSelect={(emoji) => setInput((p) => p + emoji)}
@@ -95,18 +98,19 @@ function CommentSection({ videoId, totalComments }) {
                             <button
                                 onClick={handleSubmit}
                                 disabled={!input.trim() || submitting}
-                                className="shrink-0 border-none cursor-pointer transition-all disabled:opacity-30"
-                                style={{ background: 'transparent', padding: 0 }}
+                                className="shrink-0 border-none cursor-pointer transition-all disabled:opacity-30 p-0 bg-transparent flex items-center justify-center"
                             >
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                    stroke={input.trim() ? '#ff2d78' : '#555'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    stroke={input.trim() ? '#ff2d78' : 'var(--color-text-muted)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M15 1L7 9M15 1L10.5 15L7 9L1 5.5L15 1Z" />
                                 </svg>
                             </button>
                         </div>
                     </div>
                 ) : (
-                    <p className="text-center text-white/25 text-[12px] font-body">Đăng nhập để bình luận</p>
+                    <p className="text-center text-[12px] font-body m-0" style={{ color: 'var(--color-text-muted)' }}>
+                        Đăng nhập để bình luận
+                    </p>
                 )}
             </div>
         </div>
@@ -118,7 +122,7 @@ function CommentRow({ comment }) {
     const [likes, setLikes] = useState(comment.likes ?? 0);
 
     return (
-        <div className="flex gap-3 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="flex gap-3 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
             <Avatar
                 user={{
                     anh_dai_dien: comment.anh_dai_dien,
@@ -129,12 +133,21 @@ function CommentRow({ comment }) {
             />
             <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className="text-white text-[13px] font-semibold font-body">{comment.username}</span>
-                    <span className="text-white/25 text-[11px] font-body">{formatTimeAgo(comment.createdAt)}</span>
+                    <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--color-text-primary)' }}>
+                        {comment.username}
+                    </span>
+                    <span className="text-[11px] font-body" style={{ color: 'var(--color-text-muted)' }}>
+                        {formatTimeAgo(comment.createdAt)}
+                    </span>
                 </div>
-                <p className="text-white/75 text-[13px] font-body leading-relaxed m-0 break-words">{comment.content}</p>
+                <p className="text-[13px] font-body leading-relaxed m-0 break-words" style={{ color: 'var(--color-text-secondary)' }}>
+                    {comment.content}
+                </p>
                 <div className="flex items-center gap-3 mt-1.5">
-                    <button className="bg-transparent border-none text-white/30 text-[11px] font-body cursor-pointer hover:text-white/60 p-0 transition-colors">
+                    <button
+                        className="bg-transparent border-none text-[11px] font-body cursor-pointer p-0 transition-colors hover:underline"
+                        style={{ color: 'var(--color-text-muted)' }}
+                    >
                         Trả lời
                     </button>
                 </div>
@@ -145,12 +158,14 @@ function CommentRow({ comment }) {
             >
                 <svg width="14" height="14" viewBox="0 0 24 24"
                     fill={liked ? '#ff2d78' : 'none'}
-                    stroke={liked ? '#ff2d78' : 'rgba(255,255,255,.25)'}
+                    stroke={liked ? '#ff2d78' : 'var(--color-text-muted)'}
                     strokeWidth="1.5">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                 </svg>
                 {likes > 0 && (
-                    <span className={`text-[10px] font-body ${liked ? 'text-[#ff2d78]' : 'text-white/25'}`}>{likes}</span>
+                    <span className="text-[10px] font-body" style={{ color: liked ? '#ff2d78' : 'var(--color-text-muted)' }}>
+                        {likes}
+                    </span>
                 )}
             </button>
         </div>
@@ -174,33 +189,39 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
     return (
         <div
             className="flex flex-col h-full"
-            style={{ background: '#111118', borderLeft: '1px solid rgba(255,255,255,0.06)' }}
+            style={{
+                background: 'var(--vt-card)',
+                borderLeft: '1px solid var(--color-border)',
+            }}
         >
             {/* User header */}
-            <div className="flex items-center gap-3 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-3 px-5 py-4 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
                 <Avatar
                     user={user}
-                    className="!w-11 !h-11 !text-sm cursor-pointer ring-2 ring-white/10 hover:ring-primary/50 transition-all"
+                    className="!w-11 !h-11 !text-sm cursor-pointer ring-2 ring-black/5 dark:ring-white/10 hover:ring-primary/50 transition-all"
                     onClick={() => { onClose(); navigate(`/profile/${user.username}`); }}
                 />
                 <div className="flex-1 min-w-0">
                     <p
-                        className="text-white text-[14px] font-semibold font-body leading-tight cursor-pointer hover:underline m-0"
+                        className="text-[14px] font-semibold font-body leading-tight cursor-pointer hover:underline m-0"
+                        style={{ color: 'var(--color-text-primary)' }}
                         onClick={() => { onClose(); navigate(`/profile/${user.username}`); }}
                     >
                         {user.fullName || user.username}
                         {user.isCreator && <span className="ml-1.5 text-[11px] text-primary">✦</span>}
                     </p>
-                    <p className="text-white/40 text-[12px] font-body m-0">@{user.username}</p>
+                    <p className="text-[12px] font-body m-0 mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                        @{user.username}
+                    </p>
                 </div>
                 {!isOwnVideo && me ? (
                     <button
                         onClick={onFollowToggle}
-                        className={`shrink-0 text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer
-                            ${following
-                                ? 'bg-transparent border-white/15 text-white/50 hover:border-red-400/40 hover:text-red-400'
-                                : 'bg-[#ff2d78] border-[#ff2d78] text-white hover:bg-[#e0266b]'
-                            }`}
+                        className={`shrink-0 text-[12px] font-semibold font-body px-4 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                            following
+                                ? 'bg-transparent text-text-secondary border-border hover:border-red-400 hover:text-red-400'
+                                : 'bg-primary border-primary text-white hover:opacity-90'
+                        }`}
                     >
                         {following ? 'Đang follow' : 'Follow'}
                     </button>
@@ -209,7 +230,12 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                         <select
                             value={video?.privacy || 'public'}
                             onChange={(e) => onPrivacyChange && onPrivacyChange(video.id, e.target.value)}
-                            className="bg-[#1e1e2e] text-white/90 border border-white/15 rounded-lg px-2.5 py-1.5 text-[12px] font-body outline-none cursor-pointer hover:border-primary/50 transition-colors"
+                            className="rounded-lg px-2.5 py-1.5 text-[12px] font-body outline-none cursor-pointer border transition-colors"
+                            style={{
+                                background: 'var(--vt-input)',
+                                color: 'var(--color-text-primary)',
+                                borderColor: 'var(--color-border)',
+                            }}
                         >
                             <option value="public">Công khai</option>
                             <option value="friends">Bạn bè</option>
@@ -220,9 +246,9 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
             </div>
 
             {/* Caption & Hashtags */}
-            <div className="px-5 py-3.5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="px-5 py-3.5 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
                 {captionTxt && (
-                    <p className="text-white/85 text-[13px] font-body leading-relaxed m-0 mb-2 line-clamp-3">
+                    <p className="text-[13px] font-body leading-relaxed m-0 mb-2 line-clamp-3" style={{ color: 'var(--color-text-primary)' }}>
                         {captionTxt}
                     </p>
                 )}
@@ -241,84 +267,99 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
                 )}
                 {video?.music && (
                     <div className="flex items-center gap-1.5 mt-2.5">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,.5)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-text-muted)' }}>
                             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                         </svg>
-                        <span className="text-white/50 text-[11px] font-body truncate">{video.music.title} – {video.music.artist}</span>
+                        <span className="text-[11px] font-body truncate" style={{ color: 'var(--color-text-muted)' }}>
+                            {video.music.title} – {video.music.artist}
+                        </span>
                     </div>
                 )}
-                <p className="text-white/25 text-[11px] font-body mt-2">{formatTimeAgo(video?.createdAt)}</p>
+                <p className="text-[11px] font-body mt-2 m-0" style={{ color: 'var(--color-text-muted)' }}>
+                    {formatTimeAgo(video?.createdAt)}
+                </p>
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-6 px-5 py-3 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-6 px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
                 {/* Like */}
                 <button
                     onClick={onLike}
-                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer transition-all group active:scale-90"
+                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer transition-all group active:scale-90 p-0"
                 >
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                        style={{ background: liked ? 'rgba(255,45,120,0.15)' : 'rgba(255,255,255,0.06)' }}>
+                    <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                        style={{
+                            background: liked ? 'rgba(255,45,120,0.15)' : 'var(--vt-input)',
+                        }}
+                    >
                         <svg width="18" height="18" viewBox="0 0 24 24"
                             fill={liked ? '#ff2d78' : 'none'}
-                            stroke={liked ? '#ff2d78' : 'rgba(255,255,255,.6)'}
+                            stroke={liked ? '#ff2d78' : 'var(--color-text-secondary)'}
                             strokeWidth="1.5">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                         </svg>
                     </div>
-                    <span className={`text-[13px] font-body ${liked ? 'text-[#ff2d78]' : 'text-white/50'}`}>
+                    <span className="text-[13px] font-body" style={{ color: liked ? '#ff2d78' : 'var(--color-text-secondary)' }}>
                         {formatCount(likeCount)}
                     </span>
                 </button>
 
                 {/* Comment count */}
                 <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'var(--vt-input)' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5">
                             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                         </svg>
                     </div>
-                    <span className="text-[13px] font-body text-white/50">{formatCount(video?.comments)}</span>
+                    <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
+                        {formatCount(video?.comments)}
+                    </span>
                 </div>
 
                 {/* Share */}
                 <button
                     onClick={handleShare}
-                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer"
+                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer p-0"
                     title="Sao chép link"
                 >
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
-                        style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.5" strokeLinecap="round">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center transition-colors" style={{ background: 'var(--vt-input)' }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round">
                             <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
                         </svg>
                     </div>
-                    <span className="text-[13px] font-body text-white/50">{formatCount(video?.shares)}</span>
+                    <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
+                        {formatCount(video?.shares)}
+                    </span>
                 </button>
 
                 {/* Bookmark count */}
                 <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'var(--vt-input)' }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5">
                             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
                         </svg>
                     </div>
-                    <span className="text-[13px] font-body text-white/50">{formatCount(video?.bookmarks)}</span>
+                    <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
+                        {formatCount(video?.bookmarks)}
+                    </span>
                 </div>
 
                 {/* Views */}
                 <div className="flex items-center gap-1.5 ml-auto">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="1.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
                         <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" />
                         <circle cx="12" cy="12" r="3" />
                     </svg>
-                    <span className="text-[11px] font-body text-white/25">{formatCount(video?.views)}</span>
+                    <span className="text-[11px] font-body" style={{ color: 'var(--color-text-muted)' }}>
+                        {formatCount(video?.views)}
+                    </span>
                 </div>
             </div>
 
             {/* Comments label */}
-            <div className="px-5 py-2.5 shrink-0 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <p className="text-white/40 text-[11px] font-body uppercase tracking-[0.5px] m-0">
+            <div className="px-5 py-2.5 shrink-0 flex items-center justify-between border-b" style={{ borderColor: 'var(--color-border)' }}>
+                <p className="text-[11px] font-body uppercase tracking-[0.5px] m-0" style={{ color: 'var(--color-text-muted)' }}>
                     Bình luận ({formatCount(video?.comments)})
                 </p>
             </div>
@@ -329,73 +370,70 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
     );
 }
 
-// ── Main Modal ──
+// ── ProfileVideoFeedModal Main Component ──
 export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, onClose, onPrivacyChange }) {
     const navigate = useNavigate();
-    const me = getStoredUser();
-    const videoRef = useRef(null);
-
     const [currentIdx, setCurrentIdx] = useState(initialIndex);
-    const [visible,    setVisible]    = useState(false);
-    const [playing,    setPlaying]    = useState(false);
-    const [progress,   setProgress]   = useState(0);
-    const [duration,   setDuration]   = useState(0);
-    const [dragging,   setDragging]   = useState(false);
-    const [muted,      setMuted]      = useState(false);
-    const [volume,     setVolume]     = useState(0.7);
-    const progressBarRef = useRef(null);
-
-    const current = videos[currentIdx];
+    const [playing, setPlaying] = useState(true);
+    const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [dragging, setDragging] = useState(false);
+    const [visible, setVisible] = useState(false);
+    const [volume, setVolume] = useState(1);
+    const [muted, setMuted] = useState(false);
     const [aspectRatio, setAspectRatio] = useState(9 / 16);
 
-    // ✅ FIX: liked lấy từ DB (video.isLiked), không localStorage
-    const [liked,     setLiked]     = useState(() => Boolean(current?.isLiked));
+    const current = videos[currentIdx];
+
+    const [liked, setLiked] = useState(current?.isLiked ?? false);
     const [likeCount, setLikeCount] = useState(current?.likes ?? 0);
     const [likeLoading, setLikeLoading] = useState(false);
 
-    // ✅ FIX: followMap lấy từ DB (video.user.isFollowing)
-    const [followMap,      setFollowMap]      = useState(() => {
-        const map = {};
-        videos.forEach(v => {
-            if (v.user?.username) {
-                map[v.user.username] = Boolean(v.user?.isFollowing);
-            }
-        });
-        return map;
-    });
+    const [followMap, setFollowMap] = useState({});
     const [followLoading, setFollowLoading] = useState(false);
 
-    const following = followMap[current?.user?.username] ?? false;
-
-    // ✅ FIX: Khi chuyển video, lấy trạng thái từ video object (DB), không localStorage
-    useEffect(() => {
-        if (!current) return;
-        setLiked(Boolean(current.isLiked));
-        setLikeCount(current.likes ?? 0);
-        setProgress(0);
-        setDuration(0);
-    }, [currentIdx]);
+    const videoRef = useRef(null);
+    const progressBarRef = useRef(null);
 
     useEffect(() => {
-        requestAnimationFrame(() => setVisible(true));
+        setVisible(true);
     }, []);
 
     useEffect(() => {
-        const v = videoRef.current;
-        if (!v || !current?.videoUrl) return;
-        v.currentTime = 0;
-        v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-    }, [currentIdx]);
+        if (!current) return;
+        setLiked(current.isLiked ?? false);
+        setLikeCount(current.likes ?? 0);
+        setProgress(0);
+        setPlaying(true);
+        if (current.user?.username && followMap[current.user.username] === undefined) {
+            setFollowMap(prev => ({
+                ...prev,
+                [current.user.username]: current.user.isFollowing ?? false,
+            }));
+        }
+    }, [currentIdx, current?.id]);
+
+    const following = current?.user?.username ? (followMap[current.user.username] ?? false) : false;
 
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
-        const onTime = () => { if (!dragging && v.duration) setProgress((v.currentTime / v.duration) * 100); };
+        const onTime = () => {
+            if (!dragging && v.duration) {
+                setProgress((v.currentTime / v.duration) * 100);
+            }
+        };
         const onMeta = () => setDuration(v.duration || 0);
+        const onEnd = () => go(1);
         v.addEventListener('timeupdate', onTime);
         v.addEventListener('loadedmetadata', onMeta);
-        return () => { v.removeEventListener('timeupdate', onTime); v.removeEventListener('loadedmetadata', onMeta); };
-    }, [dragging]);
+        v.addEventListener('ended', onEnd);
+        return () => {
+            v.removeEventListener('timeupdate', onTime);
+            v.removeEventListener('loadedmetadata', onMeta);
+            v.removeEventListener('ended', onEnd);
+        };
+    }, [dragging, currentIdx]);
 
     useEffect(() => {
         const v = videoRef.current;
@@ -460,7 +498,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         window.addEventListener('mouseup', onUp);
     };
 
-    // handleLike — immutable update, không mutate video object gốc
     const handleLike = async () => {
         if (!isLoggedIn() || likeLoading) return;
         const was = liked;
@@ -479,7 +516,6 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         }
     };
 
-    // handleFollowToggle — immutable, không mutate video.user trực tiếp
     const handleFollowToggle = async () => {
         if (!current?.user?.username || followLoading) return;
         const username = current.user.username;
@@ -509,7 +545,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         <div
             className="fixed inset-0 z-[300] flex items-stretch"
             style={{
-                background: 'rgba(0,0,0,0.96)',
+                background: 'rgba(0,0,0,0.92)',
                 opacity: visible ? 1 : 0,
                 transition: 'opacity 0.26s ease',
             }}
@@ -528,7 +564,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
                 <button
                     onClick={handleClose}
                     className="absolute top-5 left-5 z-20 flex items-center gap-2 border-none cursor-pointer transition-all"
-                    style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '8px 14px', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)' }}
+                    style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 14px', color: '#ffffff', backdropFilter: 'blur(8px)' }}
                 >
                     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                         <path d="M2.5 2.5l10 10M12.5 2.5L2.5 12.5" />
@@ -598,7 +634,8 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
                         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}
                     >
                         <p
-                            className="text-white font-semibold text-[15px] font-body mb-1 cursor-pointer hover:underline w-fit pointer-events-auto m-0"
+                            className="font-semibold text-[15px] font-body mb-1 cursor-pointer hover:underline w-fit pointer-events-auto m-0"
+                            style={{ color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
                             onClick={() => { handleClose(); navigate(`/profile/${current.user?.username}`); }}
                         >
                             @{current.user?.username}
@@ -693,9 +730,9 @@ function NavBtn({ direction, onClick, disabled }) {
             disabled={disabled}
             style={{
                 width: 42, height: 42, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.15)',
                 backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)',
                 color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.2 : 1,

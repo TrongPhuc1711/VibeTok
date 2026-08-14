@@ -36,16 +36,20 @@ function WaveBars({ active = false, color = '#ff2d78', barCount = 5 }) {
 function VinylDisc({ src, spinning = false, size = 42 }) {
   return (
     <div
-      className={`rounded-full border-2 border-zinc-800 relative shrink-0 overflow-hidden ${spinning ? 'animate-[vinylSpin_3s_linear_infinite]' : ''}`}
+      className={`rounded-full border relative shrink-0 overflow-hidden ${spinning ? 'animate-[vinylSpin_3s_linear_infinite]' : ''}`}
       style={{
         width: size,
         height: size,
+        borderColor: 'var(--color-border)',
         background: src
           ? `url(${src}) center/cover`
           : 'conic-gradient(from 0deg, #1a1a2e, #2a1a3e, #1a2a3e, #1a1a2e)',
       }}
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#0a0a0f] border-[1.5px] border-zinc-600" />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border"
+        style={{ background: 'var(--color-base)', borderColor: 'var(--color-border)' }}
+      />
       <style>{`@keyframes vinylSpin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -57,8 +61,8 @@ function VolumeSlider({ label, icon, value, onChange, color = '#ff2d78' }) {
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-base">{icon}</span>
-          <span className="text-text-secondary text-xs font-body font-medium">{label}</span>
+          {icon && <span className="text-base">{icon}</span>}
+          <span className="text-xs font-body font-medium" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
         </div>
         <span 
           className="text-xs font-bold font-body min-w-[34px] text-right"
@@ -68,7 +72,7 @@ function VolumeSlider({ label, icon, value, onChange, color = '#ff2d78' }) {
         </span>
       </div>
       <div className="relative h-5 flex items-center group">
-        <div className="absolute left-0 right-0 h-1 bg-white/10 rounded-sm" />
+        <div className="absolute left-0 right-0 h-1 rounded-sm" style={{ background: 'var(--color-border2)' }} />
         <div 
           className="absolute left-0 h-1 rounded-sm transition-[width] duration-75"
           style={{ width: `${value * 100}%`, background: color }} 
@@ -97,15 +101,25 @@ function TrackItem({ track, selected, previewing, onSelect, onPreview }) {
   return (
     <div
       onClick={() => onSelect(track)}
-      className={`flex items-center gap-3 py-[11px] px-4 cursor-pointer transition-colors hover:bg-white/5 border-l-2 ${selected ? 'bg-primary/20 border-primary' : 'border-transparent'}`}
+      className="flex items-center gap-3 py-[11px] px-4 cursor-pointer transition-colors hover:bg-[var(--vt-hover)] border-l-2"
+      style={{
+        background: selected ? 'rgba(255, 45, 120, 0.12)' : 'transparent',
+        borderLeftColor: selected ? 'var(--color-primary, #ff2d78)' : 'transparent',
+      }}
     >
       <VinylDisc src={track.cover} spinning={previewing} size={40} />
 
       <div className="flex-1 min-w-0">
-        <p className={`text-[13px] font-body m-0 leading-snug truncate ${selected ? 'text-primary font-semibold' : 'text-zinc-200 font-normal'}`}>
+        <p
+          className="text-[13px] font-body m-0 leading-snug truncate"
+          style={{
+            color: selected ? 'var(--color-primary, #ff2d78)' : 'var(--color-text-primary)',
+            fontWeight: selected ? '600' : '500',
+          }}
+        >
           {track.title}
         </p>
-        <p className="text-text-secondary text-[11px] font-body m-0 mt-0.5 truncate">
+        <p className="text-[11px] font-body m-0 mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
           {track.artist} · {formatDuration(track.duration)}
         </p>
       </div>
@@ -116,7 +130,12 @@ function TrackItem({ track, selected, previewing, onSelect, onPreview }) {
         ) : (
           <button
             onClick={e => { e.stopPropagation(); onPreview(track); }}
-            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${track.audioUrl ? 'bg-white/10 hover:bg-white/20 cursor-pointer text-white/50 hover:text-white' : 'bg-white/5 cursor-not-allowed text-white/20'}`}
+            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors border-none"
+            style={{
+              background: 'var(--vt-input)',
+              color: track.audioUrl ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
+              cursor: track.audioUrl ? 'pointer' : 'not-allowed',
+            }}
             title={track.audioUrl ? 'Nghe thử' : 'Không có audio'}
           >
             <PlaySmallIcon />
@@ -238,10 +257,16 @@ export default function SoundPanel({
   const hasBoth = hasMusic && hasOriginal;
 
   return (
-    <div className="w-full border-l border-zinc-800 bg-[#0d0d18] flex flex-col overflow-hidden shrink-0">
+    <div
+      className="w-full flex flex-col overflow-hidden shrink-0"
+      style={{
+        background: 'var(--vt-card)',
+        borderLeft: '1px solid var(--color-border)',
+      }}
+    >
       {/* ── Header ── */}
-      <div className="px-4 pt-4 border-b border-[#1a1a2a]">
-        <p className="text-white text-sm font-bold font-body m-0 mb-3">Âm thanh</p>
+      <div className="px-4 pt-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+        <p className="text-sm font-bold font-body m-0 mb-3" style={{ color: 'var(--color-text-primary)' }}>Âm thanh</p>
         <div className="flex">
           {[
             { key: 'original', label: 'Âm thanh gốc' },
@@ -250,11 +275,12 @@ export default function SoundPanel({
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-2 px-1 border-b-2 text-[11px] font-body transition-colors ${
-                tab === t.key 
-                  ? 'border-primary text-primary font-bold' 
-                  : 'border-transparent text-text-subtle font-normal hover:text-text-secondary'
-              }`}
+              className="flex-1 py-2 px-1 border-b-2 text-[11px] font-body transition-colors cursor-pointer bg-transparent"
+              style={{
+                borderBottomColor: tab === t.key ? 'var(--color-primary, #ff2d78)' : 'transparent',
+                color: tab === t.key ? 'var(--color-primary, #ff2d78)' : 'var(--color-text-muted)',
+                fontWeight: tab === t.key ? '700' : '400',
+              }}
             >
               {t.label}
             </button>
@@ -266,14 +292,21 @@ export default function SoundPanel({
       {tab === 'original' && (
         <div className="flex-1 overflow-y-auto flex flex-col">
           <div className="p-4">
-            <div className="bg-gradient-to-br from-primary/10 to-brand-purple/10 border border-primary/20 rounded-2xl p-3.5">
+            <div
+              className="border rounded-2xl p-3.5"
+              style={{
+                background: 'rgba(255, 45, 120, 0.05)',
+                borderColor: 'rgba(255, 45, 120, 0.2)',
+              }}
+            >
               <div className="flex items-center gap-3">
                 <div className="relative shrink-0">
                   <div 
-                    className={`w-[52px] h-[52px] rounded-full border-2 border-primary/40 flex items-center justify-center text-lg font-bold text-white overflow-hidden ${
+                    className={`w-[52px] h-[52px] rounded-full border-2 flex items-center justify-center text-lg font-bold text-white overflow-hidden ${
                       useOriginalSound && videoFile ? 'animate-[vinylSpin_3s_linear_infinite]' : ''
                     }`}
                     style={{
+                      borderColor: 'rgba(255, 45, 120, 0.4)',
                       background: originalSound.avatar 
                         ? `url(${originalSound.avatar}) center/cover` 
                         : 'linear-gradient(135deg, #ff2d78, #ff6b35)'
@@ -282,16 +315,19 @@ export default function SoundPanel({
                     {!originalSound.avatar && originalSound.initials}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-black/70" />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-primary border-2 border-[#0d0d18] flex items-center justify-center">
+                  <div
+                    className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-primary border-2 flex items-center justify-center"
+                    style={{ borderColor: 'var(--vt-card)' }}
+                  >
                     <OriginalBadgeIcon />
                   </div>
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-[13px] font-semibold font-body m-0 truncate">
+                  <p className="text-[13px] font-semibold font-body m-0 truncate" style={{ color: 'var(--color-text-primary)' }}>
                     Âm thanh gốc - {originalSound.artist}
                   </p>
-                  <p className="text-zinc-400 text-[11px] font-body m-0 mt-1 truncate">
+                  <p className="text-[11px] font-body m-0 mt-1 truncate" style={{ color: 'var(--color-text-muted)' }}>
                     @{me?.username || 'bạn'} · Trích từ video
                   </p>
                 </div>
@@ -299,11 +335,12 @@ export default function SoundPanel({
                 {videoFile && (
                   <button
                     onClick={handlePreviewOriginal}
-                    className={`w-8 h-8 rounded-full border shrink-0 flex items-center justify-center transition-colors ${
-                      previewingId === 'original' 
-                        ? 'bg-primary/30 border-primary text-primary' 
-                        : 'bg-white/10 border-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-                    }`}
+                    className="w-8 h-8 rounded-full border shrink-0 flex items-center justify-center transition-colors cursor-pointer"
+                    style={{
+                      background: previewingId === 'original' ? 'rgba(255, 45, 120, 0.2)' : 'var(--vt-input)',
+                      borderColor: previewingId === 'original' ? 'var(--color-primary, #ff2d78)' : 'var(--color-border)',
+                      color: previewingId === 'original' ? '#ff2d78' : 'var(--color-text-secondary)',
+                    }}
                     title={previewingId === 'original' ? 'Dừng' : 'Nghe thử'}
                   >
                     {previewingId === 'original' ? <StopSmallIcon /> : <PlaySmallIcon />}
@@ -323,44 +360,59 @@ export default function SoundPanel({
               )}
 
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-zinc-400 text-xs font-body">
+                <span className="text-xs font-body" style={{ color: 'var(--color-text-muted)' }}>
                   {videoFile ? 'Dùng âm thanh từ video' : 'Chưa có video'}
                 </span>
                 <button
                   onClick={handleToggleOriginal}
                   disabled={!videoFile}
-                  className={`relative w-10 h-5.5 rounded-full transition-colors ${
-                    useOriginalSound && videoFile ? 'bg-primary' : 'bg-zinc-800'
-                  } ${!videoFile ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`relative w-10 h-5.5 rounded-full transition-colors border-none ${
+                    !videoFile ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  style={{
+                    background: useOriginalSound && videoFile ? 'var(--color-primary, #ff2d78)' : 'var(--color-border2)',
+                  }}
                 >
-                  <div className={`absolute top-[2px] bottom-[2px] w-[18px] rounded-full bg-white shadow transition-all ${
-                    useOriginalSound && videoFile ? 'left-[20px]' : 'left-[2px]'
-                  }`} />
+                  <div
+                    className={`absolute top-[2px] bottom-[2px] w-[18px] rounded-full bg-white shadow transition-all ${
+                      useOriginalSound && videoFile ? 'left-[20px]' : 'left-[2px]'
+                    }`}
+                  />
                 </button>
               </div>
             </div>
 
             {!videoFile && (
-              <p className="text-text-subtle text-[11px] font-body text-center mt-2 leading-relaxed">
+              <p className="text-[11px] font-body text-center mt-2 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                 Chọn video để sử dụng âm thanh gốc
               </p>
             )}
           </div>
 
           {selectedMusic && (
-            <div className="mx-4 mb-4 bg-brand-purple/10 border border-brand-purple/20 rounded-xl p-3">
-              <p className="text-brand-purple text-[10px] font-bold font-body m-0 mb-2 tracking-wide uppercase">
+            <div
+              className="mx-4 mb-4 border rounded-xl p-3"
+              style={{
+                background: 'rgba(124, 58, 237, 0.08)',
+                borderColor: 'rgba(124, 58, 237, 0.25)',
+              }}
+            >
+              <p className="text-[10px] font-bold font-body m-0 mb-2 tracking-wide uppercase" style={{ color: '#7c3aed' }}>
                 Nhạc nền đã chọn
               </p>
               <div className="flex items-center gap-2.5">
                 <VinylDisc src={selectedMusic.cover} spinning size={36} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-xs font-semibold font-body m-0 truncate">{selectedMusic.title}</p>
-                  <p className="text-zinc-400 text-[11px] font-body m-0 mt-0.5 truncate">{selectedMusic.artist}</p>
+                  <p className="text-xs font-semibold font-body m-0 truncate" style={{ color: 'var(--color-text-primary)' }}>{selectedMusic.title}</p>
+                  <p className="text-[11px] font-body m-0 mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>{selectedMusic.artist}</p>
                 </div>
                 <button
                   onClick={() => { onMusicSelect(null); setShowVolumeMixer(false); }}
-                  className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border-none rounded-md px-2 py-1 text-[11px] font-body cursor-pointer transition-colors"
+                  className="border-none rounded-md px-2 py-1 text-[11px] font-body cursor-pointer transition-colors"
+                  style={{
+                    background: 'var(--vt-input)',
+                    color: 'var(--color-text-secondary)',
+                  }}
                 >
                   Xóa
                 </button>
@@ -373,38 +425,51 @@ export default function SoundPanel({
       {/* ── Tab: Music Library ── */}
       {tab === 'library' && (
         <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-[#1a1a2a]">
-            <div className="flex items-center gap-2 bg-[#111120] rounded-lg px-3 py-2 border border-zinc-800 focus-within:border-primary/50 transition-colors">
+          <div className="p-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
+            <div
+              className="flex items-center gap-2 rounded-lg px-3 py-2 border transition-colors"
+              style={{
+                background: 'var(--vt-input)',
+                borderColor: 'var(--color-border)',
+              }}
+            >
               <SoundPanelSearchIcon />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Tìm bài hát..."
-                className="flex-1 bg-transparent border-none outline-none text-white text-xs font-body"
+                className="flex-1 bg-transparent border-none outline-none text-xs font-body"
+                style={{ color: 'var(--color-text-primary)' }}
               />
               {search && (
-                <button onClick={() => setSearch('')} className="text-zinc-500 hover:text-white text-lg leading-none shrink-0">&times;</button>
+                <button
+                  onClick={() => setSearch('')}
+                  className="hover:opacity-100 text-lg leading-none shrink-0 border-none bg-transparent cursor-pointer"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  &times;
+                </button>
               )}
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
             {loading ? (
               <div className="p-6 space-y-4">
                 {[1,2,3,4,5].map(i => (
                   <div key={i} className="flex gap-3 animate-pulse">
-                    <div className="w-10 h-10 rounded-full bg-zinc-800/50 shrink-0" />
+                    <div className="w-10 h-10 rounded-full shrink-0" style={{ background: 'var(--vt-input)' }} />
                     <div className="flex-1 flex flex-col justify-center gap-2">
-                      <div className="h-2.5 w-[70%] rounded-full bg-zinc-800/50" />
-                      <div className="h-2 w-[45%] rounded-full bg-zinc-800/30" />
+                      <div className="h-2.5 w-[70%] rounded-full" style={{ background: 'var(--vt-input)' }} />
+                      <div className="h-2 w-[45%] rounded-full" style={{ background: 'var(--vt-hover)' }} />
                     </div>
                   </div>
                 ))}
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-zinc-500 text-[13px] font-body">
+                <p className="text-[13px] font-body" style={{ color: 'var(--color-text-muted)' }}>
                   {search ? `Không tìm thấy "${search}"` : 'Chưa có bài hát nào'}
                 </p>
               </div>
@@ -425,14 +490,23 @@ export default function SoundPanel({
       )}
 
       {/* ── Volume Mixer ── */}
-      <div className="border-t border-[#1a1a2a] bg-[#0a0a12]">
+      <div
+        className="border-t"
+        style={{
+          borderColor: 'var(--color-border)',
+          background: 'var(--vt-card)',
+        }}
+      >
         <button
           onClick={() => setShowVolumeMixer(v => !v)}
           className="w-full px-4 py-3 bg-transparent border-none flex items-center justify-between cursor-pointer group"
         >
           <div className="flex items-center gap-2">
             <VolumeMixerIcon active={hasBoth} />
-            <span className={`text-xs font-semibold font-body transition-colors ${hasBoth ? 'text-primary' : 'text-zinc-400 group-hover:text-zinc-300'}`}>
+            <span
+              className="text-xs font-semibold font-body transition-colors"
+              style={{ color: hasBoth ? '#ff2d78' : 'var(--color-text-secondary)' }}
+            >
               Mixer âm thanh
             </span>
             {hasBoth && (
@@ -448,14 +522,12 @@ export default function SoundPanel({
           <div className="px-4 pb-4 flex flex-col gap-3.5">
             <VolumeSlider
               label="Âm thanh video gốc"
-              // icon="📹"
               value={originalVolume}
               onChange={onOriginalVolumeChange}
               color="#06b6d4"
             />
             <VolumeSlider
               label="Nhạc nền"
-              // icon="🎵"
               value={musicVolume}
               onChange={onMusicVolumeChange}
               color="#ff2d78"
@@ -466,22 +538,22 @@ export default function SoundPanel({
                 <div key={`v-${i}`} className="flex-1 rounded-[2px]" style={{
                   background: '#06b6d4',
                   height: Math.max(3, originalVolume * 32 * (0.4 + Math.sin(i) * 0.4 + Math.random() * 0.2)),
-                  opacity: originalVolume,
+                  opacity: Math.max(0.2, originalVolume),
                   transition: 'height 0.2s, opacity 0.2s',
                 }} />
               ))}
-              <div className="w-[1px] h-full bg-zinc-800 mx-0.5" />
+              <div className="w-[1px] h-full mx-0.5" style={{ background: 'var(--color-border)' }} />
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={`m-${i}`} className="flex-1 rounded-[2px]" style={{
                   background: '#ff2d78',
                   height: Math.max(3, musicVolume * 32 * (0.5 + Math.cos(i * 0.8) * 0.3 + Math.random() * 0.2)),
-                  opacity: musicVolume,
+                  opacity: Math.max(0.2, musicVolume),
                   transition: 'height 0.2s, opacity 0.2s',
                 }} />
               ))}
             </div>
 
-            <p className="text-zinc-500 text-[10px] font-body text-center m-0 mt-1">
+            <p className="text-[10px] font-body text-center m-0 mt-1" style={{ color: 'var(--color-text-muted)' }}>
               Nghe thử qua video preview bên trái
             </p>
           </div>

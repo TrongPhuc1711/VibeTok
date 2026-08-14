@@ -63,7 +63,7 @@ export default function ImageUploadZone({
             <div className="w-[52px] h-[52px] rounded-full bg-primary/10 flex items-center justify-center">
               <ImageIcon />
             </div>
-            <p className="text-[#ddd] text-sm font-semibold font-body m-0">
+            <p className="text-sm font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>
               Chọn ảnh để tải lên
             </p>
             <p className="text-text-faint text-xs font-body m-0 text-center">

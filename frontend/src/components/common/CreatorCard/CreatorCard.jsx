@@ -66,7 +66,7 @@ export default function CreatorCard({ user, layout = 'card' }) {
       <div className="flex items-center gap-3 py-2">
         <Avatar user={user} size="sm" onClick={goToProfile} />
         <div className="flex-1 min-w-0 cursor-pointer" onClick={goToProfile}>
-          <p className="text-[#ddd] text-[13px] font-semibold font-body truncate m-0">
+          <p className="text-text-primary text-[13px] font-semibold font-body truncate m-0">
             {user.fullName}
           </p>
           <p className="text-text-faint text-xs font-body m-0">
@@ -91,7 +91,7 @@ export default function CreatorCard({ user, layout = 'card' }) {
       onClick={goToProfile}
     >
       <Avatar user={user} size="md" />
-      <p className="text-[#ddd] text-[13px] font-semibold font-body m-0 text-center">
+      <p className="text-text-primary text-[13px] font-semibold font-body m-0 text-center">
         {user.fullName}
       </p>
       <p className="text-text-faint text-xs font-body m-0">@{user.username}</p>

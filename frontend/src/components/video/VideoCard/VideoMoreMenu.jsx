@@ -150,7 +150,7 @@ export default function VideoMoreMenu({ videoId, videoRef, onNotInterested }) {
       {/* Trigger button - 3 dots horizontal */}
       <button
         onClick={handleOpen}
-        className="w-9 h-9 rounded-full flex items-center justify-center bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors text-white cursor-pointer"
+        className="w-9 h-9 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm hover:bg-black/60 transition-colors text-white cursor-pointer border-none"
         aria-label="Thêm tùy chọn"
       >
         <MoreIcon size={20} />
@@ -160,12 +160,13 @@ export default function VideoMoreMenu({ videoId, videoRef, onNotInterested }) {
       {open && (
         <div
           ref={menuRef}
-          className="absolute top-0 right-0 z-[100] min-w-[310px] rounded-2xl overflow-hidden animate-[fadeScaleIn_0.15s_ease-out]"
+          className="absolute top-0 right-0 z-[100] min-w-[310px] rounded-2xl overflow-hidden animate-[fadeScaleIn_0.15s_ease-out] border"
           style={{
-            background: 'rgba(30, 30, 30, 0.92)',
+            background: 'var(--vt-card)',
+            borderColor: 'var(--color-border)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            boxShadow: 'var(--vt-shadow-xl)',
           }}
           onClick={(e) => e.stopPropagation()}
           onWheel={(e) => e.stopPropagation()}
@@ -173,20 +174,23 @@ export default function VideoMoreMenu({ videoId, videoRef, onNotInterested }) {
         >
           {/* ── Tốc độ ── */}
           <div className="px-4 py-3.5 flex items-center gap-3">
-            <div className="flex items-center gap-2.5 text-white/90 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0" style={{ color: 'var(--color-text-primary)' }}>
               <SpeedIcon size={20} />
-              <span className="text-[14px] font-medium">Tốc độ</span>
+              <span className="text-[14px] font-medium font-body">Tốc độ</span>
             </div>
             <div className="flex items-center gap-1 ml-auto">
               {SPEED_OPTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => handleSpeedChange(s)}
-                  className={`min-w-[40px] h-[30px] rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                  className={`min-w-[40px] h-[30px] rounded-full text-[13px] font-semibold transition-all cursor-pointer border-none ${
                     speed === s
-                      ? 'bg-white text-black'
-                      : 'bg-white/[0.08] text-white/60 hover:bg-white/15 hover:text-white/80'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary'
                   }`}
+                  style={{
+                    background: speed === s ? '#ff2d78' : 'var(--vt-input)',
+                  }}
                 >
                   {s === 1.0 ? '1.0' : s}
                 </button>
@@ -194,19 +198,23 @@ export default function VideoMoreMenu({ videoId, videoRef, onNotInterested }) {
             </div>
           </div>
 
-          <div className="mx-4 border-t border-white/[0.08]" />
+          <div className="mx-4 border-t" style={{ borderColor: 'var(--color-border)' }} />
 
           {/* ── Cuộn tự động ── */}
           <button
             onClick={handleToggleAutoScroll}
-            className="w-full px-4 py-3.5 flex items-center gap-2.5 hover:bg-white/5 transition-colors cursor-pointer"
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 text-left"
           >
-            <AutoScrollIcon />
-            <span className="text-white/90 text-[14px] font-medium">Cuộn tự động</span>
+            <span style={{ color: 'var(--color-text-primary)' }} className="flex items-center">
+              <AutoScrollIcon />
+            </span>
+            <span className="text-[14px] font-medium font-body" style={{ color: 'var(--color-text-primary)' }}>
+              Cuộn tự động
+            </span>
             <div className="ml-auto">
               <div
                 className={`w-[42px] h-[24px] rounded-full relative transition-colors duration-200 ${
-                  autoScroll ? 'bg-[#ff2d78]' : 'bg-white/20'
+                  autoScroll ? 'bg-primary' : 'bg-black/20 dark:bg-white/20'
                 }`}
               >
                 <div
@@ -218,37 +226,49 @@ export default function VideoMoreMenu({ videoId, videoRef, onNotInterested }) {
             </div>
           </button>
 
-          <div className="mx-4 border-t border-white/[0.08]" />
+          <div className="mx-4 border-t" style={{ borderColor: 'var(--color-border)' }} />
 
           {/* ── Trình phát nổi (PiP) ── */}
           <button
             onClick={handleTogglePip}
-            className="w-full px-4 py-3.5 flex items-center gap-2.5 hover:bg-white/5 transition-colors cursor-pointer"
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 text-left"
           >
-            <PipIcon />
-            <span className="text-white/90 text-[14px] font-medium">Trình phát nổi</span>
+            <span style={{ color: 'var(--color-text-primary)' }} className="flex items-center">
+              <PipIcon />
+            </span>
+            <span className="text-[14px] font-medium font-body" style={{ color: 'var(--color-text-primary)' }}>
+              Trình phát nổi
+            </span>
           </button>
 
-          <div className="mx-4 border-t border-white/[0.08]" />
+          <div className="mx-4 border-t" style={{ borderColor: 'var(--color-border)' }} />
 
           {/* ── Không quan tâm ── */}
           <button
             onClick={handleNotInterested}
-            className="w-full px-4 py-3.5 flex items-center gap-2.5 hover:bg-white/5 transition-colors cursor-pointer"
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 text-left"
           >
-            <NotInterestedIcon size={20} />
-            <span className="text-white/90 text-[14px] font-medium">Không quan tâm</span>
+            <span style={{ color: 'var(--color-text-primary)' }} className="flex items-center">
+              <NotInterestedIcon size={20} />
+            </span>
+            <span className="text-[14px] font-medium font-body" style={{ color: 'var(--color-text-primary)' }}>
+              Không quan tâm
+            </span>
           </button>
 
-          <div className="mx-4 border-t border-white/[0.08]" />
+          <div className="mx-4 border-t" style={{ borderColor: 'var(--color-border)' }} />
 
           {/* ── Báo cáo ── */}
           <button
             onClick={handleReport}
-            className="w-full px-4 py-3.5 flex items-center gap-2.5 hover:bg-white/5 transition-colors cursor-pointer"
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 text-left"
           >
-            <ReportIcon size={20} />
-            <span className="text-white/90 text-[14px] font-medium">Báo cáo</span>
+            <span style={{ color: 'var(--color-text-primary)' }} className="flex items-center">
+              <ReportIcon size={20} />
+            </span>
+            <span className="text-[14px] font-medium font-body" style={{ color: 'var(--color-text-primary)' }}>
+              Báo cáo
+            </span>
           </button>
 
           <div className="h-1" />
