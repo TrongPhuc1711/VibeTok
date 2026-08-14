@@ -115,23 +115,24 @@ function MusicFormModal({ track, onClose, onSuccess }) {
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'var(--vt-backdrop)', backdropFilter: 'blur(4px)' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div
                 className="w-[500px] rounded-2xl border overflow-hidden"
-                style={{ background: '#0f0f1a', borderColor: '#1e1e2e', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
+                style={{ background: 'var(--vt-card)', borderColor: 'var(--color-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
-                        <h3 className="text-white text-[15px] font-display font-bold m-0">
+                        <h3 className="text-[15px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>
                             {isEdit ? 'Chỉnh sửa bài hát' : 'Thêm bài hát mới'}
                         </h3>
-                        {isEdit && <p className="text-[#555] text-[11px] font-body mt-0.5 m-0">ID: {track.id}</p>}
+                        {isEdit && <p className="text-[11px] font-body mt-0.5 m-0" style={{ color: 'var(--color-text-muted)' }}>ID: {track.id}</p>}
                     </div>
                     <button onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border border-[#1e1e2e] cursor-pointer text-[#555] hover:text-white hover:border-[#333] transition-colors">
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                             <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
@@ -141,43 +142,48 @@ function MusicFormModal({ track, onClose, onSuccess }) {
                 {/* Body */}
                 <div className="px-5 py-4 space-y-3">
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-[12px] font-body">
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-500 text-[12px] font-body">
                             {error}
                         </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-[#777] text-[11px] font-body mb-1">Tên bài hát *</label>
+                            <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Tên bài hát *</label>
                             <input type="text" value={form.title} onChange={set('title')}
                                 placeholder="Nhập tên bài hát"
-                                className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors" />
+                                className="w-full rounded-lg px-3 py-2 text-[13px] font-body outline-none transition-colors"
+                                style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }} />
                         </div>
                         <div>
-                            <label className="block text-[#777] text-[11px] font-body mb-1">Nghệ sĩ *</label>
+                            <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Nghệ sĩ *</label>
                             <input type="text" value={form.artist} onChange={set('artist')}
                                 placeholder="Tên nghệ sĩ"
-                                className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors" />
+                                className="w-full rounded-lg px-3 py-2 text-[13px] font-body outline-none transition-colors"
+                                style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }} />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-[#777] text-[11px] font-body mb-1">File âm thanh (.mp3, .wav) *</label>
+                        <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>File âm thanh (.mp3, .wav) *</label>
                         <input type="file" accept="audio/*" onChange={handleAudioChange}
-                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-[#aaa] text-[12px] font-body outline-none focus:border-primary/50 transition-colors file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-primary/20 file:text-primary cursor-pointer hover:file:bg-primary/30" />
+                            className="w-full rounded-lg px-3 py-2 text-[12px] font-body outline-none transition-colors file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-primary/20 file:text-primary cursor-pointer hover:file:bg-primary/30"
+                            style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }} />
                         {isEdit && !form.audioFile && form.audioUrl && (
-                            <p className="text-[#555] text-[10px] mt-1 ml-1 truncate">Hiện tại: {form.audioUrl.split('/').pop()}</p>
+                            <p className="text-[10px] mt-1 ml-1 truncate" style={{ color: 'var(--color-text-muted)' }}>Hiện tại: {form.audioUrl.split('/').pop()}</p>
                         )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 items-end">
                         <div>
-                            <label className="block text-[#777] text-[11px] font-body mb-1">Ảnh bìa (Tùy chọn)</label>
+                            <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Ảnh bìa (Tùy chọn)</label>
                             <input type="file" accept="image/*" onChange={handleCoverChange}
-                                className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-[#aaa] text-[12px] font-body outline-none focus:border-primary/50 transition-colors file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#7c3aed22] file:text-[#7c3aed] cursor-pointer hover:file:bg-[#7c3aed33]" />
+                                className="w-full rounded-lg px-3 py-2 text-[12px] font-body outline-none transition-colors file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#7c3aed22] file:text-[#7c3aed] cursor-pointer hover:file:bg-[#7c3aed33]"
+                                style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }} />
                         </div>
                         <div className="flex gap-3">
-                            <div className="w-[38px] h-[38px] rounded flex items-center justify-center bg-[#111120] border border-[#1e1e2e] overflow-hidden shrink-0">
+                            <div className="w-[38px] h-[38px] rounded flex items-center justify-center overflow-hidden shrink-0"
+                                style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)' }}>
                                 {form.coverUrl ? (
                                     <img src={form.coverUrl} alt="Cover preview" className="w-full h-full object-cover" />
                                 ) : (
@@ -185,10 +191,11 @@ function MusicFormModal({ track, onClose, onSuccess }) {
                                 )}
                             </div>
                             <div className="flex-1">
-                                <label className="block text-[#777] text-[11px] font-body mb-1">Thời lượng (giây)</label>
+                                <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Thời lượng (giây)</label>
                                 <input type="number" value={form.duration} onChange={set('duration')}
                                     min="0" placeholder="0" disabled
-                                    className="w-full bg-[#1a1a2a] border border-[#1e1e2e] rounded-lg px-3 py-2 text-[#777] text-[13px] font-body outline-none cursor-not-allowed" />
+                                    className="w-full rounded-lg px-3 py-2 text-[13px] font-body outline-none cursor-not-allowed opacity-60"
+                                    style={{ background: 'var(--vt-input)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }} />
                             </div>
                         </div>
                     </div>
@@ -196,14 +203,15 @@ function MusicFormModal({ track, onClose, onSuccess }) {
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" checked={form.trending} onChange={set('trending')}
                             className="w-4 h-4 rounded accent-primary" />
-                        <span className="text-[#999] text-[12px] font-body">Đánh dấu thịnh hành</span>
+                        <span className="text-[12px] font-body" style={{ color: 'var(--color-text-secondary)' }}>Đánh dấu thịnh hành</span>
                     </label>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
                     <button onClick={onClose}
-                        className="px-4 py-2 rounded-lg text-[12px] font-body text-[#777] bg-transparent border border-[#1e1e2e] cursor-pointer hover:border-[#333] hover:text-white transition-colors">
+                        className="px-4 py-2 rounded-lg text-[12px] font-body bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
                         Hủy
                     </button>
                     <button onClick={handleSubmit} disabled={loading}
@@ -230,11 +238,11 @@ function DeleteConfirmModal({ track, onClose, onConfirm }) {
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'var(--vt-backdrop)', backdropFilter: 'blur(4px)' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div className="w-[380px] rounded-2xl border overflow-hidden"
-                style={{ background: '#0f0f1a', borderColor: '#1e1e2e', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+                style={{ background: 'var(--vt-card)', borderColor: 'var(--color-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
                 <div className="px-5 py-5 text-center">
                     <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
                         style={{ background: 'rgba(239, 68, 68, 0.15)' }}>
@@ -243,15 +251,16 @@ function DeleteConfirmModal({ track, onClose, onConfirm }) {
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
                     </div>
-                    <h3 className="text-white text-[15px] font-display font-bold mb-1">Xóa bài hát?</h3>
-                    <p className="text-[#666] text-[12px] font-body leading-relaxed">
-                        Bạn có chắc muốn xóa <strong className="text-white">{track.title}</strong> của <strong className="text-[#999]">{track.artist}</strong>?
+                    <h3 className="text-[15px] font-display font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>Xóa bài hát?</h3>
+                    <p className="text-[12px] font-body leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                        Bạn có chắc muốn xóa <strong style={{ color: 'var(--color-text-primary)' }}>{track.title}</strong> của <strong style={{ color: 'var(--color-text-secondary)' }}>{track.artist}</strong>?
                         Hành động này không thể hoàn tác.
                     </p>
                 </div>
-                <div className="flex items-center justify-center gap-2 px-5 py-3.5 border-t" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-center gap-2 px-5 py-3.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
                     <button onClick={onClose}
-                        className="flex-1 px-4 py-2 rounded-lg text-[12px] font-body text-[#777] bg-transparent border border-[#1e1e2e] cursor-pointer hover:border-[#333] hover:text-white transition-colors">
+                        className="flex-1 px-4 py-2 rounded-lg text-[12px] font-body bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
                         Hủy
                     </button>
                     <button onClick={handleConfirm} disabled={loading}
@@ -372,23 +381,23 @@ export default function MusicManagerPage() {
             />
 
             {/* Table */}
-            <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                 {loading ? (
                     <div className="flex items-center justify-center py-16"><BounceDots /></div>
                 ) : tracks.length === 0 ? (
-                    <p className="text-[#444] text-[12px] font-body text-center py-16">Không tìm thấy bài hát nào</p>
+                    <p className="text-[12px] font-body text-center py-16" style={{ color: 'var(--color-text-muted)' }}>Không tìm thấy bài hát nào</p>
                 ) : (
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-[#1a1a2a]">
+                            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                                 {['Bài hát', 'Nghệ sĩ', 'Thời lượng', 'Lượt dùng', 'Trạng thái', 'Ngày thêm', 'Hành động'].map(h => (
-                                    <th key={h} className="px-4 py-3 text-left text-[10px] font-body text-[#444] font-medium whitespace-nowrap">{h}</th>
+                                    <th key={h} className="px-4 py-3 text-left text-[10px] font-body font-medium whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {tracks.map((t, i) => (
-                                <tr key={t.id} className={`border-b border-[#1a1a2a]/40 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
+                                <tr key={t.id} className="transition-colors hover:bg-[var(--vt-hover)]" style={{ borderBottom: '1px solid var(--vt-divider)' }}>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
                                             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
@@ -398,14 +407,14 @@ export default function MusicManagerPage() {
                                                     : <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round"><path d="M7 15V4l10-2v11" /><circle cx="4.5" cy="15" r="2.5" /><circle cx="14.5" cy="13" r="2.5" /></svg>
                                                 }
                                             </div>
-                                            <p className="text-white text-[12px] font-semibold font-body leading-tight m-0 max-w-[200px] truncate" title={t.title}>
+                                            <p className="text-[12px] font-semibold font-body leading-tight m-0 max-w-[200px] truncate" style={{ color: 'var(--color-text-primary)' }} title={t.title}>
                                                 {t.title}
                                             </p>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body max-w-[150px] truncate" title={t.artist}>{t.artist}</td>
-                                    <td className="px-4 py-3 text-[#666] text-[11px] font-body whitespace-nowrap">{fmtDuration(t.duration)}</td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body">{fmt(t.uses)}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body max-w-[150px] truncate" style={{ color: 'var(--color-text-secondary)' }} title={t.artist}>{t.artist}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body whitespace-nowrap" style={{ color: 'var(--color-text-secondary)' }}>{fmtDuration(t.duration)}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{fmt(t.uses)}</td>
                                     <td className="px-4 py-3">
                                         {t.trending ? (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-body font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
@@ -413,12 +422,12 @@ export default function MusicManagerPage() {
                                                 Thịnh hành
                                             </span>
                                         ) : (
-                                            <span className="text-[10px] font-body px-2 py-0.5 rounded-full bg-[#1e1e2e] text-[#555]">
+                                            <span className="text-[10px] font-body px-2 py-0.5 rounded-full" style={{ background: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
                                                 Bình thường
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-[#666] text-[11px] font-body whitespace-nowrap">{t.createdAt}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body whitespace-nowrap" style={{ color: 'var(--color-text-secondary)' }}>{t.createdAt}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex gap-1">
                                             <AdminBtn

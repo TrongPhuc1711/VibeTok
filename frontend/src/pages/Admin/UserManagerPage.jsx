@@ -62,26 +62,27 @@ function PasswordResetModal({ user, onClose, onSuccess }) {
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'var(--vt-backdrop)', backdropFilter: 'blur(4px)' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div
                 className="w-[420px] rounded-2xl border overflow-hidden"
                 style={{
-                    background: '#0f0f1a',
-                    borderColor: '#1e1e2e',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                    background: 'var(--vt-card)',
+                    borderColor: 'var(--color-border)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
                 }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
-                        <h3 className="text-white text-[15px] font-display font-bold m-0">Đổi mật khẩu</h3>
-                        <p className="text-[#555] text-[11px] font-body mt-0.5 m-0">Người dùng: {user.name} ({user.username})</p>
+                        <h3 className="text-[15px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>Đổi mật khẩu</h3>
+                        <p className="text-[11px] font-body mt-0.5 m-0" style={{ color: 'var(--color-text-muted)' }}>Người dùng: {user.name} ({user.username})</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border border-[#1e1e2e] cursor-pointer text-[#555] hover:text-white hover:border-[#333] transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                             <path d="M18 6L6 18M6 6l12 12" />
@@ -92,39 +93,50 @@ function PasswordResetModal({ user, onClose, onSuccess }) {
                 {/* Body */}
                 <div className="px-5 py-4 space-y-3">
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-[12px] font-body">
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-500 text-[12px] font-body">
                             {error}
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-[#777] text-[11px] font-body mb-1">Mật khẩu mới</label>
+                        <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Mật khẩu mới</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Tối thiểu 8 ký tự"
-                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors"
+                            className="w-full rounded-lg px-3 py-2 text-[13px] font-body outline-none transition-colors"
+                            style={{
+                                background: 'var(--vt-input)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-primary)',
+                            }}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-[#777] text-[11px] font-body mb-1">Xác nhận mật khẩu</label>
+                        <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Xác nhận mật khẩu</label>
                         <input
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Nhập lại mật khẩu"
-                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[13px] font-body outline-none placeholder:text-[#333] focus:border-primary/50 transition-colors"
+                            className="w-full rounded-lg px-3 py-2 text-[13px] font-body outline-none transition-colors"
+                            style={{
+                                background: 'var(--vt-input)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-primary)',
+                            }}
                         />
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg text-[12px] font-body text-[#777] bg-transparent border border-[#1e1e2e] cursor-pointer hover:border-[#333] hover:text-white transition-colors"
+                        className="px-4 py-2 rounded-lg text-[12px] font-body bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
                         Hủy
                     </button>
@@ -238,36 +250,36 @@ export default function UserManagerPage() {
             />
 
             {/* Table */}
-            <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                 {loading ? (
                     <div className="flex items-center justify-center py-16"><BounceDots /></div>
                 ) : users.length === 0 ? (
-                    <p className="text-[#444] text-[12px] font-body text-center py-16">Không tìm thấy người dùng nào</p>
+                    <p className="text-[12px] font-body text-center py-16" style={{ color: 'var(--color-text-muted)' }}>Không tìm thấy người dùng nào</p>
                 ) : (
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-[#1a1a2a]">
+                            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                                 {['Người dùng', 'Email', 'Ngày tham gia', 'Followers', 'Videos', 'Trạng thái', 'Hành động'].map(h => (
-                                    <th key={h} className="px-4 py-3 text-left text-[10px] font-body text-[#444] font-medium whitespace-nowrap">{h}</th>
+                                    <th key={h} className="px-4 py-3 text-left text-[10px] font-body font-medium whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {users.map((u, i) => (
-                                <tr key={u.id} className={`border-b border-[#1a1a2a]/40 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
+                                <tr key={u.id} className="transition-colors hover:bg-[var(--vt-hover)]" style={{ borderBottom: '1px solid var(--vt-divider)' }}>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
                                             <Avatar user={{ ...u, fullName: u.name }} size="xs" className="!w-7 !h-7 !text-[9px]" />
                                             <div>
-                                                <p className="text-white text-[12px] font-semibold font-body leading-tight m-0">{u.name}</p>
-                                                <p className="text-[#555] text-[10px] font-body m-0">{u.username}</p>
+                                                <p className="text-[12px] font-semibold font-body leading-tight m-0" style={{ color: 'var(--color-text-primary)' }}>{u.name}</p>
+                                                <p className="text-[10px] font-body m-0" style={{ color: 'var(--color-text-secondary)' }}>{u.username}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-[#666] text-[11px] font-body">{u.email}</td>
-                                    <td className="px-4 py-3 text-[#666] text-[11px] font-body whitespace-nowrap">{u.joinDate}</td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body">{fmt(u.followers)}</td>
-                                    <td className="px-4 py-3 text-[#888] text-[11px] font-body">{u.videos}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{u.email}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body whitespace-nowrap" style={{ color: 'var(--color-text-secondary)' }}>{u.joinDate}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{fmt(u.followers)}</td>
+                                    <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{u.videos}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-1 flex-wrap">
                                             <StatusBadge status={u.status} />

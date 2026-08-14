@@ -65,10 +65,10 @@ export default function DashboardPage() {
                 {/* Bar chart */}
                 <div className="rounded-xl p-4" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-white text-[13px] font-semibold font-body">Người dùng mới theo ngày</p>
+                        <p className="text-[13px] font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>Người dùng mới theo ngày</p>
                         <div className="flex items-center gap-3">
                             {BAR_KEYS.map(k => (
-                                <span key={k.key} className="flex items-center gap-1 text-[10px] font-body text-[#666]">
+                                <span key={k.key} className="flex items-center gap-1 text-[10px] font-body" style={{ color: 'var(--color-text-muted)' }}>
                                     <span className="w-2 h-2 rounded-sm inline-block" style={{ background: k.color }} />
                                     {k.label}
                                 </span>
@@ -77,13 +77,13 @@ export default function DashboardPage() {
                     </div>
                     {growth.length > 0
                         ? <BarChart data={growth} keys={BAR_KEYS} height={160} />
-                        : <p className="text-[#444] text-[11px] font-body text-center py-8">Chưa có dữ liệu</p>
+                        : <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
                     }
                 </div>
 
                 {/* Donut */}
                 <div className="rounded-xl p-4" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
-                    <p className="text-white text-[13px] font-semibold font-body mb-3">Phân loại nội dung</p>
+                    <p className="text-[13px] font-semibold font-body mb-3" style={{ color: 'var(--color-text-primary)' }}>Phân loại nội dung</p>
                     {content.length > 0 ? (
                         <>
                             <div className="flex justify-center mb-3">
@@ -102,7 +102,7 @@ export default function DashboardPage() {
                             </div>
                         </>
                     ) : (
-                        <p className="text-[#444] text-[11px] font-body text-center py-8">Chưa có dữ liệu</p>
+                        <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
                     )}
                 </div>
             </div>
@@ -110,14 +110,14 @@ export default function DashboardPage() {
             {/* ── Top Creators table ── */}
             <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                 <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <p className="text-white text-[13px] font-semibold font-body">Top Creators</p>
+                    <p className="text-[13px] font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>Top Creators</p>
                 </div>
                 {creators.length > 0 ? (
                     <table className="w-full">
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                                 {['#', 'Tên', 'Followers', 'Videos', 'Lượt thích', 'Trạng thái', 'Hành động'].map(h => (
-                                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-body text-[#444] font-medium whitespace-nowrap">{h}</th>
+                                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-body font-medium whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
                                         <div className="flex items-center gap-2.5">
                                             <Avatar user={{ ...c, fullName: c.name }} size="xs" className="!w-7 !h-7 !text-[9px]" />
                                             <div>
-                                                <p className="text-white text-[12px] font-semibold font-body leading-tight m-0">{c.name}</p>
+                                                <p className="text-[12px] font-semibold font-body leading-tight m-0" style={{ color: 'var(--color-text-primary)' }}>{c.name}</p>
                                                 <p className="text-[10px] font-body m-0" style={{ color: 'var(--color-text-secondary)' }}>{c.username}</p>
                                             </div>
                                         </div>
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                         </tbody>
                     </table>
                 ) : (
-                    <p className="text-[#444] text-[11px] font-body text-center py-8">Chưa có dữ liệu</p>
+                    <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
                 )}
             </div>
         </AdminLayout>

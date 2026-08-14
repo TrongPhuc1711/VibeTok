@@ -65,9 +65,16 @@ export default function AnalyticsPage() {
     const actions = (
         <div className="flex gap-1.5">
             {DATE_RANGES.map(r => (
-                <button key={r.days} onClick={() => setRange(r.days)}
-                    className={`text-[11px] font-body px-2.5 py-1 rounded border transition-colors cursor-pointer
-                        ${range === r.days ? 'bg-primary/15 border-primary/50 text-primary' : 'bg-transparent border-[#1e1e2e] text-[#555] hover:text-white'}`}>
+                <button
+                    key={r.days}
+                    onClick={() => setRange(r.days)}
+                    className="text-[11px] font-body px-2.5 py-1 rounded border transition-colors cursor-pointer"
+                    style={{
+                        background: range === r.days ? 'rgba(255, 45, 120, 0.12)' : 'var(--vt-card)',
+                        borderColor: range === r.days ? 'rgba(255, 45, 120, 0.4)' : 'var(--color-border)',
+                        color: range === r.days ? '#ff2d78' : 'var(--color-text-secondary)',
+                    }}
+                >
                     {r.label}
                 </button>
             ))}
@@ -97,21 +104,21 @@ export default function AnalyticsPage() {
 
             {/* Growth bar + content donut */}
             <div className="grid grid-cols-[1fr_260px] gap-4 mb-4">
-                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-5">
+                <div className="rounded-xl p-5" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-white text-[13px] font-semibold font-body">Người dùng mới ({range} ngày)</p>
+                        <p className="text-[13px] font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>Người dùng mới ({range} ngày)</p>
                         <div className="flex gap-3">
                             {growthKeys.map(k => <Dot key={k.key} color={k.color} label={k.label} />)}
                         </div>
                     </div>
                     {growth.length > 0
                         ? <BarChart data={growth} keys={growthKeys} height={180} />
-                        : <p className="text-[#444] text-[11px] font-body text-center py-8">Chưa có dữ liệu</p>
+                        : <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
                     }
                 </div>
 
-                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-5">
-                    <p className="text-white text-[13px] font-semibold font-body mb-3">Phân loại nội dung</p>
+                <div className="rounded-xl p-5" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
+                    <p className="text-[13px] font-semibold font-body mb-3" style={{ color: 'var(--color-text-primary)' }}>Phân loại nội dung</p>
                     {content.length > 0 ? (
                         <>
                             <div className="flex justify-center mb-3">
@@ -122,30 +129,30 @@ export default function AnalyticsPage() {
                                     <div key={d.name} className="flex items-center justify-between text-[10px] font-body">
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                                            <span className="text-[#666]">{d.name}</span>
+                                            <span style={{ color: 'var(--color-text-secondary)' }}>{d.name}</span>
                                         </div>
-                                        <span className="text-[#888]">{d.value}%</span>
+                                        <span style={{ color: 'var(--color-text-muted)' }}>{d.value}%</span>
                                     </div>
                                 ))}
                             </div>
                         </>
                     ) : (
-                        <p className="text-[#444] text-[11px] font-body text-center py-8">Chưa có dữ liệu</p>
+                        <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
                     )}
                 </div>
             </div>
 
             {/* Views area chart */}
-            <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-5">
+            <div className="rounded-xl p-5" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                 <div className="flex items-center justify-between mb-3">
-                    <p className="text-white text-[13px] font-semibold font-body">Lượt xem & tương tác ({range} ngày)</p>
+                    <p className="text-[13px] font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>Lượt xem & tương tác ({range} ngày)</p>
                     <div className="flex gap-3">
                         {viewsKeys.map(k => <Dot key={k.key} color={k.color} label={k.label} />)}
                     </div>
                 </div>
                 {views.length > 0
                     ? <AreaChart data={views} keys={viewsKeys} height={160} />
-                    : <p className="text-[#444] text-[11px] font-body text-center py-8">Chưa có dữ liệu</p>
+                    : <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
                 }
             </div>
         </AdminLayout>

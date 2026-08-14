@@ -31,7 +31,7 @@ export default function BarChart({ data = [], keys = [], height = 160 }) {
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map(pct => (
           <line key={pct} x1="0" y1={chartH*(1-pct)} x2={totalW} y2={chartH*(1-pct)}
-            stroke="#706c6cff" strokeWidth="1" />
+            stroke="var(--color-border)" strokeWidth="1" />
         ))}
         {/* Bars */}
         {data.map((d, di) => {
@@ -62,13 +62,13 @@ export default function BarChart({ data = [], keys = [], height = 160 }) {
               })}
               {/* Date label */}
               <text x={centerX} y={chartH + 15} textAnchor="middle"
-                fill="#fff" fontSize="9" fontFamily="Arial, sans-serif" fontWeight="500">
+                fill="var(--color-text-secondary)" fontSize="9" fontFamily="DM Sans, sans-serif" fontWeight="500">
                 {d.date ? `Ngày ${d.date}` : d.month ? `Tháng ${d.month}` : di}
               </text>
               {/* Value label */}
               <text x={centerX} y={chartH + 28} textAnchor="middle"
                 fill={keys[0]?.color ?? '#ff2d78'} fontSize="8" fontWeight="600"
-                fontFamily="Arial, sans-serif" opacity="0.8">
+                fontFamily="DM Sans, sans-serif" opacity="0.9">
                 {`+${fmtVal(totalVal)} người dùng`}
               </text>
             </g>

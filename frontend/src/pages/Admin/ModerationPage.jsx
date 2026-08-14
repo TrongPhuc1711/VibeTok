@@ -68,21 +68,21 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'var(--vt-backdrop)', backdropFilter: 'blur(8px)' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div
                 className="relative w-[90vw] max-w-[480px] rounded-2xl border overflow-hidden"
                 style={{
-                    background: '#0a0a14',
-                    borderColor: '#1e1e2e',
-                    boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
+                    background: 'var(--vt-card)',
+                    borderColor: 'var(--color-border)',
+                    boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
                 }}
             >
                 {/* Close button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 border-none cursor-pointer text-white/70 hover:text-white hover:bg-black/80 transition-colors"
+                    className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 border-none cursor-pointer text-white/80 hover:text-white hover:bg-black/80 transition-colors"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                         <path d="M18 6L6 18M6 6l12 12" />
@@ -123,13 +123,13 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
 
                 {/* Video info */}
                 <div className="p-4">
-                    <p className="text-white text-[14px] font-semibold font-body leading-snug mb-1.5 line-clamp-2">{video.title}</p>
+                    <p className="text-[14px] font-semibold font-body leading-snug mb-1.5 line-clamp-2" style={{ color: 'var(--color-text-primary)' }}>{video.title}</p>
                     <div className="flex items-center gap-2 mb-2">
                         <Avatar user={{ anh_dai_dien: video.avatar, initials: video.initials, fullName: video.creator }} size="xs" className="!w-6 !h-6 !text-[8px]" />
-                        <span className="text-[#888] text-[12px] font-body">{video.creator}</span>
-                        <span className="text-[#333] text-[10px] font-body ml-auto">{video.submitTime}</span>
+                        <span className="text-[12px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{video.creator}</span>
+                        <span className="text-[10px] font-body ml-auto" style={{ color: 'var(--color-text-muted)' }}>{video.submitTime}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-[#666] font-body mb-3">
+                    <div className="flex items-center gap-3 text-[11px] font-body mb-3" style={{ color: 'var(--color-text-muted)' }}>
                         <span>👁 {fmt(video.views)}</span>
                         <span>❤ {fmt(video.likes)}</span>
                         <span>💬 {fmt(video.comments)}</span>
@@ -139,17 +139,17 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                     {/* Rejection reason (nếu có) */}
                     {video.rejectionReason && (
                         <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-3">
-                            <p className="text-[10px] text-red-400/70 font-body font-semibold uppercase tracking-wide mb-0.5">Lý do từ chối</p>
-                            <p className="text-red-300 text-[12px] font-body m-0">{video.rejectionReason}</p>
+                            <p className="text-[10px] font-body font-semibold uppercase tracking-wide mb-0.5" style={{ color: '#ef4444' }}>Lý do từ chối</p>
+                            <p className="text-[12px] font-body m-0" style={{ color: '#ef4444' }}>{video.rejectionReason}</p>
                         </div>
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-[#1a1a2a]">
+                    <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
                         {video.status === 'active' && (
                             <button
                                 onClick={() => { onClose(); onHide(video); }}
-                                className="flex-1 px-3 py-2 rounded-lg bg-red-500/15 text-red-400 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-red-500/25 transition-colors"
+                                className="flex-1 px-3 py-2 rounded-lg bg-red-500/15 text-red-500 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-red-500/25 transition-colors"
                             >
                                 Ẩn video
                             </button>
@@ -157,7 +157,7 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                         {video.status === 'hidden' && (
                             <button
                                 onClick={() => { onClose(); onRestore(video.id); }}
-                                className="flex-1 px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-400 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-emerald-500/25 transition-colors"
+                                className="flex-1 px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-500 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-emerald-500/25 transition-colors"
                             >
                                 Khôi phục
                             </button>
@@ -173,7 +173,7 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                                 </button>
                                 <button
                                     onClick={() => { onClose(); onHide(video); }}
-                                    className="flex-1 px-3 py-2 rounded-lg bg-red-500/15 text-red-400 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-red-500/25 transition-colors"
+                                    className="flex-1 px-3 py-2 rounded-lg bg-red-500/15 text-red-500 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-red-500/25 transition-colors"
                                 >
                                     Ẩn video
                                 </button>
@@ -181,7 +181,8 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                         )}
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 rounded-lg text-[12px] font-body text-[#777] bg-transparent border border-[#1e1e2e] cursor-pointer hover:border-[#333] hover:text-white transition-colors"
+                            className="px-4 py-2 rounded-lg text-[12px] font-body bg-transparent border cursor-pointer transition-colors"
+                            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                         >
                             Đóng
                         </button>
@@ -212,28 +213,29 @@ function HideReasonModal({ video, onClose, onConfirm }) {
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'var(--vt-backdrop)', backdropFilter: 'blur(4px)' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div
                 className="w-[460px] rounded-2xl border overflow-hidden"
                 style={{
-                    background: '#0f0f1a',
-                    borderColor: '#1e1e2e',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                    background: 'var(--vt-card)',
+                    borderColor: 'var(--color-border)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
                 }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
-                        <h3 className="text-white text-[15px] font-display font-bold m-0">Ẩn video</h3>
-                        <p className="text-[#555] text-[11px] font-body mt-0.5 m-0">
+                        <h3 className="text-[15px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>Ẩn video</h3>
+                        <p className="text-[11px] font-body mt-0.5 m-0" style={{ color: 'var(--color-text-muted)' }}>
                             Video: {video?.title || 'Không có tiêu đề'} • {video?.creator}
                         </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border border-[#1e1e2e] cursor-pointer text-[#555] hover:text-white hover:border-[#333] transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                             <path d="M18 6L6 18M6 6l12 12" />
@@ -243,7 +245,7 @@ function HideReasonModal({ video, onClose, onConfirm }) {
 
                 {/* Body */}
                 <div className="px-5 py-4">
-                    <p className="text-[#999] text-[12px] font-body mb-3">Chọn lý do ẩn video:</p>
+                    <p className="text-[12px] font-body mb-3" style={{ color: 'var(--color-text-secondary)' }}>Chọn lý do ẩn video:</p>
 
                     <div className="space-y-1.5 mb-4">
                         {HIDE_REASONS.map(reason => (
@@ -252,7 +254,7 @@ function HideReasonModal({ video, onClose, onConfirm }) {
                                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-all border ${
                                     selectedReason === reason
                                         ? 'bg-[#ff2d78]/10 border-[#ff2d78]/30'
-                                        : 'bg-transparent border-transparent hover:bg-white/[0.03]'
+                                        : 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/[0.03]'
                                 }`}
                             >
                                 <input
@@ -263,7 +265,7 @@ function HideReasonModal({ video, onClose, onConfirm }) {
                                     onChange={() => setSelectedReason(reason)}
                                     className="accent-[#ff2d78] w-3.5 h-3.5"
                                 />
-                                <span className={`text-[12px] font-body ${selectedReason === reason ? 'text-white font-medium' : 'text-[#999]'}`}>
+                                <span className="text-[12px] font-body" style={{ color: selectedReason === reason ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}>
                                     {reason}
                                 </span>
                             </label>
@@ -272,7 +274,7 @@ function HideReasonModal({ video, onClose, onConfirm }) {
 
                     {/* Custom note */}
                     <div>
-                        <label className="block text-[#777] text-[11px] font-body mb-1">
+                        <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                             Mô tả bổ sung {selectedReason === 'Lý do khác' ? '*' : '(tùy chọn)'}
                         </label>
                         <textarea
@@ -280,16 +282,22 @@ function HideReasonModal({ video, onClose, onConfirm }) {
                             onChange={(e) => setCustomNote(e.target.value)}
                             placeholder={selectedReason === 'Lý do khác' ? 'Nhập lý do cụ thể...' : 'Nhập chi tiết bổ sung nếu cần...'}
                             rows={2}
-                            className="w-full bg-[#111120] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white text-[12px] font-body outline-none placeholder:text-[#333] focus:border-[#ff2d78]/40 transition-colors resize-none"
+                            className="w-full rounded-lg px-3 py-2 text-[12px] font-body outline-none transition-colors resize-none"
+                            style={{
+                                background: 'var(--vt-input)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-primary)',
+                            }}
                         />
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: '#1a1a2a' }}>
+                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg text-[12px] font-body text-[#777] bg-transparent border border-[#1e1e2e] cursor-pointer hover:border-[#333] hover:text-white transition-colors"
+                        className="px-4 py-2 rounded-lg text-[12px] font-body bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
                         Hủy
                     </button>
@@ -297,7 +305,7 @@ function HideReasonModal({ video, onClose, onConfirm }) {
                         onClick={handleSubmit}
                         disabled={loading || !selectedReason || (selectedReason === 'Lý do khác' && !customNote.trim())}
                         className="px-4 py-2 rounded-lg text-[12px] font-body font-semibold text-white cursor-pointer border-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        style={{ background: loading || !selectedReason ? '#333' : '#ef4444' }}
+                        style={{ background: loading || !selectedReason ? '#888' : '#ef4444' }}
                     >
                         {loading ? 'Đang ẩn...' : 'Ẩn video'}
                     </button>
@@ -546,12 +554,16 @@ export default function ModerationPage() {
                     {loading ? (
                         <div className="flex items-center justify-center py-16"><BounceDots /></div>
                     ) : videos.length === 0 ? (
-                        <p className="text-[#444] text-[12px] font-body text-center py-16">Không tìm thấy video nào</p>
+                        <p className="text-[12px] font-body text-center py-16" style={{ color: 'var(--color-text-muted)' }}>Không tìm thấy video nào</p>
                     ) : (
                         <>
                             <div className="grid grid-cols-4 gap-4 mb-6">
                                 {videos.map(v => (
-                                    <div key={v.id} className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden hover:border-primary/20 transition-colors group">
+                                    <div
+                                        key={v.id}
+                                        className="rounded-xl overflow-hidden transition-colors group"
+                                        style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
+                                    >
                                         {/* Thumbnail — click to preview */}
                                         <div
                                             className="relative h-[120px] flex items-center justify-center bg-[#1a0a2e] cursor-pointer"
@@ -583,13 +595,13 @@ export default function ModerationPage() {
 
                                         {/* Info */}
                                         <div className="p-3">
-                                            <p className="text-white text-[12px] font-semibold font-body leading-tight mb-1.5 line-clamp-1">{v.title}</p>
+                                            <p className="text-[12px] font-semibold font-body leading-tight mb-1.5 line-clamp-1" style={{ color: 'var(--color-text-primary)' }}>{v.title}</p>
                                             <div className="flex items-center gap-1.5 mb-1">
                                                 <Avatar user={{ anh_dai_dien: v.avatar, initials: v.initials, fullName: v.creator }} size="xs" className="!w-7 !h-7 !text-[9px]" />
-                                                <span className="text-[#555] text-[10px] font-body">{v.creator}</span>
-                                                <span className="text-[#333] text-[10px] font-body ml-auto">{v.submitTime}</span>
+                                                <span className="text-[10px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{v.creator}</span>
+                                                <span className="text-[10px] font-body ml-auto" style={{ color: 'var(--color-text-muted)' }}>{v.submitTime}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-[9px] text-[#555] font-body mb-2">
+                                            <div className="flex items-center gap-2 text-[9px] font-body mb-2" style={{ color: 'var(--color-text-muted)' }}>
                                                 <span>👁 {fmt(v.views)}</span>
                                                 <span>❤ {fmt(v.likes)}</span>
                                                 <span>💬 {fmt(v.comments)}</span>
@@ -599,19 +611,19 @@ export default function ModerationPage() {
                                                 {v.status === 'active' && (
                                                     <button onClick={() => handleHideVideoWithReason(v)}
                                                         disabled={actionLoading === v.id}
-                                                        className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded bg-red-500/15 text-red-400 border-none cursor-pointer hover:bg-red-500/25 disabled:opacity-40">
+                                                        className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded bg-red-500/15 text-red-500 border-none cursor-pointer hover:bg-red-500/25 disabled:opacity-40">
                                                         Ẩn video
                                                     </button>
                                                 )}
                                                 {v.status === 'hidden' && (
                                                     <button onClick={() => handleRestoreVideo(v.id)}
                                                         disabled={actionLoading === v.id}
-                                                        className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded bg-emerald-500/15 text-emerald-400 border-none cursor-pointer hover:bg-emerald-500/25 disabled:opacity-40">
+                                                        className="flex-1 text-[10px] font-semibold font-body py-1.5 rounded bg-emerald-500/15 text-emerald-500 border-none cursor-pointer hover:bg-emerald-500/25 disabled:opacity-40">
                                                         Khôi phục
                                                     </button>
                                                 )}
                                                 {v.status === 'draft' && (
-                                                    <span className="flex-1 text-[10px] font-body py-1.5 text-center text-[#555]">Bản nháp</span>
+                                                    <span className="flex-1 text-[10px] font-body py-1.5 text-center" style={{ color: 'var(--color-text-muted)' }}>Bản nháp</span>
                                                 )}
                                             </div>
                                         </div>
@@ -620,7 +632,7 @@ export default function ModerationPage() {
                             </div>
 
                             {/* Pagination */}
-                            <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+                            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                                 <AdminPagination
                                     page={videoPage}
                                     totalPages={videoTotalPages}
@@ -641,14 +653,16 @@ export default function ModerationPage() {
             {!isVideosPage && (
                 <>
                     {/* Sub-selector nội bộ trang Kiểm duyệt */}
-                    <div className="flex items-center gap-2.5 mb-6 border-b border-[#1a1a2a] pb-3">
+                    <div className="flex items-center gap-2.5 mb-6 border-b pb-3" style={{ borderColor: 'var(--color-border)' }}>
                         <button
                             onClick={() => { setModerationTab('rejected'); setRejectedPage(1); }}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13.5px] font-semibold transition-all cursor-pointer border-none ${
-                                moderationTab === 'rejected'
-                                    ? 'bg-[#ff2d78] text-white shadow-lg shadow-[#ff2d78]/25'
-                                    : 'bg-[#0f0f1a] text-white/60 hover:text-white hover:bg-white/5'
-                            }`}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13.5px] font-semibold transition-all cursor-pointer border"
+                            style={{
+                                background: moderationTab === 'rejected' ? '#ff2d78' : 'var(--vt-card)',
+                                borderColor: moderationTab === 'rejected' ? '#ff2d78' : 'var(--color-border)',
+                                color: moderationTab === 'rejected' ? '#fff' : 'var(--color-text-secondary)',
+                                boxShadow: moderationTab === 'rejected' ? '0 4px 16px rgba(255, 45, 120, 0.25)' : 'none',
+                            }}
                         >
                             <span>🚫 Video bị AI từ chối</span>
                             {videoCounts.rejected > 0 && (
@@ -662,11 +676,13 @@ export default function ModerationPage() {
 
                         <button
                             onClick={() => { setModerationTab('reports'); setReportPage(1); }}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13.5px] font-semibold transition-all cursor-pointer border-none ${
-                                moderationTab === 'reports'
-                                    ? 'bg-[#ff2d78] text-white shadow-lg shadow-[#ff2d78]/25'
-                                    : 'bg-[#0f0f1a] text-white/60 hover:text-white hover:bg-white/5'
-                            }`}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13.5px] font-semibold transition-all cursor-pointer border"
+                            style={{
+                                background: moderationTab === 'reports' ? '#ff2d78' : 'var(--vt-card)',
+                                borderColor: moderationTab === 'reports' ? '#ff2d78' : 'var(--color-border)',
+                                color: moderationTab === 'reports' ? '#fff' : 'var(--color-text-secondary)',
+                                boxShadow: moderationTab === 'reports' ? '0 4px 16px rgba(255, 45, 120, 0.25)' : 'none',
+                            }}
                         >
                             <span>🚩 Báo cáo từ người dùng</span>
                             {reportCounts.pending > 0 && (
@@ -698,12 +714,18 @@ export default function ModerationPage() {
                                         value={rejectedSearch}
                                         onChange={(e) => { setRejectedSearch(e.target.value); setRejectedPage(1); }}
                                         placeholder="Tìm video bị từ chối theo tiêu đề, tác giả..."
-                                        className="w-full bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl px-4 py-2.5 text-white text-[13px] font-body outline-none placeholder:text-[#555] focus:border-[#ff2d78]/50 transition-colors"
+                                        className="w-full rounded-xl px-4 py-2.5 text-[13px] font-body outline-none transition-colors"
+                                        style={{
+                                            background: 'var(--vt-card)',
+                                            border: '1px solid var(--color-border)',
+                                            color: 'var(--color-text-primary)',
+                                        }}
                                     />
                                     {rejectedSearch && (
                                         <button
                                             onClick={() => { setRejectedSearch(''); setRejectedPage(1); }}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white border-none bg-transparent cursor-pointer text-[12px]"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-[12px]"
+                                            style={{ color: 'var(--color-text-muted)' }}
                                         >
                                             ✕
                                         </button>
@@ -715,14 +737,18 @@ export default function ModerationPage() {
                             {loading ? (
                                 <div className="flex items-center justify-center py-16"><BounceDots /></div>
                             ) : rejectedVideos.length === 0 ? (
-                                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-12 text-center">
-                                    <p className="text-[#666] text-[14px]">🎉 Tuyệt vời! Không có video nào bị từ chối cần duyệt lại</p>
+                                <div className="rounded-xl p-12 text-center" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
+                                    <p className="text-[14px] m-0" style={{ color: 'var(--color-text-muted)' }}>🎉 Tuyệt vời! Không có video nào bị từ chối cần duyệt lại</p>
                                 </div>
                             ) : (
                                 <>
                                     <div className="grid grid-cols-4 gap-4 mb-6">
                                         {rejectedVideos.map(v => (
-                                            <div key={v.id} className="bg-[#0f0f1a] border border-red-500/20 rounded-xl overflow-hidden hover:border-red-500/40 transition-colors group">
+                                            <div
+                                                key={v.id}
+                                                className="rounded-xl overflow-hidden transition-colors group"
+                                                style={{ background: 'var(--vt-card)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                                            >
                                                 {/* Thumbnail — click to preview */}
                                                 <div
                                                     className="relative h-[120px] flex items-center justify-center bg-[#1a0a2e] cursor-pointer"
@@ -751,13 +777,13 @@ export default function ModerationPage() {
 
                                                 {/* Info */}
                                                 <div className="p-3">
-                                                    <p className="text-white text-[12px] font-semibold font-body leading-tight mb-1.5 line-clamp-1">{v.title}</p>
+                                                    <p className="text-[12px] font-semibold font-body leading-tight mb-1.5 line-clamp-1" style={{ color: 'var(--color-text-primary)' }}>{v.title}</p>
                                                     <div className="flex items-center gap-1.5 mb-1">
                                                         <Avatar user={{ anh_dai_dien: v.avatar, initials: v.initials, fullName: v.creator }} size="xs" className="!w-7 !h-7 !text-[9px]" />
-                                                        <span className="text-[#555] text-[10px] font-body">{v.creator}</span>
-                                                        <span className="text-[#333] text-[10px] font-body ml-auto">{v.submitTime}</span>
+                                                        <span className="text-[10px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{v.creator}</span>
+                                                        <span className="text-[10px] font-body ml-auto" style={{ color: 'var(--color-text-muted)' }}>{v.submitTime}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-[9px] text-[#555] font-body mb-2">
+                                                    <div className="flex items-center gap-2 text-[9px] font-body mb-2" style={{ color: 'var(--color-text-muted)' }}>
                                                         <span>👁 {fmt(v.views)}</span>
                                                         <span>❤ {fmt(v.likes)}</span>
                                                         <span>💬 {fmt(v.comments)}</span>
@@ -765,7 +791,7 @@ export default function ModerationPage() {
 
                                                     {/* Rejection reason */}
                                                     {v.rejectionReason && (
-                                                        <p className="text-red-400/90 text-[10px] font-body bg-red-500/10 border border-red-500/20 px-2 py-1.5 rounded-lg mb-2.5 line-clamp-2" title={v.rejectionReason}>
+                                                        <p className="text-[10px] font-body bg-red-500/10 border border-red-500/20 px-2 py-1.5 rounded-lg mb-2.5 line-clamp-2" style={{ color: '#ef4444' }} title={v.rejectionReason}>
                                                             ⚠ {v.rejectionReason}
                                                         </p>
                                                     )}
@@ -783,7 +809,7 @@ export default function ModerationPage() {
                                                         <button
                                                             onClick={() => handleHideVideoWithReason(v)}
                                                             disabled={actionLoading === v.id}
-                                                            className="px-3 text-[11px] font-semibold font-body py-1.5 rounded bg-red-500/15 text-red-400 border-none cursor-pointer hover:bg-red-500/25 disabled:opacity-40"
+                                                            className="px-3 text-[11px] font-semibold font-body py-1.5 rounded bg-red-500/15 text-red-500 border-none cursor-pointer hover:bg-red-500/25 disabled:opacity-40"
                                                         >
                                                             Ẩn
                                                         </button>
@@ -794,7 +820,7 @@ export default function ModerationPage() {
                                     </div>
 
                                     {/* Pagination */}
-                                    <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+                                    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                                         <AdminPagination
                                             page={rejectedPage}
                                             totalPages={rejectedTotalPages}
@@ -834,8 +860,8 @@ export default function ModerationPage() {
                             {loading ? (
                                 <div className="flex items-center justify-center py-16"><BounceDots /></div>
                             ) : reports.length === 0 ? (
-                                <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-12 text-center">
-                                    <p className="text-[#666] text-[14px]">Chưa có báo cáo vi phạm nào</p>
+                                <div className="rounded-xl p-12 text-center" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
+                                    <p className="text-[14px] m-0" style={{ color: 'var(--color-text-muted)' }}>Chưa có báo cáo vi phạm nào</p>
                                 </div>
                             ) : (
                                 <>
@@ -843,7 +869,8 @@ export default function ModerationPage() {
                                         {reports.map((r) => (
                                             <div
                                                 key={r.id}
-                                                className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center hover:border-[#2a2a3e] transition-colors"
+                                                className="rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center transition-colors"
+                                                style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
                                             >
                                                 {/* Content info */}
                                                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
@@ -852,29 +879,36 @@ export default function ModerationPage() {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                            <span className="text-white font-semibold text-[15px]">{r.reason}</span>
+                                                            <span className="font-semibold text-[15px]" style={{ color: 'var(--color-text-primary)' }}>{r.reason}</span>
                                                             <StatusBadge
                                                                 status={r.status === 'resolved' ? 'approved' : r.status === 'reviewed' ? 'pending' : 'rejected'}
                                                                 label={r.status === 'resolved' ? 'Đã giải quyết' : r.status === 'reviewed' ? 'Đã xem' : 'Chờ xử lý'}
                                                             />
-                                                            <span className="text-[12px] text-[#555] ml-auto">
+                                                            <span className="text-[12px] ml-auto" style={{ color: 'var(--color-text-muted)' }}>
                                                                 {new Date(r.created_at).toLocaleString('vi-VN')}
                                                             </span>
                                                         </div>
 
                                                         {r.description && (
-                                                            <p className="text-[#aaa] text-[13.5px] bg-[#161625] p-2.5 rounded-lg border border-white/5 mb-2 font-mono leading-relaxed">
+                                                            <p
+                                                                className="text-[13.5px] p-2.5 rounded-lg mb-2 font-mono leading-relaxed"
+                                                                style={{
+                                                                    background: 'var(--vt-input)',
+                                                                    border: '1px solid var(--color-border)',
+                                                                    color: 'var(--color-text-secondary)',
+                                                                }}
+                                                            >
                                                                 "{r.description}"
                                                             </p>
                                                         )}
 
-                                                        <div className="flex items-center gap-4 text-[12.5px] text-[#777] flex-wrap">
+                                                        <div className="flex items-center gap-4 text-[12.5px] flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
                                                             <span>
-                                                                Người báo cáo: <strong className="text-white">@{r.reporter_username || 'n/a'}</strong>
+                                                                Người báo cáo: <strong style={{ color: 'var(--color-text-primary)' }}>@{r.reporter_username || 'n/a'}</strong>
                                                             </span>
                                                             <span>•</span>
                                                             <span>
-                                                                Video bị báo cáo: ID <code className="text-white bg-white/10 px-1.5 py-0.5 rounded">{r.video_id}</code>
+                                                                Video bị báo cáo: ID <code className="px-1.5 py-0.5 rounded" style={{ background: 'var(--vt-input)', color: 'var(--color-text-primary)' }}>{r.video_id}</code>
                                                             </span>
                                                             {r.creator_username && (
                                                                 <>
@@ -889,12 +923,12 @@ export default function ModerationPage() {
                                                 </div>
 
                                                 {/* Actions */}
-                                                <div className="flex items-center gap-2 shrink-0 self-end md:self-center border-t md:border-t-0 pt-3 md:pt-0 border-white/5 w-full md:w-auto justify-end">
+                                                <div className="flex items-center gap-2 shrink-0 self-end md:self-center border-t md:border-t-0 pt-3 md:pt-0 w-full md:w-auto justify-end" style={{ borderColor: 'var(--color-border)' }}>
                                                     {r.video_active ? (
                                                         <button
                                                             onClick={() => handleHideVideoWithReason({ id: r.video_id, title: `Video #${r.video_id}`, creator: r.creator_username || 'N/A' })}
                                                             disabled={actionLoading === r.video_id}
-                                                            className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-[12.5px] font-semibold hover:bg-red-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                            className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-500 text-[12.5px] font-semibold hover:bg-red-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
                                                         >
                                                             Ẩn video
                                                         </button>
@@ -902,7 +936,7 @@ export default function ModerationPage() {
                                                         <button
                                                             onClick={() => handleRestoreVideo(r.video_id)}
                                                             disabled={actionLoading === r.video_id}
-                                                            className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-[12.5px] font-semibold hover:bg-emerald-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                            className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 text-[12.5px] font-semibold hover:bg-emerald-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
                                                         >
                                                             Khôi phục
                                                         </button>
@@ -912,7 +946,7 @@ export default function ModerationPage() {
                                                         <button
                                                             onClick={() => handleUpdateReportStatus(r.id, 'resolved')}
                                                             disabled={actionLoading === `report_${r.id}`}
-                                                            className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-[12.5px] font-semibold hover:bg-blue-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                            className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-500 text-[12.5px] font-semibold hover:bg-blue-500/30 transition-colors cursor-pointer border-none disabled:opacity-50"
                                                         >
                                                             Giải quyết
                                                         </button>
@@ -921,7 +955,11 @@ export default function ModerationPage() {
                                                     <button
                                                         onClick={() => handleDeleteReport(r.id)}
                                                         disabled={actionLoading === `del_report_${r.id}`}
-                                                        className="px-3 py-1.5 rounded-lg bg-white/10 text-white/70 text-[12.5px] font-semibold hover:bg-white/20 transition-colors cursor-pointer border-none disabled:opacity-50"
+                                                        className="px-3 py-1.5 rounded-lg text-[12.5px] font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none disabled:opacity-50"
+                                                        style={{
+                                                            background: 'var(--vt-input)',
+                                                            color: 'var(--color-text-secondary)',
+                                                        }}
                                                     >
                                                         Xóa
                                                     </button>
@@ -931,7 +969,7 @@ export default function ModerationPage() {
                                     </div>
 
                                     {/* Pagination */}
-                                    <div className="bg-[#0f0f1a] border border-[#1a1a2a] rounded-xl overflow-hidden">
+                                    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                                         <AdminPagination
                                             page={reportPage}
                                             totalPages={reportTotalPages}

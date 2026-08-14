@@ -30,7 +30,7 @@ export default function AreaChart({ data = [], keys = [], height = 130 }) {
         {/* Grid */}
         {[0, 0.33, 0.66, 1].map(pct => (
           <line key={pct} x1={padL} y1={padT+chartH*(1-pct)} x2={padL+chartW} y2={padT+chartH*(1-pct)}
-            stroke="#1a1a2e" strokeWidth="1" />
+            stroke="var(--color-border)" strokeWidth="1" />
         ))}
         {keys.map(k => {
           const pts  = data.map((d,i) => `${gx(i)},${gy(d[k.key]??0)}`).join(' ');
@@ -53,12 +53,12 @@ export default function AreaChart({ data = [], keys = [], height = 130 }) {
           return (
             <g key={i}>
               <text x={x} y={padT + chartH + 14} textAnchor="middle"
-                fill="#555" fontSize="9" fontFamily="DM Sans, sans-serif">
+                fill="var(--color-text-secondary)" fontSize="9" fontFamily="DM Sans, sans-serif">
                 {d.date ?? d.time ?? i}
               </text>
               <text x={x} y={padT + chartH + 27} textAnchor="middle"
                 fill={keys[0]?.color ?? '#ff2d78'} fontSize="8" fontWeight="600"
-                fontFamily="DM Sans, sans-serif" opacity="0.8">
+                fontFamily="DM Sans, sans-serif" opacity="0.9">
                 {fmtVal(primaryVal)}
               </text>
             </g>
