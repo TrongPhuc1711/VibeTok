@@ -8,6 +8,9 @@ import {
     getViewsPerDay, getSidebarCounts,
     getMusic, getMusicCounts, createMusic, updateMusic, deleteMusic, toggleMusicTrending,
     getAdminReports, getAdminReportCounts, updateAdminReportStatus, deleteAdminReport,
+    getSettings, updateSettings, getSystemHealth,
+    triggerAudiusSync, triggerFlushCache,
+    updateAdminProfile, changeAdminPassword
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -52,5 +55,18 @@ router.get('/reports', getAdminReports);
 router.get('/report-counts', getAdminReportCounts);
 router.patch('/reports/:id/status', updateAdminReportStatus);
 router.delete('/reports/:id', deleteAdminReport);
+
+// System Settings
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
+
+// System Operations & Health
+router.get('/system/health', getSystemHealth);
+router.post('/system/sync-audius', triggerAudiusSync);
+router.post('/system/flush-cache', triggerFlushCache);
+
+// Admin Profile & Security
+router.patch('/profile', updateAdminProfile);
+router.post('/change-password', changeAdminPassword);
 
 export default router;

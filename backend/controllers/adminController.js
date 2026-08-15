@@ -1,5 +1,49 @@
 import { AdminModel } from '../models/adminModel.js';
 import bcrypt from 'bcryptjs';
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import pool from '../config/db.js';
+import redis from '../config/redis.js';
+import { syncTrendingMusicFromAudius } from '../services/audiusSyncService.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SETTINGS_PATH = path.join(__dirname, '../config/systemSettings.json');
+
+// Helper to read settings
+const readSettingsFile = async () => {
+    try {
+        const data = await fs.readFile(SETTINGS_PATH, 'utf-8');
+        return JSON.parse(data);
+    } catch (err) {
+        return {
+            general: {
+                appName: "VibeTok",
+                tagline: "Nền tảng chia sẻ video ngắn sáng tạo",
+                supportEmail: "support@vibetok.com",
+                maintenanceMode: false,
+                maintenanceMessage: "Hệ thống VibeTok đang được nâng cấp định kỳ. Chúng tôi sẽ trở lại trong ít phút!"
+            },
+            upload: {
+                maxVideoSizeMB: 100,
+                maxVideoDurationSec: 180,
+                allowedFormats: ["mp4", "webm", "mov"]
+            },
+            moderation: {
+                geminiAiEnabled: true,
+                autoHideOnViolation: true,
+                reportThreshold: 5,
+                bannedKeywords: ["lừa đảo", "hack pass", "chửi bới", "bán nick", "cờ bạc"]
+            },
+            security: {
+                allowRegistration: true,
+                requireEmailVerification: false
+            }
+        };
+    }
+};
 
 // GET /api/admin/stats
 export const getStats = async (req, res) => {
@@ -384,3 +428,213 @@ export const deleteAdminReport = async (req, res) => {
         res.status(500).json({ message: 'Lỗi xóa báo cáo', error: e.message });
     }
 };
+
+// ==========================================
+// SYSTEM SETTINGS & SYSTEM OPERATIONS
+// ==========================================
+
+// GET /api/admin/settings
+export const getSettings = async (req, res) => {
+    try {
+        const settings = await readSettingsFile();
+        res.json({ success: true, settings });
+    } catch (e) {
+        console.error('Admin getSettings error:', e);
+        res.status(500).json({ message: 'Lỗi đọc cấu hình hệ thống', error: e.message });
+    }
+};
+
+// PUT /api/admin/settings
+export const updateSettings = async (req, res) => {
+    try {
+        const current = await readSettingsFile();
+        const updated = {
+            ...current,
+            ...req.body,
+            general: { ...current.general, ...(req.body.general || {}) },
+            upload: { ...current.upload, ...(req.body.upload || {}) },
+            moderation: { ...current.moderation, ...(req.body.moderation || {}) },
+            security: { ...current.security, ...(req.body.security || {}) },
+        };
+        await fs.writeFile(SETTINGS_PATH, JSON.stringify(updated, null, 2), 'utf-8');
+        res.json({ success: true, message: 'Đã lưu cấu hình hệ thống thành công!', settings: updated });
+    } catch (e) {
+        console.error('Admin updateSettings error:', e);
+        res.status(500).json({ message: 'Lỗi lưu cấu hình hệ thống', error: e.message });
+    }
+};
+
+// GET /api/admin/system/health
+export const getSystemHealth = async (req, res) => {
+    try {
+        // 1. MySQL Status
+        let dbStatus = 'connected';
+        let dbLatency = 0;
+        try {
+            const start = Date.now();
+            await pool.query('SELECT 1');
+            dbLatency = Date.now() - start;
+        } catch (dbErr) {
+            dbStatus = 'disconnected';
+        }
+
+        // 2. Redis Status
+        let redisStatus = 'connected';
+        let redisKeysCount = 0;
+        try {
+            const pong = await redis.ping();
+            if (pong !== 'PONG') redisStatus = 'error';
+            const info = await redis.dbsize();
+            redisKeysCount = Number(info) || 0;
+        } catch (rErr) {
+            redisStatus = 'disconnected';
+        }
+
+        // 3. Gemini API Status
+        const geminiApiKey = process.env.GEMINI_API_KEY;
+        const geminiStatus = geminiApiKey && geminiApiKey.length > 10 ? 'configured' : 'missing';
+
+        // 4. Server metrics
+        const mem = process.memoryUsage();
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const uptimeSeconds = Math.floor(process.uptime());
+
+        res.json({
+            success: true,
+            health: {
+                nodeVersion: process.version,
+                platform: `${os.type()} (${os.arch()})`,
+                uptime: uptimeSeconds,
+                database: {
+                    status: dbStatus,
+                    latencyMs: dbLatency,
+                    databaseName: process.env.DB_NAME || 'defaultdb'
+                },
+                redis: {
+                    status: redisStatus,
+                    keysCount: redisKeysCount
+                },
+                geminiAi: {
+                    status: geminiStatus,
+                    model: process.env.GEMINI_MODEL || 'gemini-3.5-flash'
+                },
+                memory: {
+                    heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+                    heapTotalMB: Math.round(mem.heapTotal / 1024 / 1024),
+                    rssMB: Math.round(mem.rss / 1024 / 1024),
+                    systemFreeMB: Math.round(freeMem / 1024 / 1024),
+                    systemTotalMB: Math.round(totalMem / 1024 / 1024)
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Admin getSystemHealth error:', e);
+        res.status(500).json({ message: 'Lỗi kiểm tra trạng thái hệ thống', error: e.message });
+    }
+};
+
+// POST /api/admin/system/sync-audius
+export const triggerAudiusSync = async (req, res) => {
+    try {
+        const result = await syncTrendingMusicFromAudius();
+        if (result.success) {
+            res.json({ success: true, message: `Đồng bộ hoàn tất! Đã thêm ${result.added || 0} bài hát mới từ Audius.`, added: result.added });
+        } else {
+            res.status(500).json({ success: false, message: `Lỗi đồng bộ: ${result.error}` });
+        }
+    } catch (e) {
+        console.error('Admin triggerAudiusSync error:', e);
+        res.status(500).json({ message: 'Lỗi thực hiện đồng bộ nhạc Audius', error: e.message });
+    }
+};
+
+// POST /api/admin/system/flush-cache
+export const triggerFlushCache = async (req, res) => {
+    try {
+        const streamKeys = await redis.keys('feed:*');
+        const trendingKeys = await redis.keys('trending:*');
+        const allKeys = [...streamKeys, ...trendingKeys];
+        
+        if (allKeys.length > 0) {
+            await redis.del(...allKeys);
+        }
+
+        res.json({ success: true, message: `Đã dọn dẹp ${allKeys.length} cache keys hệ thống thành công!` });
+    } catch (e) {
+        console.error('Admin triggerFlushCache error:', e);
+        res.status(500).json({ message: 'Lỗi dọn dẹp Redis cache', error: e.message });
+    }
+};
+
+// PATCH /api/admin/profile
+export const updateAdminProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { display_name, bio, avatar_url } = req.body;
+
+        const updates = [];
+        const values = [];
+
+        if (display_name !== undefined) {
+            updates.push('display_name = ?');
+            values.push(display_name.trim());
+        }
+        if (bio !== undefined) {
+            updates.push('bio = ?');
+            values.push(bio.trim());
+        }
+        if (avatar_url !== undefined) {
+            updates.push('avatar_url = ?');
+            values.push(avatar_url.trim());
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ message: 'Không có dữ liệu cập nhật' });
+        }
+
+        values.push(userId);
+        await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
+
+        const [rows] = await pool.query('SELECT id, username, display_name, email, avatar_url, role, bio FROM users WHERE id = ?', [userId]);
+        res.json({ success: true, message: 'Cập nhật thông tin thành công!', user: rows[0] });
+    } catch (e) {
+        console.error('Admin updateAdminProfile error:', e);
+        res.status(500).json({ message: 'Lỗi cập nhật hồ sơ admin', error: e.message });
+    }
+};
+
+// POST /api/admin/change-password
+export const changeAdminPassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Vui lòng cung cấp mật khẩu cũ và mới!' });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: 'Mật khẩu mới phải có tối thiểu 8 ký tự!' });
+        }
+
+        const [rows] = await pool.query('SELECT password FROM users WHERE id = ?', [userId]);
+        if (!rows.length) {
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, rows[0].password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+
+        res.json({ success: true, message: 'Đổi mật khẩu thành công!' });
+    } catch (e) {
+        console.error('Admin changeAdminPassword error:', e);
+        res.status(500).json({ message: 'Lỗi đổi mật khẩu admin', error: e.message });
+    }
+};
+

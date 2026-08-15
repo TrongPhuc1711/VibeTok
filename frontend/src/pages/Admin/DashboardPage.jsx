@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
-import StatCard    from '../../components/ui/StatCard';
-import BarChart    from '../../components/charts/BarChart';
-import DonutChart  from '../../components/charts/DonutChart';
+import StatCard from '../../components/ui/StatCard';
+import BarChart from '../../components/charts/BarChart';
+import DonutChart from '../../components/charts/DonutChart';
 import StatusBadge from '../../components/ui/StatusBadge';
-import AdminBtn    from './components/AdminBtn';
+import AdminBtn from './components/AdminBtn';
 import { BounceDots } from '../../components/ui/Spinner';
 import Avatar from '../../components/common/Avatar/avatar';
 import { getStats, getUserGrowth, getContentDistribution, getTopCreators } from '../../services/adminService';
@@ -17,11 +17,11 @@ const fmt = (n) => {
 };
 
 export default function DashboardPage() {
-    const [stats, setStats]       = useState([]);
-    const [growth, setGrowth]     = useState([]);
-    const [content, setContent]   = useState([]);
+    const [stats, setStats] = useState([]);
+    const [growth, setGrowth] = useState([]);
+    const [content, setContent] = useState([]);
     const [creators, setCreators] = useState([]);
-    const [loading, setLoading]   = useState(true);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         Promise.all([
@@ -116,8 +116,8 @@ export default function DashboardPage() {
                     <table className="w-full">
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                {['#', 'Tên', 'Followers', 'Videos', 'Lượt thích', 'Trạng thái', 'Hành động'].map(h => (
-                                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-body font-medium whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>{h}</th>
+                                {['STT', 'Tên Người Dùng', 'Followers', 'Videos', 'Lượt thích', 'Trạng thái', 'Hành động'].map(h => (
+                                    <th key={h} className="px-4 py-2.5 text-left text-[12px] font-body font-medium whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>

@@ -39,3 +39,17 @@ export const getAdminReports = (params) => api.get(`${BASE}/reports`, { params }
 export const getReportCounts = () => api.get(`${BASE}/report-counts`).then(r => r.data);
 export const updateReportStatus = (id, status) => api.patch(`${BASE}/reports/${id}/status`, { status }).then(r => r.data);
 export const deleteReport = (id) => api.delete(`${BASE}/reports/${id}`).then(r => r.data);
+
+// Settings
+export const getAdminSettings = () => api.get(`${BASE}/settings`).then(r => r.data.settings);
+export const updateAdminSettings = (data) => api.put(`${BASE}/settings`, data).then(r => r.data);
+
+// System Diagnostics & Operations
+export const getSystemHealth = () => api.get(`${BASE}/system/health`).then(r => r.data.health);
+export const syncAudiusMusic = () => api.post(`${BASE}/system/sync-audius`).then(r => r.data);
+export const flushRedisCache = () => api.post(`${BASE}/system/flush-cache`).then(r => r.data);
+
+// Admin Profile & Security
+export const updateAdminProfile = (data) => api.patch(`${BASE}/profile`, data).then(r => r.data);
+export const changeAdminPassword = (data) => api.post(`${BASE}/change-password`, data).then(r => r.data);
+

@@ -6,6 +6,7 @@ import AnalyticsPage from './AnalyticsPage';
 import UserManagerPage from './UserManagerPage';
 import ModerationPage from './ModerationPage';
 import MusicManagerPage from './MusicManagerPage';
+import SettingsPage from './SettingsPage';
 
 /* AdminGuard — chỉ cho phép user có vai_tro === 'admin' */
 function AdminGuard({ children }) {
@@ -25,7 +26,7 @@ export default function AdminRoutes() {
                 <Route path="/videos" element={<ModerationPage />} />
                 <Route path="/moderation" element={<ModerationPage />} />
                 <Route path="/music" element={<MusicManagerPage />} />
-                <Route path="/settings" element={<DashboardPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
         </AdminGuard>

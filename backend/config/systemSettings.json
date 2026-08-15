@@ -1,0 +1,34 @@
+{
+  "general": {
+    "appName": "VibeTok",
+    "tagline": "Nền tảng chia sẻ video ngắn sáng tạo",
+    "supportEmail": "support@vibetok.com",
+    "maintenanceMode": false,
+    "maintenanceMessage": "Hệ thống VibeTok đang được nâng cấp định kỳ. Chúng tôi sẽ trở lại trong ít phút!"
+  },
+  "upload": {
+    "maxVideoSizeMB": 100,
+    "maxVideoDurationSec": 180,
+    "allowedFormats": [
+      "mp4",
+      "webm",
+      "mov"
+    ]
+  },
+  "moderation": {
+    "geminiAiEnabled": true,
+    "autoHideOnViolation": true,
+    "reportThreshold": 5,
+    "bannedKeywords": [
+      "lừa đảo",
+      "hack pass",
+      "chửi bới",
+      "bán nick",
+      "cờ bạc"
+    ]
+  },
+  "security": {
+    "allowRegistration": true,
+    "requireEmailVerification": false
+  }
+}
