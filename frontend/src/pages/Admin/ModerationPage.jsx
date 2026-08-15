@@ -50,20 +50,115 @@ const HIDE_REASONS = [
     'Lý do khác',
 ];
 
+// ═══════ Helper: Lấy thumbnail URL hợp lệ (hỗ trợ cả JSON slideshow string) ═══════
+const getValidThumbnail = (video) => {
+    if (!video) return null;
+    let thumb = video.thumbnail;
+
+    if (!thumb || (typeof thumb === 'string' && thumb.trim().startsWith('['))) {
+        if (video.videoUrl && typeof video.videoUrl === 'string' && video.videoUrl.trim().startsWith('[')) {
+            try {
+                const parsed = JSON.parse(video.videoUrl);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+            } catch { /* ignore */ }
+        }
+        if (thumb && typeof thumb === 'string' && thumb.trim().startsWith('[')) {
+            try {
+                const parsed = JSON.parse(thumb);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+            } catch { /* ignore */ }
+        }
+    }
+    return thumb || null;
+};
+
+// ═══════ Thumbnail Card Component với Fallback khi ảnh lỗi 404 ═══════
+function AdminVideoThumbnail({ video, onClick, isRejectedBadge = false }) {
+    const [imgError, setImgError] = useState(false);
+    const thumbUrl = getValidThumbnail(video);
+
+    return (
+        <div
+            className="relative h-[120px] flex items-center justify-center bg-[#1a0a2e] cursor-pointer overflow-hidden"
+            onClick={onClick}
+        >
+            {thumbUrl && !imgError ? (
+                <img
+                    src={thumbUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={() => setImgError(true)}
+                />
+            ) : (
+                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <PlayAdminIcon />
+                </div>
+            )}
+            {/* Play overlay on hover */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                </div>
+            </div>
+            <div className="absolute top-2 left-2 z-10">
+                {isRejectedBadge ? (
+                    <StatusBadge status="rejected" label="Bị từ chối" />
+                ) : (
+                    <StatusBadge
+                        status={video.status === 'active' ? 'approved' : video.status === 'rejected' ? 'rejected' : video.status === 'hidden' ? 'rejected' : 'pending'}
+                        label={video.status === 'active' ? 'Hiển thị' : video.status === 'rejected' ? 'Từ chối' : video.status === 'hidden' ? 'Đã ẩn' : 'Nháp'}
+                    />
+                )}
+            </div>
+            {video.duration && (
+                <span className="absolute bottom-2 right-2 text-[9px] font-bold font-body text-white bg-black/60 px-1.5 py-0.5 rounded z-10">
+                    {video.duration}
+                </span>
+            )}
+        </div>
+    );
+}
+
 // ═══════ Video Preview Modal ═══════
 function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
     const videoRef = useRef(null);
+    const [slideIdx, setSlideIdx] = useState(0);
 
     if (!video) return null;
 
-    // Xác định URL video để phát
-    const videoSrc = video.videoUrl || video.thumbnail || '';
-    const isVideoFile = videoSrc && (
-        videoSrc.includes('/video/') ||
-        videoSrc.endsWith('.mp4') ||
-        videoSrc.endsWith('.webm') ||
-        videoSrc.endsWith('.mov')
+    // Kiểm tra xem có phải slideshow (danh sách ảnh) không
+    const isSlideshow = Boolean(
+        video.videoUrl && typeof video.videoUrl === 'string' && video.videoUrl.trim().startsWith('[')
     );
+    let slideshowImages = [];
+    if (isSlideshow) {
+        try {
+            const parsed = JSON.parse(video.videoUrl);
+            if (Array.isArray(parsed)) slideshowImages = parsed;
+        } catch {
+            slideshowImages = [];
+        }
+    }
+
+    // Xác định URL video / media
+    const videoSrc = video.videoUrl || video.thumbnail || '';
+    const cleanSrc = (videoSrc || '').split('?')[0].toLowerCase();
+    
+    // Kiểm tra định dạng file video (.mp4, .webm, .mov, .m4v, .ogg, /videos/, /video/, cloudinary)
+    const isVideoFile = videoSrc && !isSlideshow && (
+        cleanSrc.endsWith('.mp4') ||
+        cleanSrc.endsWith('.webm') ||
+        cleanSrc.endsWith('.mov') ||
+        cleanSrc.endsWith('.m4v') ||
+        cleanSrc.endsWith('.ogg') ||
+        videoSrc.includes('/video/') ||
+        videoSrc.includes('/videos/') ||
+        videoSrc.includes('cloudinary.com')
+    );
+
+    const posterUrl = getValidThumbnail(video);
 
     return (
         <div
@@ -89,15 +184,50 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                     </svg>
                 </button>
 
-                {/* Video player area */}
-                <div className="relative bg-black flex items-center justify-center" style={{ minHeight: 360, maxHeight: '60vh' }}>
-                    {isVideoFile ? (
+                {/* Video / Slideshow player area */}
+                <div className="relative bg-black flex items-center justify-center min-h-[360px] max-h-[60vh] overflow-hidden">
+                    {isSlideshow && slideshowImages.length > 0 ? (
+                        <div className="relative w-full h-full flex items-center justify-center min-h-[360px]">
+                            <img
+                                src={slideshowImages[slideIdx]}
+                                alt=""
+                                className="w-full max-h-[60vh] object-contain"
+                            />
+                            {slideshowImages.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={() => setSlideIdx(p => (p > 0 ? p - 1 : slideshowImages.length - 1))}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white text-lg font-bold border-none cursor-pointer flex items-center justify-center hover:bg-black/80 z-10 transition-colors"
+                                    >
+                                        ‹
+                                    </button>
+                                    <button
+                                        onClick={() => setSlideIdx(p => (p < slideshowImages.length - 1 ? p + 1 : 0))}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white text-lg font-bold border-none cursor-pointer flex items-center justify-center hover:bg-black/80 z-10 transition-colors"
+                                    >
+                                        ›
+                                    </button>
+                                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/60 px-2 py-0.5 rounded-full z-10">
+                                        {slideshowImages.map((_, i) => (
+                                            <span
+                                                key={i}
+                                                className={`w-1.5 h-1.5 rounded-full transition-all ${i === slideIdx ? 'bg-white scale-125' : 'bg-white/40'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : isVideoFile ? (
                         <video
                             ref={videoRef}
                             src={videoSrc}
+                            poster={posterUrl || undefined}
                             controls
                             autoPlay
+                            muted
                             playsInline
+                            preload="metadata"
                             className="w-full max-h-[60vh] object-contain"
                             style={{ background: '#000' }}
                         />
@@ -113,7 +243,7 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                     )}
 
                     {/* Status badge overlay */}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 z-10">
                         <StatusBadge
                             status={video.status === 'active' ? 'approved' : video.status === 'rejected' ? 'rejected' : video.status === 'hidden' ? 'rejected' : 'pending'}
                             label={video.status === 'active' ? 'Hiển thị' : video.status === 'rejected' ? 'Bị từ chối' : video.status === 'hidden' ? 'Đã ẩn' : 'Nháp'}
@@ -565,33 +695,7 @@ export default function ModerationPage() {
                                         style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
                                     >
                                         {/* Thumbnail — click to preview */}
-                                        <div
-                                            className="relative h-[120px] flex items-center justify-center bg-[#1a0a2e] cursor-pointer"
-                                            onClick={() => setPreviewVideo(v)}
-                                        >
-                                            {v.thumbnail ? (
-                                                <img src={v.thumbnail} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                                                    <PlayAdminIcon />
-                                                </div>
-                                            )}
-                                            {/* Play overlay on hover */}
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                                                        <polygon points="5 3 19 12 5 21 5 3" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div className="absolute top-2 left-2">
-                                                <StatusBadge
-                                                    status={v.status === 'active' ? 'approved' : v.status === 'rejected' ? 'rejected' : v.status === 'hidden' ? 'rejected' : 'pending'}
-                                                    label={v.status === 'active' ? 'Hiển thị' : v.status === 'rejected' ? 'Từ chối' : v.status === 'hidden' ? 'Đã ẩn' : 'Nháp'}
-                                                />
-                                            </div>
-                                            <span className="absolute bottom-2 right-2 text-[9px] font-bold font-body text-white bg-black/60 px-1.5 py-0.5 rounded">{v.duration}</span>
-                                        </div>
+                                        <AdminVideoThumbnail video={v} onClick={() => setPreviewVideo(v)} />
 
                                         {/* Info */}
                                         <div className="p-3">
@@ -750,30 +854,7 @@ export default function ModerationPage() {
                                                 style={{ background: 'var(--vt-card)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
                                             >
                                                 {/* Thumbnail — click to preview */}
-                                                <div
-                                                    className="relative h-[120px] flex items-center justify-center bg-[#1a0a2e] cursor-pointer"
-                                                    onClick={() => setPreviewVideo(v)}
-                                                >
-                                                    {v.thumbnail ? (
-                                                        <img src={v.thumbnail} alt="" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                                                            <PlayAdminIcon />
-                                                        </div>
-                                                    )}
-                                                    {/* Play overlay on hover */}
-                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                                                                <polygon points="5 3 19 12 5 21 5 3" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                    <div className="absolute top-2 left-2">
-                                                        <StatusBadge status="rejected" label="Bị từ chối" />
-                                                    </div>
-                                                    <span className="absolute bottom-2 right-2 text-[9px] font-bold font-body text-white bg-black/60 px-1.5 py-0.5 rounded">{v.duration}</span>
-                                                </div>
+                                                <AdminVideoThumbnail video={v} onClick={() => setPreviewVideo(v)} isRejectedBadge />
 
                                                 {/* Info */}
                                                 <div className="p-3">
