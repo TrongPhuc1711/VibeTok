@@ -1,4 +1,10 @@
+import os from 'os';
+import bcrypt from 'bcryptjs';
+import pool from '../config/db.js';
+import redis from '../config/redis.js';
+import { AdminModel } from '../models/adminModel.js';
 import { readSettingsFile, writeSettingsFile } from '../utils/systemSettingsHelper.js';
+import { syncTrendingMusicFromAudius } from '../services/audiusSyncService.js';
 
 
 // GET /api/admin/stats
