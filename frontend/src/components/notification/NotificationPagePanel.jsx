@@ -8,6 +8,8 @@ import {
   FollowNotifIcon,
   MentionNotifIcon,
   DuetNotifIcon,
+  WarningNotifIcon,
+  CheckNotifIcon,
 } from '../../icons/NotificationIcons';
 import VideoDetailOverlay from '../video/VideoDetailOverlay/VideoDetailOverlay';
 
@@ -29,6 +31,8 @@ const TYPE_CONFIG = {
   comment: { BadgeIcon: CommentNotifIcon, color: '#10b981', bg: '#10b98120', text: 'đã bình luận về video của bạn' },
   mention: { BadgeIcon: MentionNotifIcon, color: '#f59e0b', bg: '#f59e0b20', text: 'đã nhắc đến bạn trong bình luận' },
   duet: { BadgeIcon: DuetNotifIcon, color: '#7c3aed', bg: '#7c3aed20', text: 'đã tạo duet với video của bạn' },
+  video_rejected: { BadgeIcon: WarningNotifIcon, color: '#ef4444', bg: '#ef444420', text: 'không được phê duyệt (bị từ chối)' },
+  video_approved: { BadgeIcon: CheckNotifIcon, color: '#10b981', bg: '#10b98120', text: 'đã được phê duyệt và xuất hiện trên feed' },
 };
 
 /* ── Group by time ── */
@@ -176,7 +180,8 @@ function NotifGroup({ label, items, onItemClick }) {
 /* ── Single item ── */
 function NotifItem({ notif, onClick }) {
   const cfg = TYPE_CONFIG[notif.type] || TYPE_CONFIG.like;
-  const name = notif.actor?.fullName || notif.actor?.username || 'Ai đó';
+  const isSystemNotif = notif.type === 'video_rejected' || notif.type === 'video_approved';
+  const name = isSystemNotif ? 'Hệ thống VibeTok' : (notif.actor?.fullName || notif.actor?.username || 'Ai đó');
   const { BadgeIcon } = cfg;
   const hasVideo = !!notif.meta?.videoId;
 
@@ -198,7 +203,7 @@ function NotifItem({ notif, onClick }) {
         >
           {notif.actor?.anh_dai_dien
             ? <img src={notif.actor.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-            : (notif.actor?.initials || 'U')}
+            : (isSystemNotif ? 'V' : (notif.actor?.initials || 'U'))}
         </div>
         <div
           className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-base"
@@ -217,6 +222,11 @@ function NotifItem({ notif, onClick }) {
         {notif.meta?.comment && (
           <p className="text-text-faint text-[12px] font-body mt-0.5 truncate">
             "{notif.meta.comment}"
+          </p>
+        )}
+        {notif.type === 'video_rejected' && (notif.meta?.rejectionReason || notif.meta?.reason) && (
+          <p className="text-[#ef4444] text-[12px] font-body mt-1 bg-[#ef4444]/10 px-2.5 py-1.5 rounded border border-[#ef4444]/20 leading-snug">
+            ⚠️ Lý do từ chối: {notif.meta.rejectionReason || notif.meta.reason}
           </p>
         )}
         <p className="text-text-subtle text-[11px] font-body mt-0.5">

@@ -41,3 +41,19 @@ export function LikeNotifIcon({ color = '#ff2d78' }) {
       </svg>
     );
   }
+
+  export function WarningNotifIcon({ color = '#ef4444' }) {
+    return (
+      <svg width="9" height="9" viewBox="0 0 24 24" fill={color}>
+        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+      </svg>
+    );
+  }
+
+  export function CheckNotifIcon({ color = '#10b981' }) {
+    return (
+      <svg width="9" height="9" viewBox="0 0 24 24" fill={color}>
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+      </svg>
+    );
+  }

@@ -8,7 +8,7 @@ export const NotificationModel = {
                     n.id, n.notification_type as type, n.is_read as \`read\`, n.created_at as createdAt,
                     n.video_id as videoId, n.comment_id as commentId,
                     u.id as actorId, u.username as username, u.display_name as fullName, u.avatar_url,
-                    v.thumbnail_url as videoThumb
+                    v.thumbnail_url as videoThumb, v.rejection_reason as rejectionReason, v.description as videoCaption
             FROM notifications n
             LEFT JOIN users u ON n.sender_id = u.id
             LEFT JOIN videos v ON n.video_id = v.id
@@ -22,14 +22,15 @@ export const NotificationModel = {
 
     // 2. Tạo thông báo mới
     create: async (receiverId, senderId, type, videoId = null, commentId = null) => {
-        // Không gửi thông báo cho chính mình (ngoại trừ báo cáo video để admin có thể tự thử nghiệm)
-        if (receiverId === senderId && type !== 'video_report') return null;
+        // Không gửi thông báo tương tác cho chính mình, trừ thông báo hệ thống/báo cáo/kiểm duyệt
+        const allowedSelfTypes = ['video_report', 'video_rejected', 'video_approved'];
+        if (receiverId === senderId && !allowedSelfTypes.includes(type)) return null;
 
         const query = `
             INSERT INTO notifications (receiver_id, sender_id, notification_type, video_id, comment_id)
             VALUES (?, ?, ?, ?, ?)
         `;
-        const [result] = await db.execute(query, [receiverId, senderId, type, videoId, commentId]);
+        const [result] = await db.execute(query, [receiverId, senderId || receiverId, type, videoId, commentId]);
         return result.insertId;
     },
 

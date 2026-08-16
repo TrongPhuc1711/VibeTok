@@ -4,6 +4,7 @@ import pool from '../config/db.js';
 import redis from '../config/redis.js';
 import { AdminModel } from '../models/adminModel.js';
 import { readSettingsFile, writeSettingsFile } from '../utils/systemSettingsHelper.js';
+import { triggerNotification } from './notificationController.js';
 import { syncTrendingMusicFromAudius } from '../services/audiusSyncService.js';
 
 
@@ -141,6 +142,17 @@ export const hideVideo = async (req, res) => {
         const reason = req.body.reason || null;
         const ok = await AdminModel.hideVideo(req.params.id, reason);
         if (!ok) return res.status(404).json({ message: 'Video không tồn tại' });
+
+        try {
+            const [rows] = await pool.query('SELECT user_id FROM videos WHERE id = ?', [req.params.id]);
+            if (rows[0]?.user_id) {
+                const sender = { id: req.user.id, username: 'admin', fullName: 'Quản trị viên' };
+                await triggerNotification(rows[0].user_id, sender, 'video_rejected', req.params.id);
+            }
+        } catch (notifErr) {
+            console.error('Lỗi gửi thông báo ẩn video:', notifErr.message);
+        }
+
         res.json({ message: 'Đã ẩn video' });
     } catch (e) {
         console.error('Admin hideVideo error:', e);
@@ -165,6 +177,17 @@ export const approveVideo = async (req, res) => {
     try {
         const ok = await AdminModel.approveVideo(req.params.id);
         if (!ok) return res.status(404).json({ message: 'Video không tồn tại' });
+
+        try {
+            const [rows] = await pool.query('SELECT user_id FROM videos WHERE id = ?', [req.params.id]);
+            if (rows[0]?.user_id) {
+                const sender = { id: req.user.id, username: 'admin', fullName: 'Quản trị viên' };
+                await triggerNotification(rows[0].user_id, sender, 'video_approved', req.params.id);
+            }
+        } catch (notifErr) {
+            console.error('Lỗi gửi thông báo duyệt video:', notifErr.message);
+        }
+
         res.json({ message: 'Đã duyệt video thành công' });
     } catch (e) {
         console.error('Admin approveVideo error:', e);

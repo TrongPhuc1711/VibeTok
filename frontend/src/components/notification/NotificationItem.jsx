@@ -10,10 +10,12 @@ const TYPE_TEXT = {
   mention: 'đã nhắc đến bạn trong bình luận',
   duet:    'đã tạo duet với video của bạn',
   video_report: 'đã gửi báo cáo vi phạm một video',
+  video_rejected: 'không được phê duyệt (bị từ chối)',
+  video_approved: 'đã được phê duyệt và xuất hiện trên feed',
 };
 
 export default function NotificationItem({ notif, onClick }) {
-  const name = notif.actor?.fullName || notif.actor?.username || 'Ai đó';
+  const name = notif.actor?.fullName || notif.actor?.username || 'Hệ thống VibeTok';
   const text = TYPE_TEXT[notif.type] ?? 'đã tương tác với bạn';
 
   return (
@@ -36,11 +38,9 @@ export default function NotificationItem({ notif, onClick }) {
         >
           {notif.actor?.anh_dai_dien
             ? <img src={notif.actor.anh_dai_dien} alt="" className="w-full h-full object-cover" />
-            : notif.actor?.initials ?? 'U'
+            : notif.actor?.initials ?? 'V'
           }
         </div>
-
-
       </div>
 
       {/* Content */}
@@ -54,6 +54,12 @@ export default function NotificationItem({ notif, onClick }) {
         {notif.meta?.comment && (
           <p className="text-[#555] text-[11px] font-body mt-0.5 truncate">
             "{notif.meta.comment}"
+          </p>
+        )}
+
+        {notif.type === 'video_rejected' && (notif.meta?.rejectionReason || notif.meta?.reason) && (
+          <p className="text-[#ff6b6b] text-[11px] font-body mt-1 bg-[#ff2d78]/10 px-2 py-1 rounded border border-[#ff2d78]/20 leading-snug">
+            ⚠️ Lý do: {notif.meta.rejectionReason || notif.meta.reason}
           </p>
         )}
 

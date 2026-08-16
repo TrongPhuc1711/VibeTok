@@ -5,6 +5,7 @@ import { VideoModel } from '../models/videoModel.js';
 import { getIO } from '../utils/socket.js';
 import cloudinary from '../config/cloudinary.js';
 import { checkBannedKeywords } from '../utils/systemSettingsHelper.js';
+import { triggerNotification } from '../controllers/notificationController.js';
 import 'dotenv/config';
 
 // ── Redis connection config (reuse từ config/redis.js) ──
@@ -200,13 +201,26 @@ export function initModerationWorker() {
                 console.log(`[ModerationWorker] ✅ Video #${videoId} được phê duyệt`);
             }
 
-            // Gửi thông báo Socket.io
+            // Gửi thông báo Socket.io kiểm duyệt realtime
             emitModerationResult(userId, {
                 videoId: String(videoId),
                 status: isRejected ? 'rejected' : 'approved',
                 reason: result.reason || null,
                 categories: result.categories || [],
             });
+
+            // Gửi và lưu thông báo vào DB
+            try {
+                const sender = { id: userId, username: 'system', fullName: 'Hệ thống VibeTok' };
+                await triggerNotification(
+                    userId,
+                    sender,
+                    isRejected ? 'video_rejected' : 'video_approved',
+                    videoId
+                );
+            } catch (notifErr) {
+                console.error('[ModerationWorker] Lỗi lưu notification DB:', notifErr.message);
+            }
 
             return { videoId, status: isRejected ? 'rejected' : 'approved' };
         },
