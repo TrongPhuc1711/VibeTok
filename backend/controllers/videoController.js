@@ -6,6 +6,8 @@ import { UserModel, normalizeUser } from '../models/userModel.js';
 import { triggerNotification } from './notificationController.js';
 import { addModerationJob } from '../services/moderationQueue.js';
 import { createReport, hasUserReported } from '../models/reportModel.js';
+import { checkBannedKeywords } from '../utils/systemSettingsHelper.js';
+
 
 // GET /api/videos/feed
 export const getFeed = async (req, res) => {
@@ -170,6 +172,7 @@ export const uploadVideo = async (req, res) => {
         await addModerationJob({
             videoId,
             userId: req.user.id,
+            caption: caption ? caption.slice(0, 500) : '',
             videoUrl,
             thumbnailUrl: thumbnail,
             isSlideshow,
@@ -226,6 +229,12 @@ export const postComment = async (req, res) => {
         const content = (req.body.content || '').trim();
         if (!content) return res.status(400).json({ message: 'Nội dung không được trống' });
         if (content.length > 300) return res.status(400).json({ message: 'Bình luận tối đa 300 ký tự' });
+
+        // Kiểm tra từ cấm
+        const bannedCheck = await checkBannedKeywords(content);
+        if (bannedCheck.hasBanned) {
+            return res.status(400).json({ message: `Bình luận chứa từ ngữ bị cấm ("${bannedCheck.matchedKeyword}")` });
+        }
 
         const { parentId, mentions } = req.body;
 

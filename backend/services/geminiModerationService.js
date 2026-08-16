@@ -166,13 +166,13 @@ function parseGeminiResponse(responseText) {
 /**
  * Kiểm duyệt một ảnh bằng Gemini (inline data — dưới 20MB)
  */
-async function moderateImageWithGemini(imageUrl) {
+async function moderateImageWithGemini(imageUrl, caption = '') {
     const client = getAIClient();
     if (!client) throw new Error('Gemini AI client chưa được khởi tạo');
 
     let tempFile = null;
     try {
-        console.log(`[GeminiMod] Kiểm duyệt ảnh: ${imageUrl}`);
+        console.log(`[GeminiMod] Kiểm duyệt ảnh: ${imageUrl} (caption: "${caption}")`);
 
         // Download ảnh
         const { filePath, mimeType } = await downloadToTemp(imageUrl);
@@ -182,12 +182,14 @@ async function moderateImageWithGemini(imageUrl) {
         const fileBuffer = fs.readFileSync(filePath);
         const base64Data = fileBuffer.toString('base64');
 
+        const promptText = caption ? `${MODERATION_PROMPT}\n\nCaption/Mô tả video: "${caption}"` : MODERATION_PROMPT;
+
         const response = await generateContentWithFallback(client, {
             contents: [
                 {
                     role: 'user',
                     parts: [
-                        { text: MODERATION_PROMPT },
+                        { text: promptText },
                         {
                             inlineData: {
                                 mimeType: mimeType,
@@ -214,7 +216,7 @@ async function moderateImageWithGemini(imageUrl) {
 /**
  * Kiểm duyệt video bằng Gemini (File API — cho file lớn)
  */
-async function moderateVideoWithGemini(videoUrl) {
+async function moderateVideoWithGemini(videoUrl, caption = '') {
     const client = getAIClient();
     if (!client) throw new Error('Gemini AI client chưa được khởi tạo');
 
@@ -255,13 +257,15 @@ async function moderateVideoWithGemini(videoUrl) {
             throw new Error('Video quá lâu để xử lý');
         }
 
+        const promptText = caption ? `${MODERATION_PROMPT}\n\nCaption/Mô tả video: "${caption}"` : MODERATION_PROMPT;
+
         // Gọi generateContent với file đã upload
         const response = await generateContentWithFallback(client, {
             contents: [
                 {
                     role: 'user',
                     parts: [
-                        { text: MODERATION_PROMPT },
+                        { text: promptText },
                         {
                             fileData: {
                                 fileUri: file.uri,
@@ -296,7 +300,7 @@ async function moderateVideoWithGemini(videoUrl) {
  * @param {string} thumbnailUrl - URL thumbnail (optional)
  * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
-export async function moderateWithGemini(videoUrl, thumbnailUrl) {
+export async function moderateWithGemini(videoUrl, thumbnailUrl, caption = '') {
     if (!GEMINI_API_KEY) {
         console.warn('[GeminiMod] GEMINI_API_KEY chưa được cấu hình');
         return null; // Signal caller to use fallback
@@ -309,13 +313,13 @@ export async function moderateWithGemini(videoUrl, thumbnailUrl) {
 
         if (isVideo) {
             // Kiểm duyệt video trực tiếp — Gemini phân tích toàn bộ video
-            const result = await moderateVideoWithGemini(videoUrl);
+            const result = await moderateVideoWithGemini(videoUrl, caption);
             console.log(`[GeminiMod] Kết quả video:`, result);
             return result;
         } else {
             // Kiểm duyệt ảnh
             const imageUrl = thumbnailUrl || videoUrl;
-            const result = await moderateImageWithGemini(imageUrl);
+            const result = await moderateImageWithGemini(imageUrl, caption);
             console.log(`[GeminiMod] Kết quả ảnh:`, result);
             return result;
         }
@@ -330,7 +334,7 @@ export async function moderateWithGemini(videoUrl, thumbnailUrl) {
  * @param {string[]} imageUrls - Danh sách URL ảnh
  * @returns {{ safe: boolean, reason: string, categories: string[] }}
  */
-export async function moderateSlideshowWithGemini(imageUrls) {
+export async function moderateSlideshowWithGemini(imageUrls, caption = '') {
     if (!GEMINI_API_KEY || !imageUrls?.length) {
         return null;
     }
@@ -341,8 +345,9 @@ export async function moderateSlideshowWithGemini(imageUrls) {
         // Kiểm tra tối đa 5 ảnh
         const urlsToCheck = imageUrls.slice(0, 5);
 
-        for (const url of urlsToCheck) {
-            const result = await moderateImageWithGemini(url);
+        for (let i = 0; i < urlsToCheck.length; i++) {
+            const url = urlsToCheck[i];
+            const result = await moderateImageWithGemini(url, i === 0 ? caption : '');
             if (result && !result.safe) {
                 console.log(`[GeminiMod] ❌ Slideshow REJECTED tại: ${url}`);
                 return result;

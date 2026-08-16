@@ -1,49 +1,5 @@
-import { AdminModel } from '../models/adminModel.js';
-import bcrypt from 'bcryptjs';
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import pool from '../config/db.js';
-import redis from '../config/redis.js';
-import { syncTrendingMusicFromAudius } from '../services/audiusSyncService.js';
-import { fileURLToPath } from 'url';
+import { readSettingsFile, writeSettingsFile } from '../utils/systemSettingsHelper.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const SETTINGS_PATH = path.join(__dirname, '../config/systemSettings.json');
-
-// Helper to read settings
-const readSettingsFile = async () => {
-    try {
-        const data = await fs.readFile(SETTINGS_PATH, 'utf-8');
-        return JSON.parse(data);
-    } catch (err) {
-        return {
-            general: {
-                appName: "VibeTok",
-                tagline: "Nền tảng chia sẻ video ngắn sáng tạo",
-                supportEmail: "support@vibetok.com",
-                maintenanceMode: false,
-                maintenanceMessage: "Hệ thống VibeTok đang được nâng cấp định kỳ. Chúng tôi sẽ trở lại trong ít phút!"
-            },
-            upload: {
-                maxVideoSizeMB: 100,
-                maxVideoDurationSec: 180,
-                allowedFormats: ["mp4", "webm", "mov"]
-            },
-            moderation: {
-                geminiAiEnabled: true,
-                autoHideOnViolation: true,
-                reportThreshold: 5,
-                bannedKeywords: ["lừa đảo", "hack pass", "chửi bới", "bán nick", "cờ bạc"]
-            },
-            security: {
-                allowRegistration: true,
-                requireEmailVerification: false
-            }
-        };
-    }
-};
 
 // GET /api/admin/stats
 export const getStats = async (req, res) => {
@@ -456,7 +412,7 @@ export const updateSettings = async (req, res) => {
             moderation: { ...current.moderation, ...(req.body.moderation || {}) },
             security: { ...current.security, ...(req.body.security || {}) },
         };
-        await fs.writeFile(SETTINGS_PATH, JSON.stringify(updated, null, 2), 'utf-8');
+        await writeSettingsFile(updated);
         res.json({ success: true, message: 'Đã lưu cấu hình hệ thống thành công!', settings: updated });
     } catch (e) {
         console.error('Admin updateSettings error:', e);

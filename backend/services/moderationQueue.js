@@ -4,6 +4,7 @@ import { moderateVideo as moderateWithImagga, moderateSlideshow as moderateSlide
 import { VideoModel } from '../models/videoModel.js';
 import { getIO } from '../utils/socket.js';
 import cloudinary from '../config/cloudinary.js';
+import { checkBannedKeywords } from '../utils/systemSettingsHelper.js';
 import 'dotenv/config';
 
 // ── Redis connection config (reuse từ config/redis.js) ──
@@ -107,9 +108,22 @@ function emitModerationResult(userId, data) {
  * Ưu tiên Gemini AI → Fallback Imagga → Auto-approve
  */
 async function processModeration(jobData) {
-    const { videoId, userId, videoUrl, thumbnailUrl, isSlideshow, slideshowUrls } = jobData;
+    const { videoId, userId, caption, videoUrl, thumbnailUrl, isSlideshow, slideshowUrls } = jobData;
 
     console.log(`[ModerationQueue] ========== XỬ LÝ VIDEO #${videoId} ==========`);
+
+    // ── Tầng 0: Kiểm tra từ cấm trong Caption ──
+    if (caption) {
+        const bannedCheck = await checkBannedKeywords(caption);
+        if (bannedCheck.hasBanned) {
+            console.log(`[ModerationQueue] ❌ Caption video #${videoId} chứa từ cấm: "${bannedCheck.matchedKeyword}"`);
+            return {
+                safe: false,
+                reason: `Caption chứa từ ngữ bị cấm ("${bannedCheck.matchedKeyword}")`,
+                categories: ['banned_keyword'],
+            };
+        }
+    }
 
     let result = null;
 
@@ -117,9 +131,9 @@ async function processModeration(jobData) {
     if (isGeminiAvailable()) {
         try {
             if (isSlideshow && slideshowUrls?.length > 0) {
-                result = await moderateSlideshowWithGemini(slideshowUrls);
+                result = await moderateSlideshowWithGemini(slideshowUrls, caption);
             } else {
-                result = await moderateWithGemini(videoUrl, thumbnailUrl);
+                result = await moderateWithGemini(videoUrl, thumbnailUrl, caption);
             }
         } catch (e) {
             console.error(`[ModerationQueue] Gemini lỗi cho video #${videoId}:`, e.message);
