@@ -181,15 +181,14 @@ export default function SettingsPage() {
         >
             {/* Toast Notification */}
             {toast && (
-                <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium transition-all transform animate-in fade-in duration-200 ${
-                    toast.type === 'success'
-                        ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30 backdrop-blur-md'
-                        : 'bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30 backdrop-blur-md'
-                }`}>
+                <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium transition-all transform animate-in fade-in duration-200 ${toast.type === 'success'
+                    ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30 backdrop-blur-md'
+                    : 'bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30 backdrop-blur-md'
+                    }`}>
                     {toast.type === 'success' ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
                     ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                     )}
                     <span>{toast.text}</span>
                 </div>
@@ -198,17 +197,16 @@ export default function SettingsPage() {
             {/* Navigation Tabs */}
             <div className="flex items-center gap-2 border-b mb-6 pb-3" style={{ borderColor: 'var(--color-border)' }}>
                 {[
-                    { id: 'config', label: 'Cài đặt hệ thống', icon: '⚙️' },
-                    { id: 'profile', label: 'Tài khoản & Bảo mật', icon: '👤' },
+                    { id: 'config', label: 'Cài đặt hệ thống' },
+                    { id: 'profile', label: 'Tài khoản & Bảo mật' },
                 ].map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold font-body cursor-pointer transition-all duration-150 border-none ${
-                            activeTab === tab.id
-                                ? 'bg-[#ff2d78] text-white shadow-md shadow-[#ff2d78]/25'
-                                : 'bg-transparent hover:bg-[var(--vt-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold font-body cursor-pointer transition-all duration-150 border-none ${activeTab === tab.id
+                            ? 'bg-[#ff2d78] text-white shadow-md shadow-[#ff2d78]/25'
+                            : 'bg-transparent hover:bg-[var(--vt-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                            }`}
                     >
                         <span>{tab.icon}</span>
                         <span>{tab.label}</span>
@@ -233,9 +231,6 @@ export default function SettingsPage() {
                             }}
                         >
                             <div className="flex items-center gap-3 mb-5 pb-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: 'rgba(255, 45, 120, 0.1)', color: '#ff2d78' }}>
-                                    🌐
-                                </div>
                                 <div>
                                     <h3 className="text-[15px] font-bold font-display m-0 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                                         Thông tin chung nền tảng
@@ -286,7 +281,7 @@ export default function SettingsPage() {
 
                                 <div>
                                     <label className="block text-xs font-semibold font-body mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                                        Khẩu hiệu / Slogan
+                                        Khẩu hiệu
                                     </label>
                                     <input
                                         type="text"
@@ -364,9 +359,6 @@ export default function SettingsPage() {
                         >
                             <div>
                                 <div className="flex items-center gap-3 mb-5 pb-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-                                        🎬
-                                    </div>
                                     <div>
                                         <h3 className="text-[15px] font-bold font-display m-0 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                                             Giới hạn tải lên video
@@ -458,7 +450,7 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="mt-4 p-3 rounded-xl border text-[11px] font-body" style={{ background: 'var(--vt-input)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
-                                💡 Video đăng lên sẽ được hệ thống nén và tối ưu hoá tự động trước khi phân phối tới người xem.
+                                Video đăng lên sẽ được hệ thống nén và tối ưu hoá tự động trước khi phân phối tới người xem.
                             </div>
                         </div>
                     </div>
@@ -473,9 +465,6 @@ export default function SettingsPage() {
                         }}
                     >
                         <div className="flex items-center gap-3 mb-5 pb-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
-                                🛡️
-                            </div>
                             <div>
                                 <h3 className="text-[15px] font-bold font-display m-0 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                                     Bộ lọc & An toàn nội dung
@@ -608,9 +597,7 @@ export default function SettingsPage() {
                     >
                         <div>
                             <div className="flex items-center gap-3 mb-5 pb-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: 'rgba(255, 45, 120, 0.1)', color: '#ff2d78' }}>
-                                    👤
-                                </div>
+
                                 <div>
                                     <h3 className="text-[15px] font-bold font-display m-0 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                                         Thông tin tài khoản Admin
@@ -699,9 +686,6 @@ export default function SettingsPage() {
                     >
                         <div>
                             <div className="flex items-center gap-3 mb-5 pb-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-                                    🔐
-                                </div>
                                 <div>
                                     <h3 className="text-[15px] font-bold font-display m-0 leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                                         Đổi mật khẩu Admin

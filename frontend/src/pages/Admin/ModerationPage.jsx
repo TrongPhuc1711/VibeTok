@@ -299,7 +299,7 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove }) {
                                     className="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold font-body text-white border-none cursor-pointer hover:opacity-90 transition-all"
                                     style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
                                 >
-                                    ✓ Duyệt lại
+                                    Duyệt lại
                                 </button>
                                 <button
                                     onClick={() => { onClose(); onHide(video); }}
@@ -768,7 +768,7 @@ export default function ModerationPage() {
                                 boxShadow: moderationTab === 'rejected' ? '0 4px 16px rgba(255, 45, 120, 0.25)' : 'none',
                             }}
                         >
-                            <span>🚫 Video bị AI từ chối</span>
+                            <span>Video bị AI từ chối</span>
                             {videoCounts.rejected > 0 && (
                                 <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold ${
                                     moderationTab === 'rejected' ? 'bg-white text-[#ff2d78]' : 'bg-red-500 text-white'
@@ -788,7 +788,7 @@ export default function ModerationPage() {
                                 boxShadow: moderationTab === 'reports' ? '0 4px 16px rgba(255, 45, 120, 0.25)' : 'none',
                             }}
                         >
-                            <span>🚩 Báo cáo từ người dùng</span>
+                            <span>Báo cáo từ người dùng</span>
                             {reportCounts.pending > 0 && (
                                 <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold ${
                                     moderationTab === 'reports' ? 'bg-white text-[#ff2d78]' : 'bg-amber-500 text-black'
@@ -885,7 +885,7 @@ export default function ModerationPage() {
                                                             className="flex-1 text-[11px] font-semibold font-body py-1.5 rounded text-white border-none cursor-pointer disabled:opacity-40 hover:opacity-90 transition-all"
                                                             style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
                                                         >
-                                                            ✓ Duyệt lại
+                                                            Duyệt lại
                                                         </button>
                                                         <button
                                                             onClick={() => handleHideVideoWithReason(v)}
@@ -955,9 +955,6 @@ export default function ModerationPage() {
                                             >
                                                 {/* Content info */}
                                                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                                                    <div className="w-10 h-10 rounded-full bg-[#ff2d78]/10 text-[#ff2d78] flex items-center justify-center font-bold shrink-0 text-[18px]">
-                                                        🚩
-                                                    </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                             <span className="font-semibold text-[15px]" style={{ color: 'var(--color-text-primary)' }}>{r.reason}</span>
