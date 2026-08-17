@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
+import { CloseAdminIcon, TrashAdminIcon, PlusAdminIcon, MusicAdminIcon, TrendingAdminIcon } from '../../icons/AdminIcons';
 import StatCard from '../../components/ui/StatCard';
 import AdminBtn from './components/AdminBtn';
 import AdminFilters from './components/AdminFilters';
@@ -133,9 +134,7 @@ function MusicFormModal({ track, onClose, onSuccess }) {
                     <button onClick={onClose}
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
                         style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <CloseAdminIcon size={12} />
                     </button>
                 </div>
 
@@ -246,10 +245,7 @@ function DeleteConfirmModal({ track, onClose, onConfirm }) {
                 <div className="px-5 py-5 text-center">
                     <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
                         style={{ background: 'rgba(239, 68, 68, 0.15)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
+                        <TrashAdminIcon size={24} color="#ef4444" />
                     </div>
                     <h3 className="text-[15px] font-display font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>Xóa bài hát?</h3>
                     <p className="text-[12px] font-body leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
@@ -356,9 +352,7 @@ export default function MusicManagerPage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-body font-semibold text-white cursor-pointer border-none transition-all hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg, #ff2d78, #7c3aed)' }}
                 >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                        <path d="M6 1v10M1 6h10" />
-                    </svg>
+                    <PlusAdminIcon />
                     Thêm bài hát
                 </button>
             }
@@ -404,7 +398,7 @@ export default function MusicManagerPage() {
                                                 style={{ background: t.cover ? 'transparent' : 'linear-gradient(135deg, #ff2d78, #7c3aed)' }}>
                                                 {t.cover
                                                     ? <img src={t.cover} alt="" className="w-full h-full object-cover" />
-                                                    : <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round"><path d="M7 15V4l10-2v11" /><circle cx="4.5" cy="15" r="2.5" /><circle cx="14.5" cy="13" r="2.5" /></svg>
+                                                    : <MusicAdminIcon active />
                                                 }
                                             </div>
                                             <p className="text-[12px] font-semibold font-body leading-tight m-0 max-w-[200px] truncate" style={{ color: 'var(--color-text-primary)' }} title={t.title}>
@@ -418,7 +412,7 @@ export default function MusicManagerPage() {
                                     <td className="px-4 py-3">
                                         {t.trending ? (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-body font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                                                <TrendingAdminIcon size={10} />
                                                 Thịnh hành
                                             </span>
                                         ) : (

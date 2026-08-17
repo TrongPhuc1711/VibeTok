@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
+import { CheckAdminIcon, AlertAdminIcon } from '../../icons/AdminIcons';
 import { BounceDots } from '../../components/ui/Spinner';
 import Avatar from '../../components/common/Avatar/avatar';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -186,9 +187,9 @@ export default function SettingsPage() {
                     : 'bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30 backdrop-blur-md'
                     }`}>
                     {toast.type === 'success' ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+                        <CheckAdminIcon size={18} />
                     ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        <AlertAdminIcon size={18} />
                     )}
                     <span>{toast.text}</span>
                 </div>

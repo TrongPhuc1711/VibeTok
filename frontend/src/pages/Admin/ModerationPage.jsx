@@ -8,7 +8,7 @@ import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
 import Avatar from '../../components/common/Avatar/avatar';
-import { PlayAdminIcon } from '../../icons/AdminIcons';
+import { PlayAdminIcon, PlayFilledAdminIcon, CloseAdminIcon, NoVideoAdminIcon } from '../../icons/AdminIcons';
 import {
     getAdminVideos, getVideoCounts, hideVideo, restoreVideo, approveVideo,
     getAdminReports, getReportCounts, updateReportStatus, deleteReport,
@@ -98,9 +98,7 @@ function AdminVideoThumbnail({ video, onClick, isRejectedBadge = false }) {
             {/* Play overlay on hover */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
+                    <PlayFilledAdminIcon size={18} fill="white" />
                 </div>
             </div>
             <div className="absolute top-2 left-2 z-10">
@@ -180,9 +178,7 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove, onTem
                     onClick={onClose}
                     className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 border-none cursor-pointer text-white/80 hover:text-white hover:bg-black/80 transition-colors"
                 >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
+                    <CloseAdminIcon size={14} />
                 </button>
 
                 {/* Video / Slideshow player area */}
@@ -236,9 +232,7 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove, onTem
                         <img src={videoSrc} alt="" className="w-full max-h-[60vh] object-contain" />
                     ) : (
                         <div className="flex flex-col items-center justify-center py-16 text-[#555]">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
+                            <NoVideoAdminIcon size={40} />
                             <p className="text-[12px] font-body mt-2">Không có video để phát</p>
                         </div>
                     )}
@@ -375,9 +369,7 @@ function HideReasonModal({ video, onClose, onConfirm }) {
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
                         style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <CloseAdminIcon size={12} />
                     </button>
                 </div>
 
@@ -520,9 +512,7 @@ function TempBanUserModal({ video, onClose, onSuccess }) {
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
                         style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <CloseAdminIcon size={12} />
                     </button>
                 </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
+import { CloseAdminIcon } from '../../icons/AdminIcons';
 import StatCard from '../../components/ui/StatCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AdminBtn from './components/AdminBtn';
@@ -77,16 +78,14 @@ function PasswordResetModal({ user, onClose, onSuccess }) {
                 <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
                         <h3 className="text-[15px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>Đổi mật khẩu</h3>
-                        <p className="text-[11px] font-body mt-0.5 m-0" style={{ color: 'var(--color-text-muted)' }}>Người dùng: {user.name} ({user.username})</p>
+                        <p className="text-[11px] font-body mt-0.5 m-0 text-white">Người dùng: {user.name} ({user.username})</p>
                     </div>
                     <button
                         onClick={onClose}
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
                         style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <CloseAdminIcon size={12} />
                     </button>
                 </div>
 
@@ -210,17 +209,15 @@ function TempBanModal({ user, onClose, onSuccess }) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
-                        <h3 className="text-[15px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>Vô hiệu hóa tạm thời</h3>
-                        <p className="text-[11px] font-body mt-0.5 m-0" style={{ color: 'var(--color-text-muted)' }}>Người dùng: {user.name} ({user.username})</p>
+                        <h3 className="text-[18px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>Vô hiệu hóa tạm thời</h3>
+                        <p className="text-[12px] font-body mt-0.5 m-0 text-white">Người dùng: {user.name} ({user.username})</p>
                     </div>
                     <button
                         onClick={onClose}
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
                         style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <CloseAdminIcon size={12} />
                     </button>
                 </div>
 
@@ -249,7 +246,7 @@ function TempBanModal({ user, onClose, onSuccess }) {
                                     boxShadow: duration === d.value ? (d.value === -1 ? '0 4px 16px rgba(220, 38, 38, 0.3)' : '0 4px 16px rgba(249, 115, 22, 0.3)') : 'none',
                                 }}
                             >
-                                {d.value === -1 ? '⛔ ' : ''}{d.label}
+                                {d.label}
                             </button>
                         ))}
                     </div>
@@ -354,11 +351,11 @@ export default function UserManagerPage() {
         setActionLoading(id);
         try {
             await unbanUser(id);
-            showSuccess('Thành công', 'Đã vô hiệu hóa người dùng');
+            showSuccess('Thành công', 'Đã mở khóa tài khoản');
             fetchUsers();
             fetchCounts();
         } catch (e) {
-            showError('Lỗi', e.response?.data?.message || 'Không thể vô hiệu hóa tài khoản');
+            showError('Lỗi', e.response?.data?.message || 'Không thể mở khóa tài khoản');
         } finally {
             setActionLoading(null);
         }
@@ -435,17 +432,12 @@ export default function UserManagerPage() {
                                     <td className="px-4 py-3">
                                         <div className="flex gap-1 flex-wrap">
                                             {u.status === 'active' && u.role !== 'admin' && (
-                                                <>
-                                                    <AdminBtn label="Ban" bg="#f59e0b22" color="#f59e0b"
-                                                        onClick={() => handleBan(u.id)}
-                                                        disabled={actionLoading === u.id} />
-                                                    <AdminBtn label="Vô hiệu hóa" bg="#f9731622" color="#f97316"
-                                                        onClick={() => setTempBanModalUser(u)}
-                                                        disabled={actionLoading === u.id} />
-                                                </>
+                                                <AdminBtn label="Vô hiệu hóa" bg="#f9731622" color="#f97316"
+                                                    onClick={() => setTempBanModalUser(u)}
+                                                    disabled={actionLoading === u.id} />
                                             )}
                                             {(u.status === 'banned' || u.status === 'temp_banned') && (
-                                                <AdminBtn label="Unban" bg="#10b98122" color="#10b981"
+                                                <AdminBtn label="Mở khóa" bg="#10b98122" color="#10b981"
                                                     onClick={() => handleUnban(u.id)}
                                                     disabled={actionLoading === u.id} />
                                             )}
