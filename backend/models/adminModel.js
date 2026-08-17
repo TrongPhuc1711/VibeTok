@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import redis from '../config/redis.js';
+import { getRecordedSearchQueries } from '../utils/searchHelper.js';
 
 export const AdminModel = {
 
@@ -520,25 +521,11 @@ export const AdminModel = {
     async getSearchTrends(limit = 5) {
         let keywords = [];
 
-        // 1. Đọc từ khóa hot từ Redis Sorted Set
+        // 1. Đọc từ khóa tìm kiếm thực tế đã được ghi nhận (từ Redis hoặc In-Memory cache)
         try {
-            if (redis && (redis.status === 'ready' || redis.status === 'connect')) {
-                const raw = await redis.zrevrange('admin:trending_searches', 0, limit - 1, 'WITHSCORES');
-                for (let i = 0; i < raw.length; i += 2) {
-                    const keyword = raw[i];
-                    const count = Number(raw[i + 1]) || 0;
-                    if (keyword) {
-                        keywords.push({
-                            name: keyword.startsWith('#') ? keyword : `#${keyword}`,
-                            rawName: keyword,
-                            count,
-                            type: 'search',
-                        });
-                    }
-                }
-            }
+            keywords = await getRecordedSearchQueries(limit);
         } catch (e) {
-            console.error('Redis getSearchTrends error:', e.message);
+            console.error('getRecordedSearchQueries error:', e.message);
         }
 
         // 2. Fallback / Bổ sung từ bảng hashtags nếu Redis chưa đủ dữ liệu

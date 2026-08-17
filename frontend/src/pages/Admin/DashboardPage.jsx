@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/layout/Sidebar/AdminLayout';
 import StatCard from '../../components/ui/StatCard';
-import BarChart from '../../components/charts/BarChart';
-import DonutChart from '../../components/charts/DonutChart';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AdminBtn from './components/AdminBtn';
 import { BounceDots } from '../../components/ui/Spinner';
 import Avatar from '../../components/common/Avatar/avatar';
 import { getSharedSocket } from '../../hooks/useMessages';
 import {
-    getStats, getUserGrowth, getContentDistribution, getTopCreators,
+    getStats, getTopCreators,
     getSearchTrends, getAdminOnlineUsers
 } from '../../services/adminService';
 
@@ -68,8 +66,6 @@ function VideoPlayIcon() {
 export default function DashboardPage() {
     const navigate = useNavigate();
     const [stats, setStats] = useState([]);
-    const [growth, setGrowth] = useState([]);
-    const [content, setContent] = useState([]);
     const [creators, setCreators] = useState([]);
     const [searchTrends, setSearchTrends] = useState({ keywords: [], videos: [] });
     const [onlineUsers, setOnlineUsers] = useState([]);
@@ -80,15 +76,11 @@ export default function DashboardPage() {
     useEffect(() => {
         Promise.all([
             getStats().catch(() => []),
-            getUserGrowth().catch(() => []),
-            getContentDistribution().catch(() => []),
             getTopCreators().catch(() => []),
             getSearchTrends().catch(() => ({ keywords: [], videos: [] })),
             getAdminOnlineUsers().catch(() => ({ totalOnline: 0, users: [] })),
-        ]).then(([s, g, c, cr, st, onl]) => {
+        ]).then(([s, cr, st, onl]) => {
             setStats(s);
-            setGrowth(g);
-            setContent(c);
             setCreators(cr);
             setSearchTrends(st || { keywords: [], videos: [] });
             if (onl) {
@@ -156,10 +148,6 @@ export default function DashboardPage() {
         };
     }, []);
 
-    const BAR_KEYS = [
-        { key: 'newUsers', color: '#ff2d78', label: 'Người dùng mới' },
-    ];
-
     const rankColors = [
         { bg: 'rgba(255, 45, 120, 0.15)', text: '#ff2d78', border: 'rgba(255, 45, 120, 0.35)' },
         { bg: 'rgba(255, 107, 53, 0.15)', text: '#ff6b35', border: 'rgba(255, 107, 53, 0.35)' },
@@ -190,23 +178,20 @@ export default function DashboardPage() {
             {/* ── LIVE REAL-TIME ACTIVE USERS (SOCKET) ── */}
             <div className="rounded-xl p-4 mb-6 transition-all" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                 <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                        <span className="relative flex h-3 w-3">
+                    <div className="flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
                         <div>
                             <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--color-text-primary)' }}>
                                 Người dùng đang Online trực tiếp
                             </span>
-                            <span className="text-[13px] font-body ml-2 font-mono px-2 py-0.5 rounded-full" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                            <span className="text-[12px] font-body ml-2 font-mono px-2 py-0.5 rounded-full" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                                 {onlineCount} đang online
                             </span>
                         </div>
                     </div>
-                    <span className="text-[12px] font-body text-emerald-400/80 flex items-center gap-1">
-                        Đồng bộ Socket.IO thời gian thực
-                    </span>
                 </div>
 
                 {onlineUsers.length > 0 ? (
@@ -215,30 +200,49 @@ export default function DashboardPage() {
                             <div
                                 key={u.id}
                                 onClick={() => navigate(`/admin/users?search=${encodeURIComponent(u.username.replace('@', ''))}`)}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[var(--vt-hover)] hover:bg-[#252536] border border-[var(--vt-divider)] transition-all cursor-pointer shrink-0 group"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all cursor-pointer shrink-0 group hover:opacity-90"
+                                style={{
+                                    background: 'var(--vt-input)',
+                                    border: '1px solid var(--color-border)',
+                                }}
                                 title={`Bấm để quản lý ${u.name}`}
                             >
                                 <div className="relative">
                                     <Avatar user={{ ...u, fullName: u.name }} size="xs" className="!w-7 !h-7 !text-[10px]" />
-                                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#181824]" />
+                                    <span
+                                        className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-[1.5px]"
+                                        style={{ ringColor: 'var(--vt-card)' }}
+                                    />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-1.5">
-                                        <p className="text-[11px] font-semibold text-white group-hover:text-[#ff2d78] transition-colors leading-tight m-0 max-w-[100px] truncate">
+                                        <p
+                                            className="text-[11px] font-semibold group-hover:text-[#ff2d78] transition-colors leading-tight m-0 max-w-[100px] truncate"
+                                            style={{ color: 'var(--color-text-primary)' }}
+                                        >
                                             {u.name}
                                         </p>
                                         {u.role === 'admin' ? (
-                                            <span className="text-[8px] bg-red-500/20 text-red-400 px-1 py-0.2 rounded font-bold uppercase">Admin</span>
+                                            <span className="text-[8px] px-1 py-0.2 rounded font-bold uppercase" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                                                Admin
+                                            </span>
                                         ) : u.role === 'creator' ? (
-                                            <span className="text-[8px] bg-purple-500/20 text-purple-400 px-1 py-0.2 rounded font-bold uppercase">Creator</span>
+                                            <span className="text-[8px] px-1 py-0.2 rounded font-bold uppercase" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+                                                Creator
+                                            </span>
                                         ) : null}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                        <p className="text-[10px] text-gray-400 leading-tight m-0 truncate max-w-[90px]">
+                                        <p
+                                            className="text-[10px] leading-tight m-0 truncate max-w-[90px]"
+                                            style={{ color: 'var(--color-text-secondary)' }}
+                                        >
                                             {u.username}
                                         </p>
                                         {u.tabsCount > 1 && (
-                                            <span className="text-[8px] text-gray-500 font-mono">({u.tabsCount} tabs)</span>
+                                            <span className="text-[8px] font-mono" style={{ color: 'var(--color-text-muted)' }}>
+                                                ({u.tabsCount} tabs)
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -250,53 +254,6 @@ export default function DashboardPage() {
                         Hiện chưa có người dùng nào trực tuyến ngoài bạn
                     </div>
                 )}
-            </div>
-
-            {/* ── Charts row ── */}
-            <div className="grid grid-cols-[1fr_272px] gap-4 mb-6">
-                {/* Bar chart */}
-                <div className="rounded-xl p-4" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
-                    <div className="flex items-center justify-between mb-4">
-                        <p className="text-[13px] font-semibold font-body m-0" style={{ color: 'var(--color-text-primary)' }}>Người dùng mới theo ngày</p>
-                        <div className="flex items-center gap-3">
-                            {BAR_KEYS.map(k => (
-                                <span key={k.key} className="flex items-center gap-1 text-[10px] font-body" style={{ color: 'var(--color-text-muted)' }}>
-                                    <span className="w-2 h-2 rounded-sm inline-block" style={{ background: k.color }} />
-                                    {k.label}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                    {growth.length > 0
-                        ? <BarChart data={growth} keys={BAR_KEYS} height={160} />
-                        : <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
-                    }
-                </div>
-
-                {/* Donut */}
-                <div className="rounded-xl p-4" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
-                    <p className="text-[13px] font-semibold font-body mb-3" style={{ color: 'var(--color-text-primary)' }}>Phân loại nội dung</p>
-                    {content.length > 0 ? (
-                        <>
-                            <div className="flex justify-center mb-3">
-                                <DonutChart data={content} size={110} stroke={20} />
-                            </div>
-                            <div className="space-y-1.5">
-                                {content.map(d => (
-                                    <div key={d.name} className="flex items-center justify-between text-[10px] font-body">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                                            <span style={{ color: 'var(--color-text-secondary)' }}>{d.name}</span>
-                                        </div>
-                                        <span style={{ color: 'var(--color-text-muted)' }}>{d.value}%</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    ) : (
-                        <p className="text-[11px] font-body text-center py-8" style={{ color: 'var(--color-text-muted)' }}>Chưa có dữ liệu</p>
-                    )}
-                </div>
             </div>
 
             {/* ── SEARCH & TRENDING SECTION ── */}
@@ -535,21 +492,22 @@ export default function DashboardPage() {
                 >
                     <div
                         className="relative max-w-md w-full rounded-2xl overflow-hidden shadow-2xl p-4"
-                        style={{ background: '#181824', border: '1px solid rgba(255,255,255,0.1)' }}
+                        style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <div className="flex items-center gap-2">
                                 <Avatar user={{ ...previewVideo.creator, fullName: previewVideo.creator.name }} size="xs" className="!w-6 !h-6" />
                                 <div>
-                                    <p className="text-[12px] font-semibold text-white m-0 leading-tight">{previewVideo.creator.name}</p>
-                                    <p className="text-[10px] text-gray-400 m-0">{previewVideo.creator.username}</p>
+                                    <p className="text-[12px] font-semibold m-0 leading-tight" style={{ color: 'var(--color-text-primary)' }}>{previewVideo.creator.name}</p>
+                                    <p className="text-[10px] m-0" style={{ color: 'var(--color-text-secondary)' }}>{previewVideo.creator.username}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setPreviewVideo(null)}
-                                className="w-7 h-7 rounded-full bg-white/10 text-white flex items-center justify-center border-none cursor-pointer hover:bg-white/20"
+                                className="w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-opacity"
+                                style={{ background: 'var(--vt-hover)', color: 'var(--color-text-primary)' }}
                             >
                                 ✕
                             </button>
@@ -565,14 +523,14 @@ export default function DashboardPage() {
                                     className="w-full h-full object-contain"
                                 />
                             ) : (
-                                <p className="text-gray-400 text-xs">Không thể tải URL video</p>
+                                <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Không thể tải URL video</p>
                             )}
                         </div>
 
                         {/* Caption & Stats */}
                         <div className="mt-3">
-                            <p className="text-[12px] text-white font-body m-0 line-clamp-2">{previewVideo.title}</p>
-                            <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400 font-body">
+                            <p className="text-[12px] font-body m-0 line-clamp-2" style={{ color: 'var(--color-text-primary)' }}>{previewVideo.title}</p>
+                            <div className="flex items-center gap-4 mt-2 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
                                 <span className="flex items-center gap-1"><EyeMiniIcon /> {previewVideo.views} lượt xem</span>
                                 <span className="flex items-center gap-1"><HeartMiniIcon /> {previewVideo.likes} yêu thích</span>
                                 <span>💬 {previewVideo.comments} bình luận</span>
