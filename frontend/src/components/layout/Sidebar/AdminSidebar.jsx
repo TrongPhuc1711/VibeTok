@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import {
-    DashIcon, ChartLineIcon, UsersAdminIcon, VideoAdminIcon,
+    DashIcon, UsersAdminIcon, VideoAdminIcon,
     ShieldAdminIcon, SettingsAdminIcon, MusicAdminIcon, CollapseIcon,
 } from '../../../icons/AdminIcons';
 import { getSidebarCounts } from '../../../services/adminService';
@@ -19,7 +19,6 @@ const fmt = (n) => {
 /* ── nav config ── */
 const NAV_ITEMS = (counts) => [
     { path: '/admin', label: 'Dashboard', Icon: DashIcon, exact: true },
-    { path: '/admin/analytics', label: 'Analytics', Icon: ChartLineIcon },
     { path: '/admin/users', label: 'Người dùng', Icon: UsersAdminIcon, badge: counts.users > 0 ? fmt(counts.users) : null, badgeColor: '#3b82f6' },
     { path: '/admin/videos', label: 'Video', Icon: VideoAdminIcon, badge: counts.videos > 0 ? fmt(counts.videos) : null, badgeColor: '#7c3aed' },
     { path: '/admin/music', label: 'Âm nhạc', Icon: MusicAdminIcon },

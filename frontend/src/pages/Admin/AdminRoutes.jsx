@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getStoredUser } from '../../utils/helpers';
 import DashboardPage from './DashboardPage';
-import AnalyticsPage from './AnalyticsPage';
 import UserManagerPage from './UserManagerPage';
 import ModerationPage from './ModerationPage';
 import MusicManagerPage from './MusicManagerPage';
@@ -21,7 +20,6 @@ export default function AdminRoutes() {
         <AdminGuard>
             <Routes>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/users" element={<UserManagerPage />} />
                 <Route path="/videos" element={<ModerationPage />} />
                 <Route path="/moderation" element={<ModerationPage />} />

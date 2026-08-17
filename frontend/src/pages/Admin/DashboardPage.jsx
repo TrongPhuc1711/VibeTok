@@ -338,7 +338,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* 🎬 Right Column: Top Searched / Trending Videos */}
+                {/* Right Column: Top Searched / Trending Videos */}
                 <div className="rounded-xl p-4 flex flex-col justify-between" style={{ background: 'var(--vt-card)', border: '1px solid var(--color-border)' }}>
                     <div>
                         <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
