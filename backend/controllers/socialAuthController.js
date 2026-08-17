@@ -11,8 +11,9 @@ const checkBanStatus = async (user, res) => {
     // 1. Kiểm tra ban vĩnh viễn (is_active = 0)
     if (!user.is_active) {
         res.status(403).json({
-            message: 'Tài khoản của bạn đã bị ban. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
-            banned: true
+            message: 'Tài khoản của bạn đã bị vô hiệu hóa vĩnh viễn. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
+            banned: true,
+            permanentBan: true
         });
         return false;
     }
@@ -22,15 +23,17 @@ const checkBanStatus = async (user, res) => {
         const bannedUntil = new Date(user.banned_until);
         if (bannedUntil > new Date()) {
             const remainMs = bannedUntil.getTime() - Date.now();
-            const remainMins = Math.ceil(remainMs / 60000);
-            let remainLabel;
-            if (remainMins >= 60) {
-                const h = Math.floor(remainMins / 60);
-                const m = remainMins % 60;
-                remainLabel = m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`;
-            } else {
-                remainLabel = `${remainMins} phút`;
-            }
+            const totalMins = Math.ceil(remainMs / 60000);
+            const days = Math.floor(totalMins / (24 * 60));
+            const hours = Math.floor((totalMins % (24 * 60)) / 60);
+            const mins = totalMins % 60;
+
+            const parts = [];
+            if (days > 0) parts.push(`${days} ngày`);
+            if (hours > 0) parts.push(`${hours} giờ`);
+            if (mins > 0 || parts.length === 0) parts.push(`${mins || 1} phút`);
+            const remainLabel = parts.join(' ');
+
             res.status(403).json({
                 message: `Tài khoản của bạn đã bị vô hiệu hóa tạm thời. Còn lại: ${remainLabel}.${user.ban_reason ? ` Lý do: ${user.ban_reason}` : ''}`,
                 banned: true,

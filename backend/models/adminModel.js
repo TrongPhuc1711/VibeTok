@@ -153,7 +153,8 @@ export const AdminModel = {
         const [rows] = await pool.query(`
             SELECT u.id, u.username, u.display_name, u.email, u.avatar_url,
                    u.role, u.followers, u.total_videos, u.is_active,
-                   u.is_verified, u.created_at, u.banned_until, u.ban_reason
+                   u.is_verified, u.created_at, u.banned_until, u.ban_reason,
+                   IF(u.is_active = 0, 'banned', IF(u.banned_until IS NOT NULL AND u.banned_until > NOW(), 'temp_banned', 'active')) AS computed_status
             FROM users u
             ${whereClause}
             ORDER BY u.created_at DESC
@@ -165,7 +166,6 @@ export const AdminModel = {
         const users = rows.map((u, i) => {
             const fullName = u.display_name || u.username;
             const initials = fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
-            const isTempBanned = u.banned_until && new Date(u.banned_until) > new Date();
             return {
                 id: String(u.id),
                 name: fullName,
@@ -177,7 +177,7 @@ export const AdminModel = {
                 joinDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '',
                 followers: Number(u.followers),
                 videos: Number(u.total_videos),
-                status: isTempBanned ? 'temp_banned' : (u.is_active ? 'active' : 'banned'),
+                status: u.computed_status,
                 role: u.role,
                 verified: Boolean(u.is_verified),
                 bannedUntil: u.banned_until || null,
@@ -205,11 +205,19 @@ export const AdminModel = {
 
     //  Ban / Unban 
     async banUser(userId) {
+        const [users] = await pool.query('SELECT id, role, is_active FROM users WHERE id = ?', [userId]);
+        if (users.length === 0 || users[0].role === 'admin') {
+            return { success: false, message: 'Người dùng không tồn tại hoặc là admin' };
+        }
+        if (!users[0].is_active) {
+            return { success: false, message: 'Tài khoản này đã bị vô hiệu hóa vĩnh viễn trước đó!' };
+        }
+
         const [result] = await pool.query(
             'UPDATE users SET is_active = 0 WHERE id = ? AND role != ?',
             [userId, 'admin']
         );
-        return result.affectedRows > 0;
+        return { success: result.affectedRows > 0 };
     },
 
     async unbanUser(userId) {
@@ -217,20 +225,33 @@ export const AdminModel = {
             'UPDATE users SET is_active = 1, banned_until = NULL, ban_reason = NULL WHERE id = ?',
             [userId]
         );
-        return result.affectedRows > 0;
+        return { success: result.affectedRows > 0 };
     },
 
     // Temporary Ban (vô hiệu hóa tạm thời)
     async tempBanUser(userId, durationMinutes, reason = null) {
-        // Kiểm tra không phải admin
-        const [users] = await pool.query('SELECT id, role FROM users WHERE id = ?', [userId]);
-        if (users.length === 0 || users[0].role === 'admin') return false;
+        // Kiểm tra không phải admin và trạng thái hiện tại
+        const [users] = await pool.query(
+            `SELECT id, role, is_active, 
+                    IF(banned_until IS NOT NULL AND banned_until > NOW(), 1, 0) AS is_temp_banned 
+             FROM users WHERE id = ?`,
+            [userId]
+        );
+        if (users.length === 0 || users[0].role === 'admin') {
+            return { success: false, message: 'Người dùng không tồn tại hoặc là admin' };
+        }
+        if (!users[0].is_active) {
+            return { success: false, message: 'Tài khoản này đã bị vô hiệu hóa vĩnh viễn, không thể khóa tạm thời!' };
+        }
+        if (users[0].is_temp_banned) {
+            return { success: false, message: 'Tài khoản này hiện đang trong thời gian vô hiệu hóa tạm thời!' };
+        }
 
         const [result] = await pool.query(
             'UPDATE users SET banned_until = DATE_ADD(NOW(), INTERVAL ? MINUTE), ban_reason = ? WHERE id = ? AND role != ?',
             [durationMinutes, reason, userId, 'admin']
         );
-        return result.affectedRows > 0;
+        return { success: result.affectedRows > 0 };
     },
 
     // Admin reset user password
@@ -281,7 +302,8 @@ export const AdminModel = {
                    v.duration_seconds, v.privacy, v.views_count, v.likes_count,
                    v.comments_count, v.is_active, v.is_draft, v.created_at,
                    v.moderation_status, v.rejection_reason,
-                   u.username, u.display_name, u.avatar_url
+                   u.username, u.display_name, u.avatar_url,
+                   IF(u.is_active = 0, 'banned', IF(u.banned_until IS NOT NULL AND u.banned_until > NOW(), 'temp_banned', 'active')) AS creator_status
             FROM videos v
             LEFT JOIN users u ON v.user_id = u.id
             ${whereClause}
@@ -302,6 +324,7 @@ export const AdminModel = {
                 userId: String(v.user_id),
                 title: v.title || v.description || 'Không có tiêu đề',
                 creator: creatorName,
+                creatorStatus: v.creator_status || 'active',
                 username: `@${v.username || ''}`,
                 avatar: v.avatar_url || null,
                 initials,

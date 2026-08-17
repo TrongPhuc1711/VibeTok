@@ -25,7 +25,8 @@ export const useSocialAuth = () => {
             }, 600);
 
         } catch (error) {
-            showError('Lỗi đăng nhập', error.message);
+            const isBanned = error.message?.includes('vô hiệu hóa') || error.message?.includes('bị ban');
+            showError(isBanned ? 'Tài khoản bị vô hiệu hóa' : 'Lỗi đăng nhập', error.message);
         } finally {
             setLoading(false);
         }
@@ -57,7 +58,8 @@ export const useSocialAuth = () => {
                         }, 600);
                     })
                     .catch((error) => {
-                        showError('Lỗi đăng nhập Facebook', error.message);
+                        const isBanned = error.message?.includes('vô hiệu hóa') || error.message?.includes('bị ban');
+                        showError(isBanned ? 'Tài khoản bị vô hiệu hóa' : 'Lỗi đăng nhập Facebook', error.message);
                     })
                     .finally(() => {
                         setLoading(false);

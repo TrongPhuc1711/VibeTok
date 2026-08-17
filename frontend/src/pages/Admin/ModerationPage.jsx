@@ -296,13 +296,19 @@ function VideoPreviewModal({ video, onClose, onHide, onRestore, onApprove, onTem
                                 >
                                     Duyệt lại
                                 </button>
-                                <button
-                                    onClick={() => { onClose(); onTempBan(video); }}
-                                    className="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold font-body border-none cursor-pointer hover:opacity-90 transition-all"
-                                    style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: '#fff' }}
-                                >
-                                    Vô hiệu hóa TK
-                                </button>
+                                {video.creatorStatus === 'temp_banned' || video.creatorStatus === 'banned' ? (
+                                    <span className="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold font-body bg-red-500/10 text-red-400 border border-red-500/20 text-center flex items-center justify-center">
+                                        TK đã khóa
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => { onClose(); onTempBan(video); }}
+                                        className="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold font-body border-none cursor-pointer hover:opacity-90 transition-all"
+                                        style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: '#fff' }}
+                                    >
+                                        Vô hiệu hóa TK
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => { onClose(); onHide(video); }}
                                     className="flex-1 px-3 py-2 rounded-lg bg-red-500/15 text-red-500 text-[12px] font-semibold font-body border-none cursor-pointer hover:bg-red-500/25 transition-colors"
@@ -1026,14 +1032,21 @@ export default function ModerationPage() {
                                                         >
                                                             Duyệt lại
                                                         </button>
-                                                        <button
-                                                            onClick={() => setTempBanModalVideo(v)}
-                                                            disabled={actionLoading === v.id}
-                                                            className="px-2 text-[10px] font-semibold font-body py-1.5 rounded border-none cursor-pointer hover:opacity-90 disabled:opacity-40 transition-all"
-                                                            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: '#fff' }}
-                                                            title="Vô hiệu hóa tài khoản tạm thời"
-                                                        >
-                                                            Vô hiệu hóa tài khoản                                                        </button>
+                                                        {v.creatorStatus === 'temp_banned' || v.creatorStatus === 'banned' ? (
+                                                            <span className="px-2 text-[9px] font-semibold font-body py-1.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-center flex items-center justify-center">
+                                                                TK đã khóa
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => setTempBanModalVideo(v)}
+                                                                disabled={actionLoading === v.id}
+                                                                className="px-2 text-[10px] font-semibold font-body py-1.5 rounded border-none cursor-pointer hover:opacity-90 disabled:opacity-40 transition-all"
+                                                                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: '#fff' }}
+                                                                title="Vô hiệu hóa tài khoản tạm thời"
+                                                            >
+                                                                Vô hiệu hóa tài khoản
+                                                            </button>
+                                                        )}
                                                         <button
                                                             onClick={() => handleHideVideoWithReason(v)}
                                                             disabled={actionLoading === v.id}

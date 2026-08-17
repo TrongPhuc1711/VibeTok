@@ -88,9 +88,11 @@ export const banUser = async (req, res) => {
         if (String(req.params.id) === String(req.user.id)) {
             return res.status(400).json({ message: 'Không thể ban chính mình!' });
         }
-        const ok = await AdminModel.banUser(req.params.id);
-        if (!ok) return res.status(404).json({ message: 'Người dùng không tồn tại hoặc là admin' });
-        res.json({ message: 'Đã ban người dùng' });
+        const result = await AdminModel.banUser(req.params.id);
+        if (!result.success) {
+            return res.status(400).json({ message: result.message || 'Người dùng không tồn tại hoặc là admin' });
+        }
+        res.json({ message: 'Đã ban người dùng vĩnh viễn' });
     } catch (e) {
         console.error('Admin banUser error:', e);
         res.status(500).json({ message: 'Lỗi ban user', error: e.message });
@@ -100,8 +102,10 @@ export const banUser = async (req, res) => {
 // PATCH /api/admin/users/:id/unban
 export const unbanUser = async (req, res) => {
     try {
-        const ok = await AdminModel.unbanUser(req.params.id);
-        if (!ok) return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        const result = await AdminModel.unbanUser(req.params.id);
+        if (!result.success) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
         res.json({ message: 'Đã unban người dùng' });
     } catch (e) {
         console.error('Admin unbanUser error:', e);
@@ -120,8 +124,10 @@ export const tempBanUser = async (req, res) => {
         if (String(req.params.id) === String(req.user.id)) {
             return res.status(400).json({ message: 'Không thể vô hiệu hóa chính mình!' });
         }
-        const ok = await AdminModel.tempBanUser(req.params.id, Number(duration), reason || null);
-        if (!ok) return res.status(404).json({ message: 'Người dùng không tồn tại hoặc là admin' });
+        const result = await AdminModel.tempBanUser(req.params.id, Number(duration), reason || null);
+        if (!result.success) {
+            return res.status(400).json({ message: result.message || 'Người dùng không tồn tại hoặc là admin' });
+        }
 
         const durationLabels = { 30: '30 phút', 60: '1 giờ', 360: '6 giờ', 1440: '24 giờ' };
         const label = durationLabels[Number(duration)] || `${duration} phút`;

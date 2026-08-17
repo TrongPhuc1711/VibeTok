@@ -53,13 +53,11 @@ export default function LoginPage() {
             }, 600);
         } catch (e) {
             const response = e.response || e;
-            const isBanned = response?.data?.banned || e.message?.includes('bị ban');
-            const msg = isBanned
-                ? 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.'
-                : (e.message || 'Đăng nhập thất bại');
+            const isBanned = response?.data?.banned || e.message?.includes('bị ban') || e.message?.includes('vô hiệu hóa');
+            const msg = response?.data?.message || e.message || 'Đăng nhập thất bại';
             setApiError(msg);
             if (isBanned) {
-                showError('Tài khoản bị vô hiệu hóa ', msg);
+                showError('Tài khoản bị vô hiệu hóa', msg);
             } else {
                 showError('Đăng nhập thất bại', msg);
             }
