@@ -57,7 +57,7 @@ export default function VideoCardActions({ video, onComment, onLike, onShare, on
     setFollowing(Boolean(video?.user?.isFollowing));
     setLocalShares(video?.shares ?? 0);
     setReposted(Boolean(video?.isReposted));
-  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.bookmarks, video?.shares, video?.isReposted]);
+  }, [videoId, video?.isLiked, video?.user?.isFollowing, video?.isBookmarked, video?.bookmarks, video?.shares, video?.isReposted]);
 
   const promptLogin = (action) => setLoginPrompt({ open: true, action });
 
@@ -98,12 +98,31 @@ export default function VideoCardActions({ video, onComment, onLike, onShare, on
 
   const handleBookmark = async () => {
     if (!isLoggedIn()) { promptLogin('bookmark'); return; }
-    const wasBk = bookmarked;
-    setLocalBookmarks(n => wasBk ? Math.max(0, n - 1) : n + 1);
+    if (bookmarkLoading) return;
+    const wasBk = Boolean(bookmarked);
+    const nextBk = !wasBk;
+    const nextCount = wasBk ? Math.max(0, localBookmarks - 1) : localBookmarks + 1;
+
+    // Optimistic UI updates
+    setLocalBookmarks(nextCount);
+    if (video) {
+      video.isBookmarked = nextBk;
+      video.bookmarks = nextCount;
+    }
+
     const result = await toggleBookmarkDB();
     if (result === null) {
-      setLocalBookmarks(n => wasBk ? n + 1 : Math.max(0, n - 1));
+      // Revert if error
+      setLocalBookmarks(localBookmarks);
+      if (video) {
+        video.isBookmarked = wasBk;
+        video.bookmarks = localBookmarks;
+      }
       return;
+    }
+
+    if (video) {
+      video.isBookmarked = result;
     }
     onBookmark?.(videoId, result);
     if (result) showSuccess('Đã lưu video', 'Thêm vào danh sách lưu');

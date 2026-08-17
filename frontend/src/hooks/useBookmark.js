@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { toggleBookmark as toggleBookmarkApi, checkBookmark } from '../services/bookmarkService';
+import { toggleBookmark as toggleBookmarkApi } from '../services/bookmarkService';
 import { isLoggedIn } from '../utils/helpers';
 
 export function useBookmark(videoId, initialBookmarked = false) {
@@ -10,22 +10,6 @@ export function useBookmark(videoId, initialBookmarked = false) {
     useEffect(() => {
         setBookmarked(initialBookmarked);
     }, [initialBookmarked]);
-
-    // Check actual bookmark status from backend on mount/videoId change
-    useEffect(() => {
-        if (!isLoggedIn() || !videoId) return;
-
-        let isMounted = true;
-        checkBookmark(videoId)
-            .then(val => {
-                if (isMounted) setBookmarked(val);
-            })
-            .catch(() => { });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [videoId]);
 
     const toggle = useCallback(async () => {
         if (!isLoggedIn() || loading) return null;
@@ -44,5 +28,5 @@ export function useBookmark(videoId, initialBookmarked = false) {
         }
     }, [videoId, bookmarked, loading]);
 
-    return { bookmarked, toggle, loading };
+    return { bookmarked, setBookmarked, toggle, loading };
 }
