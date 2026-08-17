@@ -11,11 +11,19 @@ export const BookmarkModel = {
                 'DELETE FROM bookmarks WHERE user_id = ? AND video_id = ?',
                 [userId, videoId]
             );
+            await pool.query(
+                'UPDATE videos SET bookmark_count = GREATEST(0, bookmark_count - 1) WHERE id = ?',
+                [videoId]
+            );
             return false; // removed
         }
         await pool.query(
             'INSERT INTO bookmarks (user_id, video_id) VALUES (?, ?)',
             [userId, videoId]
+        );
+        await pool.query(
+            'UPDATE videos SET bookmark_count = bookmark_count + 1 WHERE id = ?',
+            [videoId]
         );
         return true; // added
     },
@@ -34,8 +42,7 @@ export const BookmarkModel = {
             `SELECT v.*,
               u.id AS user_id, u.username, u.display_name, u.avatar_url, u.role,
               m.id AS music_id, m.title AS music_title, m.artist AS music_artist, m.audio_url, m.cover_url,
-              b.created_at as bookmarked_at,
-              (SELECT COUNT(*) FROM bookmarks WHERE video_id = v.id) AS bookmark_count
+              b.created_at as bookmarked_at
        FROM bookmarks b
        JOIN videos v ON b.video_id = v.id
        JOIN users u ON v.user_id = u.id

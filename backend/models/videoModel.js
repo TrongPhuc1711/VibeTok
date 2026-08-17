@@ -54,65 +54,11 @@ export const normalizeVideo = (v) => {
     };
 };
 
-const buildVideoQuery = (currentUserId = null) => {
-    const escapedId = currentUserId ? pool.escape(currentUserId) : null;
-
-    const followingSubquery = escapedId
-        ? `(SELECT COUNT(*) FROM follows 
-           WHERE follower_id = ${escapedId} 
-           AND following_id = v.user_id) > 0`
-        : `0`;
-
-    const likedSubquery = escapedId
-        ? `(SELECT COUNT(*) FROM likes 
-           WHERE user_id = ${escapedId} 
-           AND video_id = v.id) > 0`
-        : `0`;
-
-    const bookmarkedSubquery = escapedId
-        ? `(SELECT COUNT(*) FROM bookmarks 
-           WHERE user_id = ${escapedId} 
-           AND video_id = v.id) > 0`
-        : `0`;
-
-    const repostedSubquery = escapedId
-        ? `(SELECT COUNT(*) FROM video_reposts 
-           WHERE user_id = ${escapedId} 
-           AND video_id = v.id) > 0`
-        : `0`;
-
-    const bookmarkCountSubquery = `(SELECT COUNT(*) FROM bookmarks WHERE video_id = v.id)`;
-    const repostCountSubquery = `(SELECT COUNT(*) FROM video_reposts WHERE video_id = v.id)`;
-
-    // Subquery: tìm 1 bạn bè (người mà currentUser đang follow) đã repost video này
-    const repostedByFriendUsername = escapedId
-        ? `(SELECT u2.username FROM video_reposts vr2
-           JOIN users u2 ON vr2.user_id = u2.id
-           JOIN follows f2 ON f2.follower_id = ${escapedId} AND f2.following_id = vr2.user_id
-           WHERE vr2.video_id = v.id AND vr2.user_id != ${escapedId}
-           ORDER BY vr2.created_at DESC LIMIT 1)`
-        : `NULL`;
-
-    const repostedByFriendName = escapedId
-        ? `(SELECT u2.display_name FROM video_reposts vr2
-           JOIN users u2 ON vr2.user_id = u2.id
-           JOIN follows f2 ON f2.follower_id = ${escapedId} AND f2.following_id = vr2.user_id
-           WHERE vr2.video_id = v.id AND vr2.user_id != ${escapedId}
-           ORDER BY vr2.created_at DESC LIMIT 1)`
-        : `NULL`;
-
+const buildVideoQuery = () => {
     return `
         SELECT v.*,
             u.id AS user_id, u.username, u.display_name, u.avatar_url, u.role,
-            m.id AS music_id, m.title AS music_title, m.artist AS music_artist, m.audio_url, m.cover_url,
-            (${followingSubquery}) AS is_following,
-            (${likedSubquery}) AS is_liked,
-            (${bookmarkedSubquery}) AS is_bookmarked,
-            (${repostedSubquery}) AS is_reposted,
-            (${bookmarkCountSubquery}) AS bookmark_count,
-            (${repostCountSubquery}) AS reposts_count,
-            (${repostedByFriendUsername}) AS reposted_by_friend_username,
-            (${repostedByFriendName}) AS reposted_by_friend_name
+            m.id AS music_id, m.title AS music_title, m.artist AS music_artist, m.audio_url, m.cover_url
         FROM videos v
         LEFT JOIN users u ON v.user_id = u.id
         LEFT JOIN music m ON v.music_id = m.id
@@ -153,10 +99,97 @@ const enrichVideosWithRedis = async (videos, currentUserId = null) => {
     }
 };
 
+const enrichVideosWithBatchData = async (videos, currentUserId = null) => {
+    if (!videos || videos.length === 0) return;
+
+    // Phase 1: Enrich views & likes count from Redis
+    await enrichVideosWithRedis(videos, currentUserId);
+
+    // Phase 2: If currentUserId is provided, batch fetch interaction states in parallel
+    if (!currentUserId) return;
+
+    try {
+        const videoIds = videos.map(v => Number(v.id)).filter(id => Boolean(id) && !isNaN(id));
+        const authorIds = [...new Set(videos.map(v => Number(v.userId)).filter(id => Boolean(id) && !isNaN(id)))];
+
+        if (videoIds.length === 0) return;
+
+        const [
+            likedRows,
+            bookmarkedRows,
+            repostedRows,
+            followingRows,
+            friendRepostRows
+        ] = await Promise.all([
+            // 1. Liked videos
+            pool.query('SELECT video_id FROM likes WHERE user_id = ? AND video_id IN (?)', [currentUserId, videoIds])
+                .then(([rows]) => new Set(rows.map(r => String(r.video_id))))
+                .catch(() => new Set()),
+
+            // 2. Bookmarked videos
+            pool.query('SELECT video_id FROM bookmarks WHERE user_id = ? AND video_id IN (?)', [currentUserId, videoIds])
+                .then(([rows]) => new Set(rows.map(r => String(r.video_id))))
+                .catch(() => new Set()),
+
+            // 3. Reposted videos
+            pool.query('SELECT video_id FROM video_reposts WHERE user_id = ? AND video_id IN (?)', [currentUserId, videoIds])
+                .then(([rows]) => new Set(rows.map(r => String(r.video_id))))
+                .catch(() => new Set()),
+
+            // 4. Followed authors
+            authorIds.length > 0
+                ? pool.query('SELECT following_id FROM follows WHERE follower_id = ? AND following_id IN (?)', [currentUserId, authorIds])
+                    .then(([rows]) => new Set(rows.map(r => String(r.following_id))))
+                    .catch(() => new Set())
+                : Promise.resolve(new Set()),
+
+            // 5. Friend reposts
+            pool.query(
+                `SELECT vr.video_id, u.username, u.display_name
+                 FROM video_reposts vr
+                 JOIN users u ON vr.user_id = u.id
+                 JOIN follows f ON f.follower_id = ? AND f.following_id = vr.user_id
+                 WHERE vr.video_id IN (?) AND vr.user_id != ?
+                 ORDER BY vr.created_at DESC`,
+                [currentUserId, videoIds, currentUserId]
+            ).then(([rows]) => {
+                const map = new Map();
+                for (const r of rows) {
+                    const key = String(r.video_id);
+                    if (!map.has(key)) {
+                        map.set(key, {
+                            username: r.username,
+                            fullName: r.display_name || r.username
+                        });
+                    }
+                }
+                return map;
+            }).catch(() => new Map())
+        ]);
+
+        videos.forEach(v => {
+            if (likedRows.has(String(v.id))) v.isLiked = true;
+            if (bookmarkedRows.has(String(v.id))) v.isBookmarked = true;
+            if (repostedRows.has(String(v.id))) v.isReposted = true;
+
+            if (followingRows.has(String(v.userId))) {
+                v.isFollowing = true;
+                if (v.user) v.user.isFollowing = true;
+            }
+
+            if (friendRepostRows.has(String(v.id))) {
+                v.repostedByFriend = friendRepostRows.get(String(v.id));
+            }
+        });
+    } catch (err) {
+        console.error('Error enriching videos with batch data:', err);
+    }
+};
+
 export const VideoModel = {
     async getFeed({ page = 1, limit = 5, currentUserId = null, type = 'forYou' } = {}) {
         const offset = (page - 1) * limit;
-        const query = buildVideoQuery(currentUserId);
+        const query = buildVideoQuery();
 
         let whereClause = `WHERE v.privacy = 'public' AND v.is_active = 1 AND v.is_draft = 0 AND v.moderation_status = 'approved'`;
         let countWhere = `WHERE privacy='public' AND is_active=1 AND is_draft=0 AND moderation_status='approved'`;
@@ -182,7 +215,7 @@ export const VideoModel = {
         );
 
         const videos = rows.map(normalizeVideo);
-        await enrichVideosWithRedis(videos, currentUserId);
+        await enrichVideosWithBatchData(videos, currentUserId);
 
         return {
             videos,
@@ -193,7 +226,7 @@ export const VideoModel = {
 
     async getByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
         const offset = (page - 1) * limit;
-        const query = buildVideoQuery(currentUserId);
+        const query = buildVideoQuery();
         const isOwner = currentUserId && String(currentUserId) === String(userId);
 
         let privacyClause = '';
@@ -215,18 +248,18 @@ export const VideoModel = {
             [userId, limit, offset]
         );
         const videos = rows.map(normalizeVideo);
-        await enrichVideosWithRedis(videos, currentUserId);
+        await enrichVideosWithBatchData(videos, currentUserId);
         return videos;
     },
 
     async findById(id) {
         const [rows] = await pool.query(
-            `${buildVideoQuery(null)} WHERE v.id = ? AND v.is_active = 1`,
+            `${buildVideoQuery()} WHERE v.id = ? AND v.is_active = 1`,
             [id]
         );
         const video = normalizeVideo(rows[0]) || null;
         if (video) {
-            await enrichVideosWithRedis([video], null);
+            await enrichVideosWithBatchData([video], null);
         }
         return video;
     },
@@ -234,31 +267,31 @@ export const VideoModel = {
     // Find even if deleted (for cleanup after delete)
     async findDeletedById(id) {
         const [rows] = await pool.query(
-            `${buildVideoQuery(null)} WHERE v.id = ?`,
+            `${buildVideoQuery()} WHERE v.id = ?`,
             [id]
         );
         const video = normalizeVideo(rows[0]) || null;
         if (video) {
-            await enrichVideosWithRedis([video], null);
+            await enrichVideosWithBatchData([video], null);
         }
         return video;
     },
 
     async findByIdWithAuth(id, currentUserId = null) {
         const [rows] = await pool.query(
-            `${buildVideoQuery(currentUserId)} WHERE v.id = ? AND v.is_active = 1`,
+            `${buildVideoQuery()} WHERE v.id = ? AND v.is_active = 1`,
             [id]
         );
         const video = normalizeVideo(rows[0]) || null;
         if (video) {
-            await enrichVideosWithRedis([video], currentUserId);
+            await enrichVideosWithBatchData([video], currentUserId);
         }
         return video;
     },
 
     async search({ q = '', page = 1, limit = 10 } = {}) {
         const offset = (page - 1) * limit;
-        const query = buildVideoQuery(null);
+        const query = buildVideoQuery();
 
         let rows = [];
         if (!q.trim()) {
@@ -280,7 +313,7 @@ export const VideoModel = {
             rows = result;
         }
         const videos = rows.map(normalizeVideo);
-        await enrichVideosWithRedis(videos, null);
+        await enrichVideosWithBatchData(videos, null);
         return videos;
     },
 
@@ -357,7 +390,7 @@ export const VideoModel = {
 
     async getLikedByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
         const offset = (page - 1) * limit;
-        const query = buildVideoQuery(currentUserId || userId);
+        const query = buildVideoQuery();
         const [rows] = await pool.query(
             `${query}
              INNER JOIN likes l ON l.video_id = v.id AND l.user_id = ?
@@ -366,7 +399,7 @@ export const VideoModel = {
             [userId, limit, offset]
         );
         const videos = rows.map(normalizeVideo);
-        await enrichVideosWithRedis(videos, currentUserId || userId);
+        await enrichVideosWithBatchData(videos, currentUserId || userId);
         return videos;
     },
 
@@ -391,6 +424,12 @@ export const VideoModel = {
             'INSERT IGNORE INTO video_reposts (user_id, video_id) VALUES (?, ?)',
             [userId, videoId]
         );
+        if (result.affectedRows > 0) {
+            await pool.query(
+                'UPDATE videos SET reposts_count = reposts_count + 1 WHERE id = ?',
+                [videoId]
+            );
+        }
         return result.affectedRows > 0; // true = mới repost, false = đã repost rồi
     },
 
@@ -399,6 +438,12 @@ export const VideoModel = {
             'DELETE FROM video_reposts WHERE user_id = ? AND video_id = ?',
             [userId, videoId]
         );
+        if (result.affectedRows > 0) {
+            await pool.query(
+                'UPDATE videos SET reposts_count = GREATEST(0, reposts_count - 1) WHERE id = ?',
+                [videoId]
+            );
+        }
         return result.affectedRows > 0;
     },
 
@@ -412,7 +457,7 @@ export const VideoModel = {
 
     async getRepostsByUserId(userId, { page = 1, limit = 12, currentUserId = null } = {}) {
         const offset = (page - 1) * limit;
-        const query = buildVideoQuery(currentUserId || userId);
+        const query = buildVideoQuery();
         const [rows] = await pool.query(
             `${query}
              INNER JOIN video_reposts vr ON vr.video_id = v.id AND vr.user_id = ?
@@ -421,7 +466,7 @@ export const VideoModel = {
             [userId, limit, offset]
         );
         const videos = rows.map(normalizeVideo);
-        await enrichVideosWithRedis(videos, currentUserId || userId);
+        await enrichVideosWithBatchData(videos, currentUserId || userId);
         return videos;
     },
 
