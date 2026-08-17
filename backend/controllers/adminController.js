@@ -109,6 +109,30 @@ export const unbanUser = async (req, res) => {
     }
 };
 
+// PATCH /api/admin/users/:id/temp-ban
+export const tempBanUser = async (req, res) => {
+    try {
+        const { duration, reason } = req.body;
+        if (!duration || ![30, 60, 360, 1440].includes(Number(duration))) {
+            return res.status(400).json({ message: 'Thời gian vô hiệu hóa không hợp lệ! (30, 60, 360, 1440 phút)' });
+        }
+        // Không cho ban chính mình
+        if (String(req.params.id) === String(req.user.id)) {
+            return res.status(400).json({ message: 'Không thể vô hiệu hóa chính mình!' });
+        }
+        const ok = await AdminModel.tempBanUser(req.params.id, Number(duration), reason || null);
+        if (!ok) return res.status(404).json({ message: 'Người dùng không tồn tại hoặc là admin' });
+
+        const durationLabels = { 30: '30 phút', 60: '1 giờ', 360: '6 giờ', 1440: '24 giờ' };
+        const label = durationLabels[Number(duration)] || `${duration} phút`;
+
+        res.json({ message: `Đã vô hiệu hóa tài khoản trong ${label}` });
+    } catch (e) {
+        console.error('Admin tempBanUser error:', e);
+        res.status(500).json({ message: 'Lỗi vô hiệu hóa tạm thời', error: e.message });
+    }
+};
+
 // GET /api/admin/videos?status=all&search=&page=1&limit=12
 export const getVideos = async (req, res) => {
     try {

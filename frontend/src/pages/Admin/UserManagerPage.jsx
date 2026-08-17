@@ -8,7 +8,7 @@ import AdminPagination from './components/AdminPagination';
 import { BounceDots } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
 import Avatar from '../../components/common/Avatar/avatar';
-import { getUsers, getUserCounts, banUser, unbanUser, resetUserPassword } from '../../services/adminService';
+import { getUsers, getUserCounts, banUser, unbanUser, tempBanUser, resetUserPassword } from '../../services/adminService';
 
 const fmt = (n) => {
     n = Number(n) || 0;
@@ -156,6 +156,145 @@ function PasswordResetModal({ user, onClose, onSuccess }) {
     );
 }
 
+// ═══════ Temp Ban Modal ═══════
+const TEMP_BAN_DURATIONS = [
+    { label: '30 phút', value: 30 },
+    { label: '1 giờ', value: 60 },
+    { label: '6 giờ', value: 360 },
+    { label: '24 giờ', value: 1440 },
+    { label: 'Vĩnh viễn', value: -1 },
+];
+
+function TempBanModal({ user, onClose, onSuccess }) {
+    const [duration, setDuration] = useState(null);
+    const [reason, setReason] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { showSuccess, showError } = useToast();
+
+    const handleSubmit = async () => {
+        if (!duration) return;
+        setLoading(true);
+        try {
+            if (duration === -1) {
+                // Ban vĩnh viễn
+                await banUser(user.id);
+                showSuccess('Thành công', `Đã ban vĩnh viễn ${user.name}`);
+            } else {
+                await tempBanUser(user.id, duration, reason.trim() || null);
+                const label = TEMP_BAN_DURATIONS.find(d => d.value === duration)?.label || `${duration} phút`;
+                showSuccess('Thành công', `Đã vô hiệu hóa ${user.name} trong ${label}`);
+            }
+            onSuccess();
+            onClose();
+        } catch (e) {
+            showError('Lỗi', e.response?.data?.message || 'Không thể vô hiệu hóa tài khoản');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: 'var(--vt-backdrop)', backdropFilter: 'blur(4px)' }}
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div
+                className="w-[460px] rounded-2xl border overflow-hidden"
+                style={{
+                    background: 'var(--vt-card)',
+                    borderColor: 'var(--color-border)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                }}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                    <div>
+                        <h3 className="text-[15px] font-display font-bold m-0" style={{ color: 'var(--color-text-primary)' }}>Vô hiệu hóa tạm thời</h3>
+                        <p className="text-[11px] font-body mt-0.5 m-0" style={{ color: 'var(--color-text-muted)' }}>Người dùng: {user.name} ({user.username})</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="px-5 py-4">
+                    <p className="text-[12px] font-body mb-3" style={{ color: 'var(--color-text-secondary)' }}>Chọn thời gian vô hiệu hóa:</p>
+
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                        {TEMP_BAN_DURATIONS.map(d => (
+                            <button
+                                key={d.value}
+                                onClick={() => setDuration(d.value)}
+                                className={`px-4 py-3 rounded-xl text-[13px] font-body font-semibold transition-all cursor-pointer border ${
+                                    d.value === -1 ? 'col-span-2' : ''
+                                } ${
+                                    duration === d.value
+                                        ? 'text-white'
+                                        : 'bg-transparent hover:bg-black/5 dark:hover:bg-white/[0.03]'
+                                }`}
+                                style={{
+                                    background: duration === d.value
+                                        ? (d.value === -1 ? 'linear-gradient(135deg, #dc2626, #991b1b)' : 'linear-gradient(135deg, #f97316, #ef4444)')
+                                        : (d.value === -1 ? 'rgba(239, 68, 68, 0.08)' : undefined),
+                                    borderColor: duration === d.value ? 'transparent' : (d.value === -1 ? 'rgba(239, 68, 68, 0.3)' : 'var(--color-border)'),
+                                    color: duration === d.value ? '#fff' : (d.value === -1 ? '#ef4444' : 'var(--color-text-primary)'),
+                                    boxShadow: duration === d.value ? (d.value === -1 ? '0 4px 16px rgba(220, 38, 38, 0.3)' : '0 4px 16px rgba(249, 115, 22, 0.3)') : 'none',
+                                }}
+                            >
+                                {d.value === -1 ? '⛔ ' : ''}{d.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Reason */}
+                    <div>
+                        <label className="block text-[11px] font-body mb-1" style={{ color: 'var(--color-text-secondary)' }}>Lý do (tùy chọn)</label>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Nhập lý do vô hiệu hóa..."
+                            rows={2}
+                            className="w-full rounded-lg px-3 py-2 text-[12px] font-body outline-none transition-colors resize-none"
+                            style={{
+                                background: 'var(--vt-input)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-primary)',
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-lg text-[12px] font-body bg-transparent border cursor-pointer transition-colors"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading || !duration}
+                        className="px-4 py-2 rounded-lg text-[12px] font-body font-semibold text-white cursor-pointer border-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ background: loading || !duration ? '#888' : 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                    >
+                        {loading ? 'Đang xử lý...' : 'Vô hiệu hóa'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function UserManagerPage() {
     const { showSuccess, showError } = useToast();
     const [users, setUsers] = useState([]);
@@ -168,6 +307,7 @@ export default function UserManagerPage() {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
     const [resetPasswordUser, setResetPasswordUser] = useState(null);
+    const [tempBanModalUser, setTempBanModalUser] = useState(null);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -281,20 +421,30 @@ export default function UserManagerPage() {
                                     <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{fmt(u.followers)}</td>
                                     <td className="px-4 py-3 text-[11px] font-body" style={{ color: 'var(--color-text-secondary)' }}>{u.videos}</td>
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-1 flex-wrap">
-                                            <StatusBadge status={u.status} />
-                                            {u.role === 'creator' && <StatusBadge status="creator" />}
-                                            {u.role === 'admin' && <StatusBadge status="active" label="Admin" />}
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1 flex-wrap">
+                                                <StatusBadge status={u.status} />
+                                                {u.role === 'creator' && <StatusBadge status="creator" />}
+                                                {u.role === 'admin' && <StatusBadge status="active" label="Admin" />}
+                                            </div>
+                                            {u.bannedUntil && (
+                                                <p className="text-[9px] font-body font-medium" style={{ color: 'var(--color-text-muted)' }}>Đến: {u.bannedUntil}</p>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="flex gap-1">
+                                        <div className="flex gap-1 flex-wrap">
                                             {u.status === 'active' && u.role !== 'admin' && (
-                                                <AdminBtn label="Ban" bg="#f59e0b22" color="#f59e0b"
-                                                    onClick={() => handleBan(u.id)}
-                                                    disabled={actionLoading === u.id} />
+                                                <>
+                                                    <AdminBtn label="Ban" bg="#f59e0b22" color="#f59e0b"
+                                                        onClick={() => handleBan(u.id)}
+                                                        disabled={actionLoading === u.id} />
+                                                    <AdminBtn label="Vô hiệu hóa" bg="#f9731622" color="#f97316"
+                                                        onClick={() => setTempBanModalUser(u)}
+                                                        disabled={actionLoading === u.id} />
+                                                </>
                                             )}
-                                            {u.status === 'banned' && (
+                                            {(u.status === 'banned' || u.status === 'temp_banned') && (
                                                 <AdminBtn label="Unban" bg="#10b98122" color="#10b981"
                                                     onClick={() => handleUnban(u.id)}
                                                     disabled={actionLoading === u.id} />
@@ -326,6 +476,15 @@ export default function UserManagerPage() {
                     user={resetPasswordUser}
                     onClose={() => setResetPasswordUser(null)}
                     onSuccess={() => fetchUsers()}
+                />
+            )}
+
+            {/* Temp Ban Modal */}
+            {tempBanModalUser && (
+                <TempBanModal
+                    user={tempBanModalUser}
+                    onClose={() => setTempBanModalUser(null)}
+                    onSuccess={() => { fetchUsers(); fetchCounts(); }}
                 />
             )}
         </AdminLayout>

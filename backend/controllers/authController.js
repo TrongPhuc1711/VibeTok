@@ -122,6 +122,35 @@ export const login = async (req, res) => {
             });
         }
 
+        // Kiểm tra vô hiệu hóa tạm thời (temp ban)
+        if (user.banned_until) {
+            const bannedUntil = new Date(user.banned_until);
+            if (bannedUntil > new Date()) {
+                const remainMs = bannedUntil.getTime() - Date.now();
+                const remainMins = Math.ceil(remainMs / 60000);
+                let remainLabel;
+                if (remainMins >= 60) {
+                    const h = Math.floor(remainMins / 60);
+                    const m = remainMins % 60;
+                    remainLabel = m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`;
+                } else {
+                    remainLabel = `${remainMins} phút`;
+                }
+                return res.status(403).json({
+                    message: `Tài khoản của bạn đã bị vô hiệu hóa tạm thời. Còn lại: ${remainLabel}.${user.ban_reason ? ` Lý do: ${user.ban_reason}` : ''}`,
+                    banned: true,
+                    tempBan: true,
+                    bannedUntil: user.banned_until,
+                });
+            } else {
+                // Hết hạn → tự động mở khóa
+                await pool.query(
+                    'UPDATE users SET banned_until = NULL, ban_reason = NULL WHERE id = ?',
+                    [user.id]
+                );
+            }
+        }
+
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role },
             getJwtSecret(),

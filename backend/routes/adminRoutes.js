@@ -3,7 +3,7 @@ import { verifyToken, requireAdmin } from '../middlewares/authMiddleware.js';
 import { uploadMusicFiles } from '../middlewares/uploadMiddleware.js';
 import {
     getStats, getUserGrowth, getContentDistribution, getTopCreators,
-    getUsers, getUserCounts, banUser, unbanUser, resetUserPassword,
+    getUsers, getUserCounts, banUser, unbanUser, tempBanUser, resetUserPassword,
     getVideos, getVideoCounts, hideVideo, restoreVideo, approveVideo,
     getViewsPerDay, getSidebarCounts,
     getMusic, getMusicCounts, createMusic, updateMusic, deleteMusic, toggleMusicTrending,
@@ -29,6 +29,7 @@ router.get('/users', getUsers);
 router.get('/user-counts', getUserCounts);
 router.patch('/users/:id/ban', banUser);
 router.patch('/users/:id/unban', unbanUser);
+router.patch('/users/:id/temp-ban', tempBanUser);
 router.patch('/users/:id/reset-password', resetUserPassword);
 
 // Videos

@@ -14,6 +14,7 @@ export const getUsers = (params) => api.get(`${BASE}/users`, { params }).then(r 
 export const getUserCounts = () => api.get(`${BASE}/user-counts`).then(r => r.data.counts);
 export const banUser = (id) => api.patch(`${BASE}/users/${id}/ban`);
 export const unbanUser = (id) => api.patch(`${BASE}/users/${id}/unban`);
+export const tempBanUser = (id, duration, reason) => api.patch(`${BASE}/users/${id}/temp-ban`, { duration, reason });
 export const resetUserPassword = (id, new_password) => api.patch(`${BASE}/users/${id}/reset-password`, { new_password });
 
 // Videos 

@@ -131,8 +131,8 @@ export const AdminModel = {
         const params = [];
         const wheres = [];
 
-        if (filter === 'active') wheres.push('u.is_active = 1');
-        if (filter === 'banned') wheres.push('u.is_active = 0');
+        if (filter === 'active') wheres.push('u.is_active = 1 AND (u.banned_until IS NULL OR u.banned_until <= NOW())');
+        if (filter === 'banned') wheres.push('(u.is_active = 0 OR (u.banned_until IS NOT NULL AND u.banned_until > NOW()))');
         if (filter === 'creator') wheres.push("u.role = 'creator'");
         if (filter === 'admin') wheres.push("u.role = 'admin'");
 
@@ -153,7 +153,7 @@ export const AdminModel = {
         const [rows] = await pool.query(`
             SELECT u.id, u.username, u.display_name, u.email, u.avatar_url,
                    u.role, u.followers, u.total_videos, u.is_active,
-                   u.is_verified, u.created_at
+                   u.is_verified, u.created_at, u.banned_until, u.ban_reason
             FROM users u
             ${whereClause}
             ORDER BY u.created_at DESC
@@ -165,6 +165,7 @@ export const AdminModel = {
         const users = rows.map((u, i) => {
             const fullName = u.display_name || u.username;
             const initials = fullName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
+            const isTempBanned = u.banned_until && new Date(u.banned_until) > new Date();
             return {
                 id: String(u.id),
                 name: fullName,
@@ -176,9 +177,11 @@ export const AdminModel = {
                 joinDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '',
                 followers: Number(u.followers),
                 videos: Number(u.total_videos),
-                status: u.is_active ? 'active' : 'banned',
+                status: isTempBanned ? 'temp_banned' : (u.is_active ? 'active' : 'banned'),
                 role: u.role,
                 verified: Boolean(u.is_verified),
+                bannedUntil: u.banned_until || null,
+                banReason: u.ban_reason || null,
             };
         });
 
@@ -193,10 +196,11 @@ export const AdminModel = {
     //  User counts (cho sidebar badges) 
     async getUserCounts() {
         const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM users');
-        const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM users WHERE is_active = 1');
+        const [[{ active }]] = await pool.query('SELECT COUNT(*) AS active FROM users WHERE is_active = 1 AND (banned_until IS NULL OR banned_until <= NOW())');
         const [[{ banned }]] = await pool.query('SELECT COUNT(*) AS banned FROM users WHERE is_active = 0');
+        const [[{ temp_banned }]] = await pool.query('SELECT COUNT(*) AS temp_banned FROM users WHERE banned_until IS NOT NULL AND banned_until > NOW()');
         const [[{ creator }]] = await pool.query("SELECT COUNT(*) AS creator FROM users WHERE role = 'creator' AND is_active = 1");
-        return { all: total, active, banned, creator };
+        return { all: total, active, banned: banned + temp_banned, creator };
     },
 
     //  Ban / Unban 
@@ -210,8 +214,21 @@ export const AdminModel = {
 
     async unbanUser(userId) {
         const [result] = await pool.query(
-            'UPDATE users SET is_active = 1 WHERE id = ?',
+            'UPDATE users SET is_active = 1, banned_until = NULL, ban_reason = NULL WHERE id = ?',
             [userId]
+        );
+        return result.affectedRows > 0;
+    },
+
+    // Temporary Ban (vô hiệu hóa tạm thời)
+    async tempBanUser(userId, durationMinutes, reason = null) {
+        // Kiểm tra không phải admin
+        const [users] = await pool.query('SELECT id, role FROM users WHERE id = ?', [userId]);
+        if (users.length === 0 || users[0].role === 'admin') return false;
+
+        const [result] = await pool.query(
+            'UPDATE users SET banned_until = DATE_ADD(NOW(), INTERVAL ? MINUTE), ban_reason = ? WHERE id = ? AND role != ?',
+            [durationMinutes, reason, userId, 'admin']
         );
         return result.affectedRows > 0;
     },
@@ -260,7 +277,7 @@ export const AdminModel = {
         );
 
         const [rows] = await pool.query(`
-            SELECT v.id, v.title, v.description, v.video_url, v.thumbnail_url,
+            SELECT v.id, v.user_id, v.title, v.description, v.video_url, v.thumbnail_url,
                    v.duration_seconds, v.privacy, v.views_count, v.likes_count,
                    v.comments_count, v.is_active, v.is_draft, v.created_at,
                    v.moderation_status, v.rejection_reason,
@@ -282,6 +299,7 @@ export const AdminModel = {
             const secs = duration % 60;
             return {
                 id: String(v.id),
+                userId: String(v.user_id),
                 title: v.title || v.description || 'Không có tiêu đề',
                 creator: creatorName,
                 username: `@${v.username || ''}`,
