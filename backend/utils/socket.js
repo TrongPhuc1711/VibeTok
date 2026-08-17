@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import pool from '../config/db.js';
 
 let io;
 
@@ -9,7 +10,48 @@ const onlineUsers = new Map();
 // userId → ISO timestamp (lần cuối offline)
 const lastSeenMap = new Map();
 
-const markUserOnline = (userId, socketId) => {
+export const getOnlineUsersCount = () => {
+    let count = 0;
+    for (const [, sockets] of onlineUsers.entries()) {
+        if (sockets && sockets.size > 0) count++;
+    }
+    return count;
+};
+
+export const getOnlineUsersList = async () => {
+    const onlineIds = [];
+    for (const [uid, sockets] of onlineUsers.entries()) {
+        if (sockets && sockets.size > 0) {
+            onlineIds.push(uid);
+        }
+    }
+    if (onlineIds.length === 0) return [];
+
+    try {
+        const [rows] = await pool.query(`
+            SELECT id, username, display_name, email, avatar_url, role, is_verified, created_at
+            FROM users
+            WHERE id IN (?) AND is_active = 1
+        `, [onlineIds]);
+
+        return rows.map(u => ({
+            id: String(u.id),
+            name: u.display_name || u.username,
+            username: `@${u.username}`,
+            email: u.email,
+            avatar: u.avatar_url || null,
+            role: u.role || 'user',
+            verified: Boolean(u.is_verified),
+            tabsCount: onlineUsers.get(String(u.id))?.size || 1,
+            joinedDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '',
+        }));
+    } catch (e) {
+        console.error('[Socket] getOnlineUsersList error:', e.message);
+        return [];
+    }
+};
+
+const markUserOnline = async (userId, socketId) => {
     const uid = String(userId);
     if (!onlineUsers.has(uid)) {
         onlineUsers.set(uid, new Set());
@@ -20,6 +62,33 @@ const markUserOnline = (userId, socketId) => {
     if (wasOffline && io) {
         // Broadcast cho tất cả clients biết user này vừa online
         io.emit('user_online', { userId: uid });
+
+        // Broadcast realtime update cho Admin
+        try {
+            const [rows] = await pool.query(
+                'SELECT id, username, display_name, email, avatar_url, role, is_verified, created_at FROM users WHERE id = ?',
+                [uid]
+            );
+            if (rows && rows[0]) {
+                const u = rows[0];
+                io.emit('admin_user_online', {
+                    user: {
+                        id: String(u.id),
+                        name: u.display_name || u.username,
+                        username: `@${u.username}`,
+                        email: u.email,
+                        avatar: u.avatar_url || null,
+                        role: u.role || 'user',
+                        verified: Boolean(u.is_verified),
+                        tabsCount: 1,
+                        joinedDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '',
+                    },
+                    totalOnline: getOnlineUsersCount(),
+                });
+            }
+        } catch (e) {
+            console.error('[Socket] admin_user_online error:', e.message);
+        }
     }
 };
 
@@ -35,6 +104,11 @@ const markUserOffline = (userId, socketId) => {
         lastSeenMap.set(uid, now);
         if (io) {
             io.emit('user_offline', { userId: uid, lastSeen: now });
+            io.emit('admin_user_offline', {
+                userId: uid,
+                totalOnline: getOnlineUsersCount(),
+                lastSeen: now,
+            });
         }
     }
 };
@@ -123,6 +197,16 @@ export const initSocket = (server) => {
                 };
             });
             callback(result);
+        });
+
+        // ── Admin yêu cầu danh sách tất cả users đang online ──
+        socket.on('admin_get_online_users', async (callback) => {
+            if (typeof callback !== 'function') return;
+            const users = await getOnlineUsersList();
+            callback({
+                totalOnline: getOnlineUsersCount(),
+                users,
+            });
         });
 
         // ── Typing indicators ──

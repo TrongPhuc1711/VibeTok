@@ -7,6 +7,8 @@ export const getStats = () => api.get(`${BASE}/stats`).then(r => r.data.stats);
 export const getUserGrowth = (days = 12) => api.get(`${BASE}/user-growth`, { params: { days } }).then(r => r.data.data);
 export const getContentDistribution = () => api.get(`${BASE}/content-distribution`).then(r => r.data.data);
 export const getTopCreators = (limit = 5) => api.get(`${BASE}/top-creators`, { params: { limit } }).then(r => r.data.data);
+export const getSearchTrends = (limit = 5) => api.get(`${BASE}/search-trends`, { params: { limit } }).then(r => r.data.data);
+export const getAdminOnlineUsers = () => api.get(`${BASE}/online-users`).then(r => r.data);
 export const getSidebarCounts = () => api.get(`${BASE}/sidebar-counts`).then(r => r.data.counts);
 
 // Users 

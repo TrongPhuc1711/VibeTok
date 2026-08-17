@@ -1,4 +1,5 @@
 import { MusicModel, HashtagModel, CategoryModel } from '../models/contentModel.js';
+import { recordSearchQuery } from '../utils/searchHelper.js';
 
 // Music Controller
 // GET /api/music
@@ -28,6 +29,9 @@ export const getTrendingHashtags = async (req, res) => {
 export const searchHashtags = async (req, res) => {
     try {
         const { q = '', limit = 5 } = req.query;
+        if (q) {
+            recordSearchQuery(q).catch(() => {});
+        }
         const hashtags = await HashtagModel.search(q, Number(limit));
         res.json({ hashtags });
     } catch (e) {

@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import redis from '../config/redis.js';
 
 export const AdminModel = {
 
@@ -513,6 +514,134 @@ export const AdminModel = {
         const newVal = rows[0].is_trending ? 0 : 1;
         await pool.query('UPDATE music SET is_trending = ? WHERE id = ?', [newVal, id]);
         return newVal === 1;
+    },
+
+    // Top Trending Search Keywords & Videos
+    async getSearchTrends(limit = 5) {
+        let keywords = [];
+
+        // 1. Đọc từ khóa hot từ Redis Sorted Set
+        try {
+            if (redis && (redis.status === 'ready' || redis.status === 'connect')) {
+                const raw = await redis.zrevrange('admin:trending_searches', 0, limit - 1, 'WITHSCORES');
+                for (let i = 0; i < raw.length; i += 2) {
+                    const keyword = raw[i];
+                    const count = Number(raw[i + 1]) || 0;
+                    if (keyword) {
+                        keywords.push({
+                            name: keyword.startsWith('#') ? keyword : `#${keyword}`,
+                            rawName: keyword,
+                            count,
+                            type: 'search',
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Redis getSearchTrends error:', e.message);
+        }
+
+        // 2. Fallback / Bổ sung từ bảng hashtags nếu Redis chưa đủ dữ liệu
+        if (keywords.length < limit) {
+            const existingNames = new Set(keywords.map(k => k.rawName.toLowerCase()));
+            try {
+                const [hashtagRows] = await pool.query(`
+                    SELECT name, total_videos, is_trending
+                    FROM hashtags
+                    ORDER BY total_videos DESC, is_trending DESC
+                    LIMIT ?
+                `, [limit + 5]);
+
+                for (const h of hashtagRows) {
+                    if (keywords.length >= limit) break;
+                    if (!existingNames.has(h.name.toLowerCase())) {
+                        keywords.push({
+                            name: `#${h.name}`,
+                            rawName: h.name,
+                            count: Number(h.total_videos) || 1,
+                            type: 'hashtag',
+                        });
+                        existingNames.add(h.name.toLowerCase());
+                    }
+                }
+            } catch (err) {
+                console.error('Hashtag fallback error:', err.message);
+            }
+        }
+
+        // Nếu vẫn trống (trường hợp DB trắng), thêm các chủ đề mặc định
+        if (keywords.length === 0) {
+            const defaults = ['vibes', 'dance', 'trend', 'music', 'funny'];
+            keywords = defaults.slice(0, limit).map((d, i) => ({
+                name: `#${d}`,
+                rawName: d,
+                count: (5 - i) * 10,
+                type: 'default',
+            }));
+        }
+
+        // Tính % relative popularity
+        const maxCount = Math.max(...keywords.map(k => k.count), 1);
+        keywords = keywords.map((k, index) => ({
+            ...k,
+            rank: index + 1,
+            percent: Math.max(20, Math.round((k.count / maxCount) * 100)),
+            displayCount: AdminModel._fmt(k.count),
+        }));
+
+        // 3. Lấy Top Videos thịnh hành / được quan tâm nhiều nhất
+        let videos = [];
+        try {
+            const [videoRows] = await pool.query(`
+                SELECT v.id, v.title, v.description, v.thumbnail_url, v.video_url,
+                       v.views_count, v.likes_count, v.comments_count, v.duration_seconds, v.created_at,
+                       u.id AS user_id, u.username, u.display_name, u.avatar_url
+                FROM videos v
+                LEFT JOIN users u ON v.user_id = u.id
+                WHERE v.is_active = 1 
+                  AND v.is_draft = 0 
+                  AND (v.moderation_status IS NULL OR v.moderation_status != 'rejected')
+                ORDER BY (v.views_count * 2 + v.likes_count * 3 + v.comments_count * 2) DESC, v.views_count DESC, v.id DESC
+                LIMIT ?
+            `, [limit]);
+
+            const COLORS = ['#ff2d78', '#ff6b35', '#f59e0b', '#06b6d4', '#7c3aed', '#10b981'];
+
+            videos = videoRows.map((v, i) => {
+                const creatorName = v.display_name || v.username || 'Creator';
+                const initials = creatorName.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'U';
+                const duration = v.duration_seconds || 0;
+                const mins = Math.floor(duration / 60);
+                const secs = duration % 60;
+                return {
+                    id: String(v.id),
+                    rank: i + 1,
+                    title: v.title || v.description || 'Video thịnh hành',
+                    thumbnail: v.thumbnail_url,
+                    videoUrl: v.video_url,
+                    duration: `${mins}:${String(secs).padStart(2, '0')}`,
+                    views: AdminModel._fmt(v.views_count),
+                    likes: AdminModel._fmt(v.likes_count),
+                    comments: AdminModel._fmt(v.comments_count),
+                    rawViews: Number(v.views_count) || 0,
+                    creator: {
+                        id: String(v.user_id),
+                        name: creatorName,
+                        username: `@${v.username || ''}`,
+                        avatar: v.avatar_url || null,
+                        initials,
+                        color: COLORS[i % COLORS.length],
+                    }
+                };
+            });
+        } catch (err) {
+            console.error('getSearchTrends videos error:', err.message);
+        }
+
+        return {
+            keywords,
+            videos,
+        };
     },
 
     //  Helpers 

@@ -7,6 +7,7 @@ import { triggerNotification } from './notificationController.js';
 import { addModerationJob } from '../services/moderationQueue.js';
 import { createReport, hasUserReported } from '../models/reportModel.js';
 import { checkBannedKeywords } from '../utils/systemSettingsHelper.js';
+import { recordSearchQuery } from '../utils/searchHelper.js';
 
 
 // GET /api/videos/feed
@@ -34,6 +35,9 @@ export const getFeed = async (req, res) => {
 export const searchVideos = async (req, res) => {
     try {
         const q = (req.query.q || '').trim().slice(0, 100);
+        if (q) {
+            recordSearchQuery(q).catch(() => {});
+        }
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
         const videos = await VideoModel.search({ q, page, limit });

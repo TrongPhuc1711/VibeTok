@@ -2,7 +2,8 @@ import express from 'express';
 import { verifyToken, requireAdmin } from '../middlewares/authMiddleware.js';
 import { uploadMusicFiles } from '../middlewares/uploadMiddleware.js';
 import {
-    getStats, getUserGrowth, getContentDistribution, getTopCreators,
+    getStats, getUserGrowth, getContentDistribution, getTopCreators, getSearchTrends,
+    getAdminOnlineUsers,
     getUsers, getUserCounts, banUser, unbanUser, tempBanUser, resetUserPassword,
     getVideos, getVideoCounts, hideVideo, restoreVideo, approveVideo,
     getViewsPerDay, getSidebarCounts,
@@ -22,6 +23,8 @@ router.get('/stats', getStats);
 router.get('/user-growth', getUserGrowth);
 router.get('/content-distribution', getContentDistribution);
 router.get('/top-creators', getTopCreators);
+router.get('/search-trends', getSearchTrends);
+router.get('/online-users', getAdminOnlineUsers);
 router.get('/sidebar-counts', getSidebarCounts);
 
 // Users

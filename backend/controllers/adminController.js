@@ -6,6 +6,7 @@ import { AdminModel } from '../models/adminModel.js';
 import { readSettingsFile, writeSettingsFile } from '../utils/systemSettingsHelper.js';
 import { triggerNotification } from './notificationController.js';
 import { syncTrendingMusicFromAudius } from '../services/audiusSyncService.js';
+import { getOnlineUsersList, getOnlineUsersCount } from '../utils/socket.js';
 
 
 // GET /api/admin/stats
@@ -51,6 +52,32 @@ export const getTopCreators = async (req, res) => {
     } catch (e) {
         console.error('Admin getTopCreators error:', e);
         res.status(500).json({ message: 'Lỗi lấy top creators', error: e.message });
+    }
+};
+
+// GET /api/admin/search-trends?limit=5
+export const getSearchTrends = async (req, res) => {
+    try {
+        const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
+        const data = await AdminModel.getSearchTrends(limit);
+        res.json({ data });
+    } catch (e) {
+        console.error('Admin getSearchTrends error:', e);
+        res.status(500).json({ message: 'Lỗi lấy xu hướng tìm kiếm', error: e.message });
+    }
+};
+
+// GET /api/admin/online-users
+export const getAdminOnlineUsers = async (req, res) => {
+    try {
+        const users = await getOnlineUsersList();
+        res.json({
+            totalOnline: getOnlineUsersCount(),
+            users,
+        });
+    } catch (e) {
+        console.error('Admin getAdminOnlineUsers error:', e);
+        res.status(500).json({ message: 'Lỗi lấy danh sách người dùng online', error: e.message });
     }
 };
 

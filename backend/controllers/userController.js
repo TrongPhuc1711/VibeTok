@@ -2,6 +2,7 @@ import { UserModel, normalizeUser } from '../models/userModel.js';
 import { FollowModel } from '../models/follow/followLikeModel.js';
 import pool from '../config/db.js';
 import axios from 'axios';
+import { recordSearchQuery } from '../utils/searchHelper.js';
 
 // GET /api/users/:username
 export const getUserProfile = async (req, res) => {
@@ -59,6 +60,8 @@ export const searchUsers = async (req, res) => {
     try {
         const { q = '', limit = 10 } = req.query;
         if (!q.trim()) return res.json({ users: [] });
+
+        recordSearchQuery(q).catch(() => {});
 
         const currentUserRole = req.user?.role ?? null;
         const rows = await UserModel.search(
