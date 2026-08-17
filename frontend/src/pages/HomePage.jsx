@@ -150,6 +150,19 @@ export default function HomePage({ feedType = 'forYou' }) {
         if (!el || isMobile) return;
 
         const handler = (e) => {
+            // Ignore scroll if event originates inside comment panel or if share sheet/modal is open
+            if (
+                document.querySelector('[data-share-open="true"]') ||
+                document.querySelector('[data-modal-scroll-lock="true"]') ||
+                e.target?.closest?.('.comment-panel-container') ||
+                e.target?.closest?.('[data-no-video-scroll="true"]')
+            ) {
+                return;
+            }
+
+            // Lọc micro-scrolls (chạm nhẹ trên touchpad hoặc cuộn chuột lăn nhỏ)
+            if (Math.abs(e.deltaY) < 15) return;
+
             e.preventDefault();
             if (scrollLockRef.current) return;
 
@@ -158,7 +171,7 @@ export default function HomePage({ feedType = 'forYou' }) {
 
             setTimeout(() => {
                 scrollLockRef.current = false;
-            }, 700);
+            }, 450);
         };
 
         el.addEventListener('wheel', handler, { passive: false });
@@ -260,7 +273,8 @@ export default function HomePage({ feedType = 'forYou' }) {
                             {/* Comment panel */}
                             {showComments && (
                                 <div
-                                    className="w-[420px] h-full shrink-0 shadow-2xl z-40"
+                                    className="w-[420px] h-full shrink-0 shadow-2xl z-40 comment-panel-container"
+                                    data-no-video-scroll="true"
                                     style={{
                                         background: isDark ? '#121212' : '#ffffff',
                                         borderLeft: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
@@ -271,6 +285,7 @@ export default function HomePage({ feedType = 'forYou' }) {
                                         videoId={commentVideoId}
                                         totalComments={current.comments}
                                         onClose={() => setCommentVideoId(null)}
+                                        isInline
                                     />
                                 </div>
                             )}

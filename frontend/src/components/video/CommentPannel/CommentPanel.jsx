@@ -11,7 +11,7 @@ import MentionDropdown from './MentionDropdown';
 import Avatar from '../../common/Avatar/avatar';
 
 
-export default function CommentPanel({ videoId, totalComments, onClose }) {
+export default function CommentPanel({ videoId, totalComments, onClose, isInline = false }) {
   const me = getStoredUser();
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
@@ -29,8 +29,24 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
   const [mentions, setMentions] = useState([]); // collected mentions for submit
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const panelRef = useRef(null);
   const submittingRef = useRef(false);
   const mentionTimerRef = useRef(null);
+
+  // Dừng lan truyền sự kiện lăn chuột lên HomePage để không bị đổi video khi cuộn bình luận
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+
+    const stopNativeWheel = (e) => {
+      e.stopPropagation();
+    };
+
+    el.addEventListener('wheel', stopNativeWheel, { passive: true });
+    return () => {
+      el.removeEventListener('wheel', stopNativeWheel);
+    };
+  }, []);
 
   // animation mount
   useEffect(() => {
@@ -40,6 +56,10 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
   useEffect(() => {
     if (!videoId) return;
     setLoading(true);
+    setInput('');
+    setReplyTo(null);
+    setMentions([]);
+    setError('');
     getComments(videoId)
       .then((r) => setComments(r.data.comments || []))
       .catch(() => setComments([]))
@@ -201,26 +221,31 @@ export default function CommentPanel({ videoId, totalComments, onClose }) {
 
   return (
     <>
-      {/* Backdrop mờ */}
-      <div
-        className="fixed inset-0 z-40"
-        onClick={handleClose}
-        style={{ background: 'transparent' }}
-      />
+      {/* Backdrop mờ - chỉ hiển thị khi không ở dạng inline side-panel */}
+      {!isInline && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={handleClose}
+          style={{ background: 'transparent' }}
+        />
+      )}
 
       {/* Panel */}
       <div
-        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col"
+        ref={panelRef}
+        className={`${isInline ? 'relative w-full h-full flex flex-col' : 'fixed right-0 top-0 bottom-0 z-50 flex flex-col'} comment-panel-container`}
+        data-no-video-scroll="true"
         style={{
-          width: 420,
+          width: isInline ? '100%' : 420,
           background: 'var(--vt-comment-bg)',
           backdropFilter: 'blur(20px)',
-          borderLeft: '1px solid var(--vt-comment-border)',
-          transform: visible ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
-          boxShadow: 'var(--vt-shadow-xl)',
+          borderLeft: isInline ? 'none' : '1px solid var(--vt-comment-border)',
+          transform: isInline ? 'none' : (visible ? 'translateX(0)' : 'translateX(100%)'),
+          transition: isInline ? 'none' : 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
+          boxShadow: isInline ? 'none' : 'var(--vt-shadow-xl)',
         }}
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
         <div

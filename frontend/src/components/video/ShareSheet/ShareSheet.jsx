@@ -73,6 +73,22 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
     }
   }, [open]);
 
+  // Vô hiệu hóa lăn chuột chuyển video toàn trang khi đang mở bảng chia sẻ
+  useEffect(() => {
+    if (!open) return;
+
+    const preventWheelScroll = (e) => {
+      // Dừng lăn chuột chuyển video
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    window.addEventListener('wheel', preventWheelScroll, { passive: false });
+    return () => {
+      window.removeEventListener('wheel', preventWheelScroll);
+    };
+  }, [open]);
+
   const handleClose = useCallback(() => {
     setClosing(true);
     setTimeout(() => { setClosing(false); onClose?.(); }, 280);
@@ -143,8 +159,11 @@ export default function ShareSheet({ open, onClose, videoId, videoUrl, onShareDo
 
   return (
     <div
+      data-share-open="true"
+      data-no-video-scroll="true"
       className={`fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/55 backdrop-blur-[4px] ${closing ? 'animate-[overlayOut_0.28s_ease-in_forwards]' : 'animate-[overlayIn_0.2s_ease-out]'}`}
       onClick={handleOverlayClick}
+      onWheel={(e) => { e.stopPropagation(); e.preventDefault(); }}
     >
       <div className={`w-full max-w-[500px] md:max-w-[420px] bg-surface rounded-t-2xl md:rounded-2xl overflow-hidden pb-[env(safe-area-inset-bottom,0px)] ${closing ? 'animate-[sheetDown_0.28s_ease-in_forwards]' : 'animate-[sheetUp_0.32s_cubic-bezier(0.16,1,0.3,1)]'}`}>
 
