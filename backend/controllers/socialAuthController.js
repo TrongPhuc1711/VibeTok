@@ -1,9 +1,54 @@
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import pool from '../config/db.js';
 import { socialAuthModel } from '../models/socialAuthModel.js';
-import { UserModel, normalizeUser } from '../models/userModel.js';
+import { normalizeUser } from '../models/userModel.js';
 
 const getJwtSecret = () => process.env.JWT_SECRET || 'vibetok_secret_key_default';
+
+// Helper kiểm tra trạng thái khóa của tài khoản
+const checkBanStatus = async (user, res) => {
+    // 1. Kiểm tra ban vĩnh viễn (is_active = 0)
+    if (!user.is_active) {
+        res.status(403).json({
+            message: 'Tài khoản của bạn đã bị ban. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
+            banned: true
+        });
+        return false;
+    }
+
+    // 2. Kiểm tra vô hiệu hóa tạm thời (temp ban)
+    if (user.banned_until) {
+        const bannedUntil = new Date(user.banned_until);
+        if (bannedUntil > new Date()) {
+            const remainMs = bannedUntil.getTime() - Date.now();
+            const remainMins = Math.ceil(remainMs / 60000);
+            let remainLabel;
+            if (remainMins >= 60) {
+                const h = Math.floor(remainMins / 60);
+                const m = remainMins % 60;
+                remainLabel = m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`;
+            } else {
+                remainLabel = `${remainMins} phút`;
+            }
+            res.status(403).json({
+                message: `Tài khoản của bạn đã bị vô hiệu hóa tạm thời. Còn lại: ${remainLabel}.${user.ban_reason ? ` Lý do: ${user.ban_reason}` : ''}`,
+                banned: true,
+                tempBan: true,
+                bannedUntil: user.banned_until,
+            });
+            return false;
+        } else {
+            // Hết hạn → tự động mở khóa
+            await pool.query(
+                'UPDATE users SET banned_until = NULL, ban_reason = NULL WHERE id = ?',
+                [user.id]
+            );
+        }
+    }
+
+    return true;
+};
 
 export const googleLogin = async (req, res) => {
     try {
@@ -41,13 +86,18 @@ export const googleLogin = async (req, res) => {
             }
         }
 
-        // 3. Lấy thông tin user cuối cùng
-        const userRow = await UserModel.findById(userId);
+        // 3. Lấy thông tin user (kể cả khi is_active = 0 để kiểm tra ban)
+        const [userRows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+        const userRow = userRows[0];
         if (!userRow) {
-            return res.status(404).json({ message: 'User not found after link/create' });
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng!' });
         }
 
-        // 4. Tạo JWT và gửi về client như login thông thường
+        // 4. Kiểm tra tài khoản có bị khóa / tạm khóa không
+        const isAllowed = await checkBanStatus(userRow, res);
+        if (!isAllowed) return;
+
+        // 5. Tạo JWT và gửi về client như login thông thường
         const token = jwt.sign(
             { id: userRow.id, username: userRow.username, role: userRow.role },
             getJwtSecret(),
@@ -113,13 +163,18 @@ export const facebookLogin = async (req, res) => {
             }
         }
 
-        // 3. Lấy thông tin user cuối cùng
-        const userRow = await UserModel.findById(userId);
+        // 3. Lấy thông tin user (kể cả khi is_active = 0 để kiểm tra ban)
+        const [userRows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+        const userRow = userRows[0];
         if (!userRow) {
-            return res.status(404).json({ message: 'User not found after link/create' });
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng!' });
         }
 
-        // 4. Tạo JWT và gửi về client
+        // 4. Kiểm tra tài khoản có bị khóa / tạm khóa không
+        const isAllowed = await checkBanStatus(userRow, res);
+        if (!isAllowed) return;
+
+        // 5. Tạo JWT và gửi về client
         const token = jwt.sign(
             { id: userRow.id, username: userRow.username, role: userRow.role },
             getJwtSecret(),
