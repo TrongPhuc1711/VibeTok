@@ -77,7 +77,7 @@ export default function DashboardPage() {
         Promise.all([
             getStats().catch(() => []),
             getTopCreators().catch(() => []),
-            getSearchTrends().catch(() => ({ keywords: [], videos: [] })),
+            getSearchTrends(10).catch(() => ({ keywords: [], videos: [] })),
             getAdminOnlineUsers().catch(() => ({ totalOnline: 0, users: [] })),
         ]).then(([s, cr, st, onl]) => {
             setStats(s);
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2">
                                 <SearchTrendIcon />
                                 <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--color-text-primary)' }}>
-                                    Từ khóa tìm kiếm hot nhất
+                                    Top 10 Từ khóa tìm kiếm hot nhất
                                 </span>
                             </div>
                             <span className="text-[10px] font-body px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(255, 45, 120, 0.1)', color: '#ff2d78', border: '1px solid rgba(255, 45, 120, 0.25)' }}>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
                         </div>
 
                         {searchTrends.keywords && searchTrends.keywords.length > 0 ? (
-                            <div className="space-y-3">
+                            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                                 {searchTrends.keywords.map((kw, i) => {
                                     const rankStyle = rankColors[i] || rankColors[4];
                                     return (
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                                                         {kw.name}
                                                     </span>
                                                     {kw.type === 'search' && (
-                                                        <span className="text-[9px] px-1.5 py-0.2 rounded font-body" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)' }}>
+                                                        <span className="text-[9px] px-1.5 py-0.2 rounded font-body" style={{ background: 'var(--vt-hover)', color: 'var(--color-text-muted)' }}>
                                                             Tìm kiếm
                                                         </span>
                                                     )}
@@ -301,18 +301,20 @@ export default function DashboardPage() {
                                                 </span>
                                             </div>
                                             {/* Progress Bar */}
-                                            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                                            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--vt-input)' }}>
                                                 <div
                                                     className="h-full rounded-full transition-all duration-500"
                                                     style={{
-                                                        width: `${kw.percent || 20}%`,
+                                                        width: `${kw.percent || 10}%`,
                                                         background: i === 0
                                                             ? 'linear-gradient(90deg, #ff2d78, #ff6b35)'
                                                             : i === 1
                                                             ? 'linear-gradient(90deg, #ff6b35, #f59e0b)'
                                                             : i === 2
                                                             ? 'linear-gradient(90deg, #7c3aed, #a855f7)'
-                                                            : 'linear-gradient(90deg, #06b6d4, #3b82f6)',
+                                                            : i === 3
+                                                            ? 'linear-gradient(90deg, #06b6d4, #3b82f6)'
+                                                            : 'linear-gradient(90deg, #64748b, #94a3b8)',
                                                     }}
                                                 />
                                             </div>
@@ -343,7 +345,7 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-[#10b981]" />
                                 <span className="text-[13px] font-semibold font-body" style={{ color: 'var(--color-text-primary)' }}>
-                                    Top Video được quan tâm & tìm kiếm
+                                    Top 10 Video được quan tâm & tìm kiếm
                                 </span>
                             </div>
                             <span className="text-[10px] font-body" style={{ color: 'var(--color-text-muted)' }}>
@@ -352,7 +354,7 @@ export default function DashboardPage() {
                         </div>
 
                         {searchTrends.videos && searchTrends.videos.length > 0 ? (
-                            <div className="space-y-2.5">
+                            <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
                                 {searchTrends.videos.map((v) => (
                                     <div
                                         key={v.id}

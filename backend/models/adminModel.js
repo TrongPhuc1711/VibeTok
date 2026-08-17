@@ -518,7 +518,7 @@ export const AdminModel = {
     },
 
     // Top Trending Search Keywords & Videos
-    async getSearchTrends(limit = 5) {
+    async getSearchTrends(limit = 10) {
         let keywords = [];
 
         // 1. Đọc từ khóa tìm kiếm thực tế đã được ghi nhận (từ Redis hoặc In-Memory cache)
@@ -528,7 +528,7 @@ export const AdminModel = {
             console.error('getRecordedSearchQueries error:', e.message);
         }
 
-        // 2. Fallback / Bổ sung từ bảng hashtags nếu Redis chưa đủ dữ liệu
+        // 2. Fallback / Bổ sung từ bảng hashtags nếu chưa đủ dữ liệu
         if (keywords.length < limit) {
             const existingNames = new Set(keywords.map(k => k.rawName.toLowerCase()));
             try {
@@ -540,7 +540,6 @@ export const AdminModel = {
                 `, [limit + 5]);
 
                 for (const h of hashtagRows) {
-                    if (keywords.length >= limit) break;
                     if (!existingNames.has(h.name.toLowerCase())) {
                         keywords.push({
                             name: `#${h.name}`,
@@ -558,21 +557,25 @@ export const AdminModel = {
 
         // Nếu vẫn trống (trường hợp DB trắng), thêm các chủ đề mặc định
         if (keywords.length === 0) {
-            const defaults = ['vibes', 'dance', 'trend', 'music', 'funny'];
+            const defaults = ['vibes', 'dance', 'trend', 'music', 'funny', 'lifestyle', 'gaming', 'tech', 'travel', 'food'];
             keywords = defaults.slice(0, limit).map((d, i) => ({
                 name: `#${d}`,
                 rawName: d,
-                count: (5 - i) * 10,
+                count: (10 - i) * 10,
                 type: 'default',
             }));
         }
 
-        // Tính % relative popularity
+        // 3. Sắp xếp toàn bộ từ khóa theo số lượt (count) giảm dần từ cao xuống thấp
+        keywords.sort((a, b) => b.count - a.count);
+        keywords = keywords.slice(0, limit);
+
+        // Tính % relative popularity và gán thứ hạng
         const maxCount = Math.max(...keywords.map(k => k.count), 1);
         keywords = keywords.map((k, index) => ({
             ...k,
             rank: index + 1,
-            percent: Math.max(20, Math.round((k.count / maxCount) * 100)),
+            percent: Math.max(8, Math.round((k.count / maxCount) * 100)),
             displayCount: AdminModel._fmt(k.count),
         }));
 

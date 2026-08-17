@@ -55,10 +55,10 @@ export const getTopCreators = async (req, res) => {
     }
 };
 
-// GET /api/admin/search-trends?limit=5
+// GET /api/admin/search-trends?limit=10
 export const getSearchTrends = async (req, res) => {
     try {
-        const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
         const data = await AdminModel.getSearchTrends(limit);
         res.json({ data });
     } catch (e) {
