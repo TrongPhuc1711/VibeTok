@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import redis from '../config/redis.js';
 
 export const BookmarkModel = {
     async toggle(userId, videoId) {
@@ -6,26 +7,59 @@ export const BookmarkModel = {
             'SELECT id FROM bookmarks WHERE user_id = ? AND video_id = ?',
             [userId, videoId]
         );
-        if (existing.length > 0) {
+
+        const isRemoving = existing.length > 0;
+        if (isRemoving) {
             await pool.query(
                 'DELETE FROM bookmarks WHERE user_id = ? AND video_id = ?',
                 [userId, videoId]
             );
+        } else {
             await pool.query(
-                'UPDATE videos SET bookmark_count = GREATEST(0, bookmark_count - 1) WHERE id = ?',
-                [videoId]
+                'INSERT INTO bookmarks (user_id, video_id) VALUES (?, ?)',
+                [userId, videoId]
             );
-            return false; // removed
         }
-        await pool.query(
-            'INSERT INTO bookmarks (user_id, video_id) VALUES (?, ?)',
-            [userId, videoId]
-        );
-        await pool.query(
-            'UPDATE videos SET bookmark_count = bookmark_count + 1 WHERE id = ?',
-            [videoId]
-        );
-        return true; // added
+
+        // Redis Write-Buffer & Counter
+        try {
+            const setKey = `video:${videoId}:bookmarks`;
+            const countKey = `video:${videoId}:bookmarks_count`;
+
+            if (isRemoving) {
+                await redis.srem(setKey, String(userId));
+                const exists = await redis.exists(countKey);
+                if (exists) {
+                    const current = await redis.decr(countKey);
+                    if (current < 0) await redis.set(countKey, 0);
+                } else {
+                    const [rows] = await pool.query('SELECT bookmark_count FROM videos WHERE id = ?', [videoId]);
+                    const dbBookmarks = Math.max(0, (rows[0]?.bookmark_count || 0) - 1);
+                    await redis.set(countKey, dbBookmarks);
+                }
+            } else {
+                await redis.sadd(setKey, String(userId));
+                const exists = await redis.exists(countKey);
+                if (!exists) {
+                    const [rows] = await pool.query('SELECT bookmark_count FROM videos WHERE id = ?', [videoId]);
+                    const dbBookmarks = (rows[0]?.bookmark_count || 0) + 1;
+                    await redis.set(countKey, dbBookmarks);
+                } else {
+                    await redis.incr(countKey);
+                }
+            }
+
+            await redis.sadd('video:dirty_bookmarks', String(videoId));
+        } catch (redisErr) {
+            console.error('[Redis Bookmark Error] Fallback MySQL:', redisErr);
+            const delta = isRemoving ? -1 : 1;
+            await pool.query(
+                'UPDATE videos SET bookmark_count = GREATEST(0, bookmark_count + ?) WHERE id = ?',
+                [delta, videoId]
+            );
+        }
+
+        return !isRemoving;
     },
 
     async isBookmarked(userId, videoId) {

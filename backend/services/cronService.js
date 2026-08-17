@@ -48,8 +48,26 @@ export function initCronJobs() {
         } catch (error) {
             console.error('[Cron Likes] Lỗi đồng bộ lượt thích:', error);
         }
+
+        // 3. Đồng bộ lượt lưu (dirty bookmarks)
+        try {
+            const dirtyBookmarkVideoIds = await redis.smembers('video:dirty_bookmarks');
+            if (dirtyBookmarkVideoIds && dirtyBookmarkVideoIds.length > 0) {
+                for (const videoId of dirtyBookmarkVideoIds) {
+                    const key = `video:${videoId}:bookmarks_count`;
+                    const bookmarks = await redis.get(key);
+                    if (bookmarks !== null) {
+                        const bookmarkCount = Math.max(0, Number(bookmarks));
+                        await pool.query('UPDATE videos SET bookmark_count = ? WHERE id = ?', [bookmarkCount, videoId]);
+                    }
+                    await redis.srem('video:dirty_bookmarks', videoId);
+                }
+            }
+        } catch (error) {
+            console.error('[Cron Bookmarks] Lỗi đồng bộ lượt lưu:', error);
+        }
     });
 
-    console.log('[Cron Service] Đã khởi tạo cron job đồng bộ lượt xem & lượt thích từ Redis sang MySQL (mỗi 5 giây).');
+    console.log('[Cron Service] Đã khởi tạo cron job đồng bộ lượt xem, lượt thích & lượt lưu từ Redis sang MySQL (mỗi 5 giây).');
 }
 

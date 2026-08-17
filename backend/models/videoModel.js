@@ -70,10 +70,12 @@ const enrichVideosWithRedis = async (videos, currentUserId = null) => {
     try {
         const viewKeys = videos.map(v => `video:${v.id}:views`);
         const likeKeys = videos.map(v => `video:${v.id}:likes_count`);
+        const bookmarkKeys = videos.map(v => `video:${v.id}:bookmarks_count`);
 
-        const [cachedViews, cachedLikes] = await Promise.all([
+        const [cachedViews, cachedLikes, cachedBookmarks] = await Promise.all([
             redis.mget(viewKeys),
             redis.mget(likeKeys),
+            redis.mget(bookmarkKeys),
         ]);
 
         let userLikes = [];
@@ -89,6 +91,9 @@ const enrichVideosWithRedis = async (videos, currentUserId = null) => {
             }
             if (cachedLikes[idx] !== null) {
                 video.likes = Number(cachedLikes[idx]);
+            }
+            if (cachedBookmarks[idx] !== null) {
+                video.bookmarks = Number(cachedBookmarks[idx]);
             }
             if (currentUserId && userLikes[idx] === 1) {
                 video.isLiked = true;
