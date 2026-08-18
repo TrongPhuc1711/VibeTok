@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getVideoById, getComments, postComment, likeVideo, unlikeVideo } from '../../../services/videoService';
+import { getVideoById, getComments, postComment, likeVideo, unlikeVideo, shareVideo as shareVideoApi, repostVideo as repostVideoApi } from '../../../services/videoService';
 import { followUser, unfollowUser } from '../../../services/userService';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../../../utils/helpers';
 import Avatar from '../../common/Avatar/avatar';
 import { ImageSlideshow } from '../../ui/ImageSlideshow';
+import { useToast } from '../../ui/Toast';
+import LoginPromptModal from '../../ui/LoginPromptModal';
+import { useBookmark } from '../../../hooks/useBookmark';
+import ShareSheet from '../ShareSheet/ShareSheet';
+import { HeartIcon, CommentIcon, ShareIcon, BookmarkIcon } from '../../../icons/ActionIcons';
 
 export default function VideoDetailOverlay({ videoId, highlightComment = false, onClose }) {
   const navigate = useNavigate();
   const me = getStoredUser();
+  const { showSuccess, showInfo, showError } = useToast();
 
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +29,17 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
   const [cmtLoading, setCmtLoading] = useState(true);
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Bookmark, Share & Login states
+  const { bookmarked, toggle: toggleBookmarkDB, loading: bookmarkLoading } = useBookmark(
+    videoId,
+    Boolean(video?.isBookmarked)
+  );
+  const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [shareCount, setShareCount] = useState(0);
+  const [reposted, setReposted] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [loginPrompt, setLoginPrompt] = useState({ open: false, action: 'like' });
 
   const videoRef = useRef(null);
   const inputRef = useRef(null);
@@ -44,9 +61,11 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
         const v = r.data.video;
         setVideo(v);
         setLikeCount(v.likes || 0);
-        // ✅ FIX: Lấy isLiked từ server response
         setLiked(Boolean(v.isLiked));
         setFollowing(Boolean(v.user?.isFollowing));
+        setBookmarkCount(v.bookmarks || 0);
+        setShareCount(v.shares || 0);
+        setReposted(Boolean(v.isReposted));
       })
       .catch(() => setVideo(null))
       .finally(() => setLoading(false));
@@ -89,19 +108,93 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
     else { v.pause(); setPlaying(false); }
   };
 
+  const promptLogin = (action) => setLoginPrompt({ open: true, action });
+
   const handleLike = async () => {
-    if (!isLoggedIn()) return;
+    if (!isLoggedIn()) { promptLogin('like'); return; }
     const was = liked;
-    // Optimistic UI
-    setLiked(!was);
-    setLikeCount(n => was ? Math.max(0, n - 1) : n + 1);
+    const nextState = !was;
+    const nextCount = was ? Math.max(0, likeCount - 1) : likeCount + 1;
+
+    setLiked(nextState);
+    setLikeCount(nextCount);
+    if (video) {
+      video.isLiked = nextState;
+      video.likes = nextCount;
+    }
     try {
       if (was) await unlikeVideo(videoId);
-      else await likeVideo(videoId);
+      else {
+        await likeVideo(videoId);
+        showSuccess('Đã thích video ❤️', `@${video?.user?.username}`);
+      }
     } catch {
-      // Rollback
       setLiked(was);
-      setLikeCount(n => was ? n + 1 : Math.max(0, n - 1));
+      setLikeCount(likeCount);
+      if (video) {
+        video.isLiked = was;
+        video.likes = likeCount;
+      }
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!isLoggedIn()) { promptLogin('bookmark'); return; }
+    if (bookmarkLoading) return;
+    const wasBk = Boolean(bookmarked);
+    const nextBk = !wasBk;
+    const nextCount = wasBk ? Math.max(0, bookmarkCount - 1) : bookmarkCount + 1;
+
+    setBookmarkCount(nextCount);
+    if (video) {
+      video.isBookmarked = nextBk;
+      video.bookmarks = nextCount;
+    }
+
+    const result = await toggleBookmarkDB();
+    if (result === null) {
+      setBookmarkCount(bookmarkCount);
+      if (video) {
+        video.isBookmarked = wasBk;
+        video.bookmarks = bookmarkCount;
+      }
+      return;
+    }
+
+    if (video) {
+      video.isBookmarked = result;
+    }
+    if (result) showSuccess('Đã lưu video', 'Thêm vào danh sách lưu');
+    else showInfo('Đã bỏ lưu', 'Xóa khỏi danh sách lưu');
+  };
+
+  const handleShare = () => {
+    setShareOpen(true);
+  };
+
+  const handleShareDone = () => {
+    setShareCount(n => n + 1);
+    if (video) video.shares = (video.shares || 0) + 1;
+    shareVideoApi(videoId).catch(() => {
+      setShareCount(n => Math.max(0, n - 1));
+    });
+  };
+
+  const handleRepost = async () => {
+    if (!isLoggedIn()) { promptLogin('repost'); return; }
+    const was = reposted;
+    setReposted(!was);
+    try {
+      const res = await repostVideoApi(videoId);
+      setReposted(res.data.reposted);
+      if (res.data.reposted) {
+        showSuccess('Đã đăng lại!', `Video của @${video?.user?.username}`);
+      } else {
+        showInfo('Đã bỏ đăng lại', 'Xóa khỏi danh sách đăng lại');
+      }
+    } catch {
+      setReposted(was);
+      showError('Lỗi', 'Không thể đăng lại video này');
     }
   };
 
@@ -295,36 +388,59 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
             )}
 
             {/* Stats row */}
-            <div className="flex items-center gap-5 px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="flex items-center gap-4 px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
               {/* Like */}
               <button
                 onClick={handleLike}
                 className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer transition-all active:scale-90 p-0"
+                title={liked ? 'Bỏ thích' : 'Thích'}
               >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: liked ? 'rgba(255,45,120,0.15)' : 'var(--vt-input)' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24"
-                    fill={liked ? '#ff2d78' : 'none'}
-                    stroke={liked ? '#ff2d78' : 'var(--color-text-secondary)'}
-                    strokeWidth="1.5"
-                  >
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors" style={{ background: liked ? 'rgba(255,45,120,0.15)' : 'var(--vt-input)' }}>
+                  <HeartIcon filled={liked} size={18} />
                 </div>
                 <span className="text-[13px] font-body" style={{ color: liked ? '#ff2d78' : 'var(--color-text-secondary)' }}>
                   {formatCount(likeCount)}
                 </span>
               </button>
+
               {/* Comments */}
               <div className="flex items-center gap-1.5">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--vt-input)' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                  </svg>
+                  <CommentIcon />
                 </div>
                 <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
                   {formatCount(video.comments)}
                 </span>
               </div>
+
+              {/* Share */}
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer transition-all active:scale-90 p-0"
+                title="Chia sẻ"
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors" style={{ background: 'var(--vt-input)' }}>
+                  <ShareIcon />
+                </div>
+                <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
+                  {formatCount(shareCount)}
+                </span>
+              </button>
+
+              {/* Bookmark */}
+              <button
+                onClick={handleBookmark}
+                className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer transition-all active:scale-90 p-0"
+                title={bookmarked ? 'Bỏ lưu' : 'Lưu video'}
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors" style={{ background: bookmarked ? 'rgba(255,248,45,0.15)' : 'var(--vt-input)' }}>
+                  <BookmarkIcon filled={bookmarked} />
+                </div>
+                <span className="text-[13px] font-body" style={{ color: bookmarked ? '#fff82d' : 'var(--color-text-secondary)' }}>
+                  {formatCount(bookmarkCount)}
+                </span>
+              </button>
+
               {/* Views */}
               <div className="flex items-center gap-1.5 ml-auto">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
@@ -422,6 +538,21 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
           </div>
         </div>
       )}
+
+      <LoginPromptModal
+        open={loginPrompt.open}
+        onClose={() => setLoginPrompt({ open: false, action: 'like' })}
+        action={loginPrompt.action}
+      />
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        videoId={videoId}
+        onShareDone={handleShareDone}
+        onRepost={handleRepost}
+        isReposted={reposted}
+      />
     </div>
   );
 }

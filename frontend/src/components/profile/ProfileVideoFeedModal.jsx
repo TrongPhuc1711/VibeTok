@@ -1,12 +1,16 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getComments, postComment, likeVideo, unlikeVideo } from '../../services/videoService';
+import { getComments, postComment, likeVideo, unlikeVideo, shareVideo as shareVideoApi, repostVideo as repostVideoApi } from '../../services/videoService';
 import { followUser, unfollowUser } from '../../services/userService';
 import { formatCount, formatTimeAgo, parseHashtags, stripHashtags } from '../../utils/formatters';
 import { isLoggedIn, getStoredUser } from '../../utils/helpers';
 import { ArrowDownIcon, ArrowUpIcon } from '../../icons/NavIcons';
 import EmojiPickerButton from '../ui/EmojiPickerButton';
 import Avatar from '../common/Avatar/avatar';
+import { useToast } from '../ui/Toast';
+import LoginPromptModal from '../ui/LoginPromptModal';
+import ShareSheet from '../video/ShareSheet/ShareSheet';
+import { BookmarkIcon, ShareIcon } from '../../icons/ActionIcons';
 
 // ── Comment Section ──
 function CommentSection({ videoId, totalComments }) {
@@ -173,18 +177,13 @@ function CommentRow({ comment }) {
 }
 
 // ── Right Panel ──
-function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount, onClose, onPrivacyChange }) {
+function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount, bookmarked, bookmarkCount, onBookmark, shareCount, onShareOpen, onClose, onPrivacyChange }) {
     const navigate = useNavigate();
     const me = getStoredUser();
     const user = video?.user ?? {};
     const hashtags = parseHashtags(video?.caption ?? '');
     const captionTxt = stripHashtags(video?.caption ?? '');
     const isOwnVideo = me && (String(me.id) === String(user.id) || me.username === user.username);
-
-    const handleShare = () => {
-        const url = `${window.location.origin}/video/${video.id}`;
-        if (navigator.clipboard) navigator.clipboard.writeText(url);
-    };
 
     return (
         <div
@@ -281,11 +280,12 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-6 px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="flex items-center gap-5 px-5 py-3 shrink-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
                 {/* Like */}
                 <button
                     onClick={onLike}
                     className="flex items-center gap-2 bg-transparent border-none cursor-pointer transition-all group active:scale-90 p-0"
+                    title={liked ? 'Bỏ thích' : 'Thích'}
                 >
                     <div
                         className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
@@ -319,31 +319,36 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
 
                 {/* Share */}
                 <button
-                    onClick={handleShare}
-                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer p-0"
-                    title="Sao chép link"
+                    onClick={onShareOpen}
+                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer transition-all active:scale-90 p-0"
+                    title="Chia sẻ"
                 >
                     <div className="w-9 h-9 rounded-full flex items-center justify-center transition-colors" style={{ background: 'var(--vt-input)' }}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round">
-                            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-                        </svg>
+                        <ShareIcon size={17} />
                     </div>
                     <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
-                        {formatCount(video?.shares)}
+                        {formatCount(shareCount ?? video?.shares)}
                     </span>
                 </button>
 
-                {/* Bookmark count */}
-                <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'var(--vt-input)' }}>
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.5">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-                        </svg>
+                {/* Bookmark */}
+                <button
+                    onClick={onBookmark}
+                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer transition-all active:scale-90 p-0"
+                    title={bookmarked ? 'Bỏ lưu' : 'Lưu video'}
+                >
+                    <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                        style={{
+                            background: bookmarked ? 'rgba(255,248,45,0.15)' : 'var(--vt-input)',
+                        }}
+                    >
+                        <BookmarkIcon filled={bookmarked} />
                     </div>
-                    <span className="text-[13px] font-body" style={{ color: 'var(--color-text-secondary)' }}>
-                        {formatCount(video?.bookmarks)}
+                    <span className="text-[13px] font-body" style={{ color: bookmarked ? '#fff82d' : 'var(--color-text-secondary)' }}>
+                        {formatCount(bookmarkCount ?? video?.bookmarks)}
                     </span>
-                </div>
+                </button>
 
                 {/* Views */}
                 <div className="flex items-center gap-1.5 ml-auto">
@@ -373,6 +378,8 @@ function RightPanel({ video, following, onFollowToggle, onLike, liked, likeCount
 // ── ProfileVideoFeedModal Main Component ──
 export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, onClose, onPrivacyChange }) {
     const navigate = useNavigate();
+    const { showSuccess, showInfo, showError } = useToast();
+
     const [currentIdx, setCurrentIdx] = useState(initialIndex);
     const [playing, setPlaying] = useState(true);
     const [progress, setProgress] = useState(0);
@@ -392,6 +399,14 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     const [followMap, setFollowMap] = useState({});
     const [followLoading, setFollowLoading] = useState(false);
 
+    // Bookmark, Share & Login states per video
+    const [bookmarkMap, setBookmarkMap] = useState({});
+    const [bookmarkCountMap, setBookmarkCountMap] = useState({});
+    const [shareCountMap, setShareCountMap] = useState({});
+    const [repostMap, setRepostMap] = useState({});
+    const [shareOpen, setShareOpen] = useState(false);
+    const [loginPrompt, setLoginPrompt] = useState({ open: false, action: 'like' });
+
     const videoRef = useRef(null);
     const progressBarRef = useRef(null);
 
@@ -405,6 +420,14 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         setLikeCount(current.likes ?? 0);
         setProgress(0);
         setPlaying(true);
+
+        if (current.id) {
+            setBookmarkMap(prev => (prev[current.id] !== undefined ? prev : { ...prev, [current.id]: Boolean(current.isBookmarked) }));
+            setBookmarkCountMap(prev => (prev[current.id] !== undefined ? prev : { ...prev, [current.id]: current.bookmarks ?? 0 }));
+            setShareCountMap(prev => (prev[current.id] !== undefined ? prev : { ...prev, [current.id]: current.shares ?? 0 }));
+            setRepostMap(prev => (prev[current.id] !== undefined ? prev : { ...prev, [current.id]: Boolean(current.isReposted) }));
+        }
+
         if (current.user?.username && followMap[current.user.username] === undefined) {
             setFollowMap(prev => ({
                 ...prev,
@@ -414,6 +437,11 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     }, [currentIdx, current?.id]);
 
     const following = current?.user?.username ? (followMap[current.user.username] ?? false) : false;
+
+    const bookmarked = current?.id ? (bookmarkMap[current.id] ?? Boolean(current.isBookmarked)) : false;
+    const bookmarkCount = current?.id ? (bookmarkCountMap[current.id] ?? (current.bookmarks ?? 0)) : (current?.bookmarks ?? 0);
+    const shareCount = current?.id ? (shareCountMap[current.id] ?? (current.shares ?? 0)) : (current?.shares ?? 0);
+    const reposted = current?.id ? (repostMap[current.id] ?? Boolean(current.isReposted)) : false;
 
     useEffect(() => {
         const v = videoRef.current;
@@ -498,21 +526,111 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
         window.addEventListener('mouseup', onUp);
     };
 
+    const promptLogin = (action) => setLoginPrompt({ open: true, action });
+
     const handleLike = async () => {
-        if (!isLoggedIn() || likeLoading) return;
+        if (!isLoggedIn()) { promptLogin('like'); return; }
+        if (likeLoading || !current?.id) return;
         const was = liked;
-        setLiked(!was);
-        setLikeCount(n => was ? Math.max(0, n - 1) : n + 1);
+        const nextState = !was;
+        const nextCount = was ? Math.max(0, likeCount - 1) : likeCount + 1;
+        setLiked(nextState);
+        setLikeCount(nextCount);
+        if (current) {
+            current.isLiked = nextState;
+            current.likes = nextCount;
+        }
 
         setLikeLoading(true);
         try {
             if (was) await unlikeVideo(current.id);
-            else     await likeVideo(current.id);
+            else {
+                await likeVideo(current.id);
+                showSuccess('Đã thích video ❤️', `@${current.user?.username}`);
+            }
         } catch {
             setLiked(was);
-            setLikeCount(n => was ? n + 1 : Math.max(0, n - 1));
+            setLikeCount(likeCount);
+            if (current) {
+                current.isLiked = was;
+                current.likes = likeCount;
+            }
         } finally {
             setLikeLoading(false);
+        }
+    };
+
+    const handleBookmark = async () => {
+        if (!isLoggedIn()) { promptLogin('bookmark'); return; }
+        if (!current?.id) return;
+
+        const videoId = current.id;
+        const wasBk = Boolean(bookmarked);
+        const nextBk = !wasBk;
+        const nextCount = wasBk ? Math.max(0, bookmarkCount - 1) : bookmarkCount + 1;
+
+        // Optimistic UI updates
+        setBookmarkMap(prev => ({ ...prev, [videoId]: nextBk }));
+        setBookmarkCountMap(prev => ({ ...prev, [videoId]: nextCount }));
+        if (current) {
+            current.isBookmarked = nextBk;
+            current.bookmarks = nextCount;
+        }
+
+        try {
+            const { toggleBookmark: toggleBookmarkApi } = await import('../../services/bookmarkService');
+            const res = await toggleBookmarkApi(videoId);
+            const serverBk = res.bookmarked;
+            setBookmarkMap(prev => ({ ...prev, [videoId]: serverBk }));
+            if (current) current.isBookmarked = serverBk;
+
+            if (serverBk) showSuccess('Đã lưu video', 'Thêm vào danh sách lưu');
+            else showInfo('Đã bỏ lưu', 'Xóa khỏi danh sách lưu');
+        } catch {
+            setBookmarkMap(prev => ({ ...prev, [videoId]: wasBk }));
+            setBookmarkCountMap(prev => ({ ...prev, [videoId]: bookmarkCount }));
+            if (current) {
+                current.isBookmarked = wasBk;
+                current.bookmarks = bookmarkCount;
+            }
+            showError('Lỗi', 'Không thể lưu video');
+        }
+    };
+
+    const handleShareOpen = () => {
+        setShareOpen(true);
+    };
+
+    const handleShareDone = () => {
+        if (!current?.id) return;
+        const videoId = current.id;
+        setShareCountMap(prev => ({ ...prev, [videoId]: (prev[videoId] || 0) + 1 }));
+        if (current) current.shares = (current.shares || 0) + 1;
+        shareVideoApi(videoId).catch(() => {
+            setShareCountMap(prev => ({ ...prev, [videoId]: Math.max(0, (prev[videoId] || 1) - 1) }));
+        });
+    };
+
+    const handleRepost = async () => {
+        if (!isLoggedIn()) { promptLogin('repost'); return; }
+        if (!current?.id) return;
+        const videoId = current.id;
+        const was = reposted;
+        setRepostMap(prev => ({ ...prev, [videoId]: !was }));
+        try {
+            const res = await repostVideoApi(videoId);
+            const serverReposted = res.data.reposted;
+            setRepostMap(prev => ({ ...prev, [videoId]: serverReposted }));
+            if (current) current.isReposted = serverReposted;
+
+            if (serverReposted) {
+                showSuccess('Đã đăng lại!', `Video của @${current.user?.username}`);
+            } else {
+                showInfo('Đã bỏ đăng lại', 'Xóa khỏi danh sách đăng lại');
+            }
+        } catch {
+            setRepostMap(prev => ({ ...prev, [videoId]: was }));
+            showError('Lỗi', 'Không thể đăng lại video này');
         }
     };
 
@@ -715,10 +833,30 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
                     onLike={handleLike}
                     liked={liked}
                     likeCount={likeCount}
+                    bookmarked={bookmarked}
+                    bookmarkCount={bookmarkCount}
+                    onBookmark={handleBookmark}
+                    shareCount={shareCount}
+                    onShareOpen={handleShareOpen}
                     onClose={handleClose}
                     onPrivacyChange={onPrivacyChange}
                 />
             </div>
+
+            <LoginPromptModal
+                open={loginPrompt.open}
+                onClose={() => setLoginPrompt({ open: false, action: 'like' })}
+                action={loginPrompt.action}
+            />
+
+            <ShareSheet
+                open={shareOpen}
+                onClose={() => setShareOpen(false)}
+                videoId={current.id}
+                onShareDone={handleShareDone}
+                onRepost={handleRepost}
+                isReposted={reposted}
+            />
         </div>
     );
 }
