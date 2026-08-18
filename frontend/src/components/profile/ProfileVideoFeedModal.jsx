@@ -7,6 +7,7 @@ import { isLoggedIn, getStoredUser } from '../../utils/helpers';
 import { ArrowDownIcon, ArrowUpIcon } from '../../icons/NavIcons';
 import EmojiPickerButton from '../ui/EmojiPickerButton';
 import Avatar from '../common/Avatar/avatar';
+import { ImageSlideshow } from '../ui/ImageSlideshow';
 import { useToast } from '../ui/Toast';
 import LoginPromptModal from '../ui/LoginPromptModal';
 import ShareSheet from '../video/ShareSheet/ShareSheet';
@@ -657,6 +658,26 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
     };
     const currentSec = duration ? (progress / 100) * duration : 0;
 
+    const isSlideshow = (() => {
+        if (!current?.videoUrl) return false;
+        if (Array.isArray(current.videoUrl)) return true;
+        if (typeof current.videoUrl === 'string') {
+            const trimmed = current.videoUrl.trim();
+            return (trimmed.startsWith('[') && trimmed.endsWith(']'));
+        }
+        return false;
+    })();
+
+    const imagesArray = (() => {
+        if (!isSlideshow) return [];
+        try {
+            const parsed = Array.isArray(current.videoUrl) ? current.videoUrl : JSON.parse(current.videoUrl);
+            return parsed.map((url, i) => ({ id: String(i), url }));
+        } catch {
+            return [];
+        }
+    })();
+
     if (!current) return null;
 
     return (
@@ -705,7 +726,15 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
                         background: '#0a0a0a',
                     }}
                 >
-                    {current.videoUrl ? (
+                    {isSlideshow ? (
+                        <div className="absolute inset-0 w-full h-full z-[1]">
+                            <ImageSlideshow
+                                images={imagesArray}
+                                autoPlay={true}
+                                duration={3000}
+                            />
+                        </div>
+                    ) : current.videoUrl ? (
                         <video
                             ref={videoRef}
                             src={current.videoUrl}
@@ -730,7 +759,7 @@ export default function ProfileVideoFeedModal({ videos = [], initialIndex = 0, o
                         </div>
                     )}
 
-                    {!playing && (
+                    {!isSlideshow && !playing && (
                         <div
                             className="absolute inset-0 flex items-center justify-center cursor-pointer"
                             style={{ background: 'rgba(0,0,0,0.2)' }}

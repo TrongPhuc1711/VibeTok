@@ -221,8 +221,25 @@ export default function VideoDetailOverlay({ videoId, highlightComment = false, 
 
   const hashtags = parseHashtags(video?.caption ?? '');
   const captionTxt = stripHashtags(video?.caption ?? '');
-  const isSlideshow = video?.videoUrl?.startsWith('["') && video?.videoUrl?.endsWith('"]');
-  const imagesArray = isSlideshow ? JSON.parse(video.videoUrl).map((url, i) => ({ id: String(i), url })) : [];
+  const isSlideshow = (() => {
+    if (!video?.videoUrl) return false;
+    if (Array.isArray(video.videoUrl)) return true;
+    if (typeof video.videoUrl === 'string') {
+      const trimmed = video.videoUrl.trim();
+      return (trimmed.startsWith('[') && trimmed.endsWith(']'));
+    }
+    return false;
+  })();
+
+  const imagesArray = (() => {
+    if (!isSlideshow) return [];
+    try {
+      const parsed = Array.isArray(video.videoUrl) ? video.videoUrl : JSON.parse(video.videoUrl);
+      return parsed.map((url, i) => ({ id: String(i), url }));
+    } catch {
+      return [];
+    }
+  })();
 
   return (
     <div
