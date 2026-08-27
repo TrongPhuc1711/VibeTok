@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Allow: /explore
+Allow: /video/*
+Allow: /hashtag/*
+Disallow: /admin/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /change-password
+Disallow: /messages/
+Disallow: /upload
+Disallow: /call/
+
+User-agent: Mediapartners-Google
+Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /register
+Disallow: /messages/
+Disallow: /upload
+Disallow: /call/

@@ -164,6 +164,31 @@ export default function Sidebar({ className = '', collapsed = false, onNotifClic
 
         {/* Hiển thị following list khi đã đăng nhập */}
         {isAuthenticated && <SidebarFollowing />}
+
+        {/* Footer links cho SEO & AdSense compliance */}
+        <div className="px-5 py-4 mt-auto border-t border-border/50 text-[11px] text-subtext leading-relaxed font-body">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 font-medium">
+            <button
+              onClick={() => navigate(ROUTES.ABOUT)}
+              className="bg-transparent border-none p-0 text-subtext hover:text-primary cursor-pointer transition-colors"
+            >
+              Giới thiệu
+            </button>
+            <button
+              onClick={() => navigate(ROUTES.TERMS)}
+              className="bg-transparent border-none p-0 text-subtext hover:text-primary cursor-pointer transition-colors"
+            >
+              Điều khoản
+            </button>
+            <button
+              onClick={() => navigate(ROUTES.PRIVACY)}
+              className="bg-transparent border-none p-0 text-subtext hover:text-primary cursor-pointer transition-colors"
+            >
+              Quyền riêng tư
+            </button>
+          </div>
+          <p className="text-[11px] text-subtext/70 m-0">© 2026 VibeTok</p>
+        </div>
       </div>
 
       {/* Footer chỉ hiện khi đã đăng nhập */}

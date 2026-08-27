@@ -24,6 +24,11 @@ import VideoDetailPage from './pages/VideoDetailPage';
 import HashtagPage from './pages/HashtagPage';
 import ImageSlideshowDemo from './pages/ImageSlideshowDemo';
 
+// Legal & Info pages
+import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
+import TermsPage from './pages/legal/TermsPage';
+import AboutPage from './pages/legal/AboutPage';
+
 // Admin
 import AdminRoutes from './pages/Admin/AdminRoutes';
 
@@ -103,6 +108,11 @@ export default function App() {
                 <Route path="/video/:id" element={<VideoDetailPage />} />
                 <Route path="/tag/:tagName" element={<HashtagPage />} />
                 <Route path="/slideshow-demo" element={<ImageSlideshowDemo />} />
+
+                {/* Legal & Info */}
+                <Route path={ROUTES.PRIVACY} element={<PrivacyPolicyPage />} />
+                <Route path={ROUTES.TERMS} element={<TermsPage />} />
+                <Route path={ROUTES.ABOUT} element={<AboutPage />} />
 
                 {/* Messages */}
                 <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />

@@ -63,6 +63,9 @@ export const ROUTES = {
   CHANGE_PASSWORD: '/change-password',
   FORGOT_PASSWORD: '/forgot-password',
   HASHTAG: '/tag/:tagName',
+  PRIVACY: '/privacy',
+  TERMS: '/terms',
+  ABOUT: '/about',
 };
 
 // Categories
