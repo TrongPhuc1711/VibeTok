@@ -1,7 +1,3 @@
-/**
- * useVideoFeed — hook quản lý feed video với infinite scroll.
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getFeed } from '../services/videoService';
 import { FEED_PAGE_SIZE } from '../constants';

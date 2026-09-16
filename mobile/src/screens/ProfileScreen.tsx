@@ -242,11 +242,21 @@ export default function ProfileScreen() {
             <View style={styles.tabsContainer}>
               {tabs.map((tab) => {
                 const isActive = activeTab === tab;
-                const iconColor = isActive ? Colors.textPrimary : Colors.textDim;
+                const isBookmarkActive = tab === 'Bookmarks' && isActive;
+                const iconColor = isBookmarkActive
+                  ? '#F59E0B'
+                  : isActive
+                  ? Colors.textPrimary
+                  : Colors.textDim;
+
                 return (
                   <TouchableOpacity
                     key={tab}
-                    style={[styles.tab, isActive && styles.tabActive]}
+                    style={[
+                      styles.tab,
+                      isActive && styles.tabActive,
+                      isBookmarkActive && { borderBottomColor: '#F59E0B' },
+                    ]}
                     onPress={() => setActiveTab(tab)}
                   >
                     <View style={styles.tabContent}>
@@ -268,7 +278,7 @@ export default function ProfileScreen() {
                         <Bookmark
                           size={15}
                           color={iconColor}
-                          fill={isActive ? Colors.primary : 'none'}
+                          fill={isActive ? '#F59E0B' : 'none'}
                           strokeWidth={isActive ? 2.2 : 1.8}
                         />
                       )}
@@ -276,6 +286,7 @@ export default function ProfileScreen() {
                         style={[
                           styles.tabText,
                           isActive && styles.tabTextActive,
+                          isBookmarkActive && { color: '#F59E0B' },
                         ]}
                       >
                         {tab === 'Videos'

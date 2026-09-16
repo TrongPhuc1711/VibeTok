@@ -112,7 +112,7 @@ function MainTabNavigator() {
           tabBarActiveTintColor: Colors.textPrimary,
           tabBarInactiveTintColor: Colors.textDim,
           tabBarLabelStyle: styles.tabLabel,
-          tabBarLabel: config.label || undefined,
+          tabBarLabel: route.name === 'Upload' ? () => null : config.label,
           tabBarIcon: ({ focused, color }) => {
             const isUpload = route.name === 'Upload';
             return (
@@ -126,7 +126,13 @@ function MainTabNavigator() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Explore" component={ExploreScreen} />
-      <Tab.Screen name="Upload" component={UploadScreen} />
+      <Tab.Screen
+        name="Upload"
+        component={UploadScreen}
+        options={{
+          tabBarLabel: () => null,
+        }}
+      />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
