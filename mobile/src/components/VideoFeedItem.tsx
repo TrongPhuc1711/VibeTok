@@ -47,25 +47,34 @@ export default function VideoFeedItem({
   const [showPauseIcon, setShowPauseIcon] = useState(false);
 
   // Check if videoUrl is actually an image or slideshow JSON
+  const rawUrl = React.useMemo(() => {
+    if (typeof video.videoUrl !== 'string') return '';
+    try {
+      return decodeURIComponent(video.videoUrl).trim();
+    } catch {
+      return video.videoUrl.trim();
+    }
+  }, [video.videoUrl]);
+
   const isSlideshowOrImage =
-    typeof video.videoUrl === 'string' &&
-    (video.videoUrl.trim().startsWith('[') ||
-      /\.(png|jpe?g|webp|gif)($|\?)/i.test(video.videoUrl));
+    rawUrl.startsWith('[') ||
+    rawUrl.includes('/slideshows/') ||
+    /\.(png|jpe?g|webp|gif)($|\?)/i.test(rawUrl);
 
   const imageUrls: string[] = React.useMemo(() => {
     if (!isSlideshowOrImage) return [];
-    if (typeof video.videoUrl === 'string' && video.videoUrl.trim().startsWith('[')) {
+    if (rawUrl.startsWith('[')) {
       try {
-        const parsed = JSON.parse(video.videoUrl);
-        return Array.isArray(parsed) ? parsed : [video.videoUrl];
+        const parsed = JSON.parse(rawUrl);
+        return Array.isArray(parsed) ? parsed : [rawUrl];
       } catch {
-        return [video.videoUrl];
+        return [rawUrl];
       }
     }
-    return [video.videoUrl];
-  }, [video.videoUrl, isSlideshowOrImage]);
+    return [rawUrl || video.thumbnail];
+  }, [rawUrl, isSlideshowOrImage, video.thumbnail]);
 
-  const videoSource = !isSlideshowOrImage && video.videoUrl ? video.videoUrl : '';
+  const videoSource = !isSlideshowOrImage && video.videoUrl ? video.videoUrl : null;
 
   const player = useVideoPlayer(videoSource, (p) => {
     p.loop = true;

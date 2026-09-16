@@ -47,7 +47,7 @@ export default function UploadScreen() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const previewPlayer = useVideoPlayer(videoUri || '', (player) => {
+  const previewPlayer = useVideoPlayer(videoUri ? videoUri : null, (player) => {
     player.muted = true;
     player.loop = true;
     if (videoUri) {

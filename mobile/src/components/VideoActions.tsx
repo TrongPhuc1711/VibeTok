@@ -37,8 +37,8 @@ export default function VideoActions({
       {/* Avatar */}
       <TouchableOpacity style={styles.avatarButton} onPress={onAvatarPress}>
         <Avatar
-          uri={video.user.anh_dai_dien}
-          initials={video.user.initials}
+          uri={video.user?.anh_dai_dien}
+          initials={video.user?.initials || 'VT'}
           size={44}
           borderColor={Colors.primary}
         />

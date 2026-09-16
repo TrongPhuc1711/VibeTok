@@ -32,13 +32,13 @@ export default function CommentItem({ comment, onLike, onReply }: CommentItemPro
   return (
     <View style={styles.container}>
       <Avatar
-        uri={comment.user.anh_dai_dien}
-        initials={comment.user.initials}
+        uri={comment.user?.anh_dai_dien}
+        initials={comment.user?.initials || 'U'}
         size={34}
       />
 
       <View style={styles.body}>
-        <Text style={styles.username}>{comment.user.username}</Text>
+        <Text style={styles.username}>{comment.user?.username || 'Người dùng'}</Text>
         <Text style={styles.content}>{comment.content}</Text>
 
         <View style={styles.meta}>
