@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "VibeTok",
+    "slug": "vibetok",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vibetok.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.vibetok.app",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "vibetok",
+    "plugins": [
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "VibeTok cần quyền truy cập thư viện ảnh để bạn có thể chọn video hoặc ảnh đăng tải.",
+          "cameraPermission": "VibeTok cần quyền camera để bạn có thể chụp ảnh hoặc quay video trực tiếp."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7a4f5824-82c2-4ff5-80f0-5c73f22107be"
+      }
+    },
+    "owner": "trongphuc17"
+  }
+}
