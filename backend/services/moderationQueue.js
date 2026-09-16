@@ -18,6 +18,9 @@ const redisConnection = {
     port: redisPort,
     password: redisPassword,
     tls: redisHost !== '127.0.0.1' && redisHost !== 'localhost' ? {} : undefined,
+    keepAlive: 30000,
+    connectTimeout: 10000,
+    maxRetriesPerRequest: null,
 };
 
 // ── Queue definition ──
@@ -257,7 +260,11 @@ export function initModerationWorker() {
     });
 
     worker.on('error', (err) => {
-        console.error('[ModerationWorker] Worker error:', err.message);
+        if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+            console.warn(`[ModerationWorker] Socket timeout (${err.code}), đang tự động duy trì kết nối...`);
+        } else {
+            console.error('[ModerationWorker] Worker error:', err.message);
+        }
     });
 
     console.log('[ModerationQueue] ✓ Worker đã khởi tạo — đang lắng nghe job kiểm duyệt');

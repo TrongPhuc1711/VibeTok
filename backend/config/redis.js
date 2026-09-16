@@ -9,8 +9,11 @@ const redis = new Redis({
     port: redisPort,
     password: redisPassword,
     tls: redisHost !== '127.0.0.1' && redisHost !== 'localhost' ? {} : undefined,
+    keepAlive: 30000,
+    connectTimeout: 10000,
+    maxRetriesPerRequest: null,
     retryStrategy(times) {
-        const delay = Math.min(times * 50, 2000);
+        const delay = Math.min(times * 100, 3000);
         return delay;
     }
 });
@@ -20,7 +23,11 @@ redis.on('connect', () => {
 });
 
 redis.on('error', (err) => {
-    console.error('[Redis] Lỗi kết nối:', err);
+    if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+        console.warn(`[Redis] Gián đoạn kết nối (${err.code}): Đang tự động kết nối lại...`);
+    } else {
+        console.error('[Redis] Lỗi kết nối:', err.message || err);
+    }
 });
 
 export default redis;
