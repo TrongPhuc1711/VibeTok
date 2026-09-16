@@ -4,17 +4,25 @@ import {
   Text,
   Image,
   TouchableWithoutFeedback,
+  TouchableOpacity,
   Dimensions,
   StyleSheet,
   Animated,
+  FlatList,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Play, Heart, Music } from 'lucide-react-native';
+import { Play, Heart, Music, Repeat2, Images } from 'lucide-react-native';
 
 import VideoActions from './VideoActions';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../theme/colors';
+import { parseHashtags, stripHashtags } from '../utils/formatters';
 import type { VideoItem } from '../hooks/useVideoFeed';
+import type { RootStackParamList } from '../navigation/types';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const TAB_BAR_H = 60;
@@ -30,6 +38,7 @@ interface VideoFeedItemProps {
   onBookmark: () => void;
   onShare: () => void;
   onAvatarPress: () => void;
+  onFollow?: () => void;
 }
 
 export default function VideoFeedItem({
@@ -42,9 +51,12 @@ export default function VideoFeedItem({
   onBookmark,
   onShare,
   onAvatarPress,
+  onFollow,
 }: VideoFeedItemProps) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
 
   // Check if videoUrl is actually an image or slideshow JSON
   const rawUrl = React.useMemo(() => {
@@ -71,7 +83,7 @@ export default function VideoFeedItem({
         return [rawUrl];
       }
     }
-    return [rawUrl || video.thumbnail];
+    return [rawUrl || video.thumbnail || ''];
   }, [rawUrl, isSlideshowOrImage, video.thumbnail]);
 
   const videoSource = !isSlideshowOrImage && video.videoUrl ? video.videoUrl : null;
@@ -99,8 +111,7 @@ export default function VideoFeedItem({
     }
   }, [isActive, paused, player, videoSource]);
 
-  // Single tap → toggle play/pause
-  // Double tap → like
+  // Single tap → toggle play/pause, Double tap → like
   const handlePress = useCallback(() => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
@@ -135,17 +146,50 @@ export default function VideoFeedItem({
     lastTapRef.current = now;
   }, [isLiked, onLike, heartScale, heartOpacity]);
 
+  // Handle slideshow swipe
+  const handleSlideScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_W);
+    setSlideIndex(index);
+  };
+
+  const hashtags = parseHashtags(video.caption || '');
+  const captionText = stripHashtags(video.caption || '');
+  const repostedBy = (video as any)?.repostedByFriend;
+
   return (
     <View style={styles.container}>
       <TouchableWithoutFeedback onPress={handlePress}>
         <View style={styles.videoWrapper}>
-          {/* Video player */}
+          {/* ── Visual Media ── */}
           {isSlideshowOrImage && imageUrls.length > 0 ? (
-            <Image
-              source={{ uri: imageUrls[0] }}
-              style={styles.video}
-              resizeMode="cover"
-            />
+            <View style={styles.slideshowContainer}>
+              <FlatList
+                data={imageUrls}
+                keyExtractor={(uri, i) => uri + i}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={handleSlideScroll}
+                renderItem={({ item }) => (
+                  <Image
+                    source={{ uri: item }}
+                    style={styles.slideImage}
+                    resizeMode="cover"
+                  />
+                )}
+              />
+
+              {/* Slideshow pill counter */}
+              {imageUrls.length > 1 && (
+                <View style={styles.slideshowBadge}>
+                  <Images size={12} color={Colors.white} />
+                  <Text style={styles.slideshowBadgeText}>
+                    {slideIndex + 1}/{imageUrls.length}
+                  </Text>
+                </View>
+              )}
+            </View>
           ) : (
             <VideoView
               player={player}
@@ -158,7 +202,7 @@ export default function VideoFeedItem({
           {/* Pause icon overlay */}
           {showPauseIcon && paused && (
             <View style={styles.pauseOverlay}>
-              <Play size={64} color="rgba(255,255,255,0.8)" fill="rgba(255,255,255,0.8)" />
+              <Play size={64} color="rgba(255,255,255,0.85)" fill="rgba(255,255,255,0.85)" />
             </View>
           )}
 
@@ -176,40 +220,80 @@ export default function VideoFeedItem({
             <Heart size={100} color={Colors.primary} fill={Colors.primary} />
           </Animated.View>
 
-          {/* Bottom gradient + info */}
+          {/* ── Bottom Gradient & Video Info (giống Web VideoCardInfo) ── */}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
             style={styles.gradient}
           >
             <View style={styles.infoContainer}>
-              <Text style={styles.username} numberOfLines={1}>
-                @{video.user.username}
+              {/* Repost banner */}
+              {repostedBy && (
+                <View style={styles.repostRow}>
+                  <Repeat2 size={13} color="rgba(255,255,255,0.8)" />
+                  <Text style={styles.repostText}>
+                    {repostedBy.fullName || repostedBy.username} đã đăng lại
+                  </Text>
+                </View>
+              )}
+
+              {/* Author name */}
+              <TouchableOpacity
+                onPress={onAvatarPress}
+                activeOpacity={0.8}
+                style={styles.authorRow}
+              >
+                <Text style={styles.displayName} numberOfLines={1}>
+                  {video.user?.fullName || video.user?.username || 'Người dùng'}
+                </Text>
+                {video.user?.fullName && (
+                  <Text style={styles.username}>@{video.user.username}</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Caption + Hashtags */}
+              <Text style={styles.caption} numberOfLines={3}>
+                {captionText}
+                {hashtags.map((h, i) => (
+                  <Text
+                    key={i}
+                    style={styles.hashtagsText}
+                    onPress={() => {
+                      navigation.navigate('Hashtag', {
+                        tag: h.replace(/^#/, ''),
+                      });
+                    }}
+                  >
+                    {' '}{h}
+                  </Text>
+                ))}
               </Text>
-              <Text style={styles.caption} numberOfLines={2}>
-                {video.caption}
-              </Text>
+
+              {/* Music Banner */}
               {video.music && (
                 <View style={styles.musicRow}>
-                  <Music size={12} color={Colors.textMuted} />
+                  <Music size={13} color={Colors.white} />
                   <Text style={styles.musicText} numberOfLines={1}>
-                    {video.music.title} — {video.music.artist}
+                    {video.music.title} – {video.music.artist}
                   </Text>
                 </View>
               )}
             </View>
           </LinearGradient>
 
-          {/* Right action buttons */}
+          {/* ── Right Action Buttons ── */}
           <View style={styles.actionsContainer}>
             <VideoActions
               video={video}
               isLiked={isLiked}
               isBookmarked={isBookmarked}
+              isFollowing={video.isFollowing ?? video.user?.isFollowing}
+              isPlaying={isActive && !paused}
               onLike={onLike}
               onComment={onComment}
               onBookmark={onBookmark}
               onShare={onShare}
               onAvatarPress={onAvatarPress}
+              onFollow={onFollow}
             />
           </View>
         </View>
@@ -232,6 +316,32 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  slideshowContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  slideImage: {
+    width: SCREEN_W,
+    height: '100%',
+  },
+  slideshowBadge: {
+    position: 'absolute',
+    top: 60,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  slideshowBadgeText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   pauseOverlay: {
     position: 'absolute',
     top: 0,
@@ -240,10 +350,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  pauseIcon: {
-    fontSize: 56,
-    opacity: 0.7,
   },
   heartOverlay: {
     position: 'absolute',
@@ -254,31 +360,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heartIcon: {
-    fontSize: 100,
-  },
   gradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingBottom: 16,
+    paddingBottom: 20,
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 80,
   },
   infoContainer: {
-    maxWidth: SCREEN_W * 0.7,
+    maxWidth: SCREEN_W * 0.76,
     gap: 6,
   },
-  username: {
+  repostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+  repostText: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 12,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  displayName: {
     color: Colors.white,
     fontSize: 16,
     fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  username: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 13,
+    fontWeight: '500',
   },
   caption: {
-    color: Colors.textSecondary,
+    color: '#F1F1F2',
     fontSize: 14,
     lineHeight: 19,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  hashtagsText: {
+    color: Colors.white,
+    fontWeight: '700',
   },
   musicRow: {
     flexDirection: 'row',
@@ -286,16 +424,17 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
   },
-  musicIcon: {
-    fontSize: 12,
-  },
   musicText: {
-    color: Colors.textMuted,
-    fontSize: 12,
+    color: Colors.white,
+    fontSize: 13,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   actionsContainer: {
     position: 'absolute',
-    right: 10,
-    bottom: 80,
+    right: 12,
+    bottom: 24,
   },
 });

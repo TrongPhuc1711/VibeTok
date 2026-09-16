@@ -19,14 +19,15 @@ import { ArrowLeft } from 'lucide-react-native';
 
 import VideoFeedItem from '../components/VideoFeedItem';
 import CommentSheet from '../components/CommentSheet';
+import ShareSheet from '../components/ShareSheet';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import {
   getVideoById,
   likeVideo,
   unlikeVideo,
-  shareVideo,
 } from '../services/videoService';
 import { toggleBookmark } from '../services/bookmarkService';
+import { followUser, unfollowUser } from '../services/userService';
 import { Colors } from '../theme/colors';
 import type { VideoItem } from '../hooks/useVideoFeed';
 import type { RootStackParamList } from '../navigation/types';
@@ -46,6 +47,7 @@ export default function VideoDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [commentOpen, setCommentOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -130,15 +132,40 @@ export default function VideoDetailScreen() {
   }, [video]);
 
   // ── Share ──
-  const handleShare = useCallback(async () => {
-    if (!video) return;
+  const handleShare = useCallback(() => {
+    setShareOpen(true);
+  }, []);
+
+  // ── Follow ──
+  const handleFollow = useCallback(async () => {
+    if (!video?.user?.username) return;
+    const wasFollowing = video.isFollowing ?? video.user?.isFollowing;
+    setVideo((v) =>
+      v
+        ? {
+            ...v,
+            isFollowing: !wasFollowing,
+            user: { ...v.user, isFollowing: !wasFollowing },
+          }
+        : v,
+    );
     try {
-      await shareVideo(video.id);
-      await Share.share({
-        message: `${video.caption || 'Xem video hay trên VibeTok!'}\nhttps://vibe-tok.vercel.app/video/${video.id}`,
-      });
+      if (wasFollowing) {
+        await unfollowUser(video.user.username);
+      } else {
+        await followUser(video.user.username);
+      }
     } catch {
-      // User cancelled
+      // Rollback
+      setVideo((v) =>
+        v
+          ? {
+              ...v,
+              isFollowing: wasFollowing,
+              user: { ...v.user, isFollowing: wasFollowing },
+            }
+          : v,
+      );
     }
   }, [video]);
 
@@ -184,6 +211,7 @@ export default function VideoDetailScreen() {
         onBookmark={handleBookmark}
         onShare={handleShare}
         onAvatarPress={handleAvatarPress}
+        onFollow={handleFollow}
       />
 
       {/* Floating back button */}
@@ -202,6 +230,18 @@ export default function VideoDetailScreen() {
           videoId={video.id}
           totalComments={video.comments}
           onClose={() => setCommentOpen(false)}
+        />
+      )}
+
+      {/* Share Sheet */}
+      {shareOpen && (
+        <ShareSheet
+          visible={shareOpen}
+          video={video}
+          onClose={() => setShareOpen(false)}
+          onRepostChange={(reposted) => {
+            setVideo((v) => (v ? { ...v, isReposted: reposted } : v));
+          }}
         />
       )}
     </View>

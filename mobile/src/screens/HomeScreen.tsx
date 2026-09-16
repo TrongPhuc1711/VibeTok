@@ -18,10 +18,12 @@ import { Film } from 'lucide-react-native';
 
 import VideoFeedItem from '../components/VideoFeedItem';
 import CommentSheet from '../components/CommentSheet';
+import ShareSheet from '../components/ShareSheet';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useVideoFeed, type VideoItem } from '../hooks/useVideoFeed';
 import { likeVideo, unlikeVideo, shareVideo } from '../services/videoService';
 import { toggleBookmark } from '../services/bookmarkService';
+import { followUser } from '../services/userService';
 import { Colors } from '../theme/colors';
 import { FEED_TABS } from '../constants';
 import type { RootStackParamList } from '../navigation/types';
@@ -39,6 +41,7 @@ export default function HomeScreen() {
   const [feedType, setFeedType] = useState<'forYou' | 'following'>('forYou');
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentVideoId, setCommentVideoId] = useState<string | null>(null);
+  const [sharingVideo, setSharingVideo] = useState<VideoItem | null>(null);
 
   const { videos, loading, refreshing, hasMore, loadMore, refresh, updateVideo } =
     useVideoFeed(feedType);
@@ -91,15 +94,8 @@ export default function HomeScreen() {
   );
 
   // ── Share ──
-  const handleShare = useCallback(async (video: VideoItem) => {
-    try {
-      await shareVideo(video.id);
-      await Share.share({
-        message: `${video.caption || 'Xem video hay trên VibeTok!'}\nhttps://vibe-tok.vercel.app/video/${video.id}`,
-      });
-    } catch {
-      // User cancelled share
-    }
+  const handleShare = useCallback((video: VideoItem) => {
+    setSharingVideo(video);
   }, []);
 
   // ── Avatar press → Profile ──
@@ -108,6 +104,24 @@ export default function HomeScreen() {
       navigation.navigate('UserProfile', { username: video.user.username });
     },
     [navigation],
+  );
+
+  // ── Follow ──
+  const handleFollow = useCallback(
+    async (video: VideoItem) => {
+      const username = video.user?.username;
+      if (!username) return;
+      updateVideo(video.id, {
+        isFollowing: true,
+        user: { ...video.user, isFollowing: true },
+      });
+      try {
+        await followUser(username);
+      } catch (err) {
+        console.error('Follow error:', err);
+      }
+    },
+    [updateVideo],
   );
 
   // Render video item
@@ -123,9 +137,10 @@ export default function HomeScreen() {
         onBookmark={() => handleBookmark(item)}
         onShare={() => handleShare(item)}
         onAvatarPress={() => handleAvatarPress(item)}
+        onFollow={() => handleFollow(item)}
       />
     ),
-    [activeIndex, handleLike, handleBookmark, handleShare, handleAvatarPress],
+    [activeIndex, handleLike, handleBookmark, handleShare, handleAvatarPress, handleFollow],
   );
 
   const activeVideo = videos[activeIndex];
@@ -220,6 +235,18 @@ export default function HomeScreen() {
           videoId={commentVideoId}
           totalComments={activeVideo.comments}
           onClose={() => setCommentVideoId(null)}
+        />
+      )}
+
+      {/* ── Share sheet ── */}
+      {sharingVideo && (
+        <ShareSheet
+          visible={Boolean(sharingVideo)}
+          video={sharingVideo}
+          onClose={() => setSharingVideo(null)}
+          onRepostChange={(reposted) => {
+            updateVideo(sharingVideo.id, { isReposted: reposted });
+          }}
         />
       )}
     </View>

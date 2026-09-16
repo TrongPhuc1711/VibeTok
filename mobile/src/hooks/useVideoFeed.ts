@@ -23,6 +23,12 @@ export interface VideoItem {
   isLiked: boolean;
   isFollowing: boolean;
   isBookmarked?: boolean;
+  isReposted?: boolean;
+  repostedByFriend?: {
+    id: string;
+    username: string;
+    fullName?: string;
+  } | null;
   user: {
     id: string;
     username: string;

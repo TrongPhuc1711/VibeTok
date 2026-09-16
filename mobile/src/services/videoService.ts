@@ -143,6 +143,16 @@ export const repostVideo = async (videoId: string) => {
   return { data: res.data };
 };
 
+export const getRepostedVideosByUserId = async (
+  userId: string,
+  { page = 1, limit = 30 } = {},
+) => {
+  const res = await api.get(`/videos/user/${userId}/reposts`, {
+    params: { page, limit },
+  });
+  return { data: res.data };
+};
+
 // ── Report ──
 export const reportVideo = async (
   videoId: string,

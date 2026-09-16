@@ -28,6 +28,7 @@ import UploadScreen from '../screens/UploadScreen';
 import NotificationScreen from '../screens/NotificationScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import VideoDetailScreen from '../screens/VideoDetailScreen';
+import HashtagScreen from '../screens/HashtagScreen';
 
 import type {
   AuthStackParamList,
@@ -150,6 +151,11 @@ function RootNavigator() {
       <RootStack.Screen
         name="VideoDetail"
         component={VideoDetailScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <RootStack.Screen
+        name="Hashtag"
+        component={HashtagScreen}
         options={{ animation: 'slide_from_right' }}
       />
     </RootStack.Navigator>

@@ -43,3 +43,18 @@ export const formatDuration = (seconds: number): string => {
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
+
+/**
+ * Trích xuất danh sách hashtag từ caption: "Video hay #dance #music" → ["#dance", "#music"]
+ */
+export const parseHashtags = (text = ''): string[] => {
+  return text.match(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g) ?? [];
+};
+
+/**
+ * Lấy phần nội dung caption không chứa hashtag
+ */
+export const stripHashtags = (text = ''): string => {
+  return text.replace(/#[\w\u00C0-\u024F\u1E00-\u1EFF]+/g, '').trim();
+};
+

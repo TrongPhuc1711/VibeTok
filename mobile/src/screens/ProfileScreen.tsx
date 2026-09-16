@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Film, Heart, Bookmark, ArrowLeft } from 'lucide-react-native';
+import { Film, Heart, Bookmark, ArrowLeft, Repeat } from 'lucide-react-native';
 
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
@@ -31,8 +31,8 @@ import type { RootStackParamList } from '../navigation/types';
 
 type ProfileRoute = RouteProp<RootStackParamList, 'UserProfile'>;
 
-const TABS_OWN = ['Videos', 'Liked', 'Bookmarks'] as const;
-const TABS_OTHER = ['Videos', 'Liked'] as const;
+const TABS_OWN = ['Videos', 'Reposts', 'Liked', 'Bookmarks'] as const;
+const TABS_OTHER = ['Videos', 'Reposts', 'Liked'] as const;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -47,11 +47,14 @@ export default function ProfileScreen() {
     profile,
     videos,
     likedVideos,
+    repostedVideos,
     loading,
     likedLoading,
+    repostedLoading,
     following,
     toggleFollow,
     fetchLikedVideos,
+    fetchRepostedVideos,
     refetch,
   } = useProfile(targetUsername);
 
@@ -61,6 +64,7 @@ export default function ProfileScreen() {
   const [bookmarks, setBookmarks] = useState<any[]>([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(false);
   const [likedFetched, setLikedFetched] = useState(false);
+  const [repostedFetched, setRepostedFetched] = useState(false);
   const [bookmarksFetched, setBookmarksFetched] = useState(false);
 
   // Fetch liked videos on tab change
@@ -70,6 +74,14 @@ export default function ProfileScreen() {
       setLikedFetched(true);
     }
   }, [activeTab, likedFetched, fetchLikedVideos]);
+
+  // Fetch reposted videos on tab change
+  useEffect(() => {
+    if (activeTab === 'Reposts' && !repostedFetched) {
+      fetchRepostedVideos();
+      setRepostedFetched(true);
+    }
+  }, [activeTab, repostedFetched, fetchRepostedVideos]);
 
   // Fetch bookmarks
   useEffect(() => {
@@ -89,6 +101,13 @@ export default function ProfileScreen() {
       loadBookmarks();
     }
   }, [activeTab, bookmarksFetched, isMyProfile]);
+
+  // Reset tab caches when navigating to different profile
+  useEffect(() => {
+    setLikedFetched(false);
+    setRepostedFetched(false);
+    setBookmarksFetched(false);
+  }, [targetUsername]);
 
   // Logout handler
   const handleLogout = useCallback(() => {
@@ -113,12 +132,20 @@ export default function ProfileScreen() {
   const currentVideos =
     activeTab === 'Videos'
       ? videos
-      : activeTab === 'Liked'
-        ? likedVideos
-        : bookmarks;
+      : activeTab === 'Reposts'
+        ? repostedVideos
+        : activeTab === 'Liked'
+          ? likedVideos
+          : bookmarks;
 
   const currentLoading =
-    activeTab === 'Liked' ? likedLoading : activeTab === 'Bookmarks' ? bookmarksLoading : false;
+    activeTab === 'Liked'
+      ? likedLoading
+      : activeTab === 'Reposts'
+        ? repostedLoading
+        : activeTab === 'Bookmarks'
+          ? bookmarksLoading
+          : false;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -134,9 +161,11 @@ export default function ProfileScreen() {
         emptyText={
           activeTab === 'Videos'
             ? 'Chưa đăng video nào'
-            : activeTab === 'Liked'
-              ? 'Chưa thích video nào'
-              : 'Chưa lưu video nào'
+            : activeTab === 'Reposts'
+              ? 'Chưa đăng lại video nào'
+              : activeTab === 'Liked'
+                ? 'Chưa thích video nào'
+                : 'Chưa lưu video nào'
         }
         ListHeaderComponent={
           <View>
@@ -224,6 +253,9 @@ export default function ProfileScreen() {
                       {tab === 'Videos' && (
                         <Film size={15} color={iconColor} strokeWidth={isActive ? 2.2 : 1.8} />
                       )}
+                      {tab === 'Reposts' && (
+                        <Repeat size={15} color={iconColor} strokeWidth={isActive ? 2.2 : 1.8} />
+                      )}
                       {tab === 'Liked' && (
                         <Heart
                           size={15}
@@ -248,9 +280,11 @@ export default function ProfileScreen() {
                       >
                         {tab === 'Videos'
                           ? 'Video'
-                          : tab === 'Liked'
-                            ? 'Đã thích'
-                            : 'Đã lưu'}
+                          : tab === 'Reposts'
+                            ? 'Đã đăng lại'
+                            : tab === 'Liked'
+                              ? 'Đã thích'
+                              : 'Đã lưu'}
                       </Text>
                     </View>
                   </TouchableOpacity>

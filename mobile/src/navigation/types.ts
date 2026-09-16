@@ -21,4 +21,5 @@ export type RootStackParamList = {
   MainTabs: undefined;
   UserProfile: { username: string };
   VideoDetail: { videoId: string };
+  Hashtag: { tag: string };
 };

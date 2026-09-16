@@ -190,14 +190,28 @@ export default function ExploreScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.tagsRow}
                   >
-                    {trendingTags.map((tag: any, i: number) => (
-                      <TouchableOpacity key={i} style={styles.tagChip}>
-                        <Text style={styles.tagText}>#{tag.name || tag.tag}</Text>
-                        {tag.count && (
-                          <Text style={styles.tagCount}>{tag.count} video</Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
+                    {trendingTags.map((tag: any, i: number) => {
+                      const rawTag = tag.name || tag.tag || '';
+                      return (
+                        <TouchableOpacity
+                          key={i}
+                          style={styles.tagChip}
+                          onPress={() => {
+                            if (rawTag) {
+                              navigation.navigate('Hashtag', {
+                                tag: rawTag.replace(/^#/, ''),
+                              });
+                            }
+                          }}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={styles.tagText}>#{rawTag.replace(/^#/, '')}</Text>
+                          {tag.count && (
+                            <Text style={styles.tagCount}>{tag.count} video</Text>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               )}
